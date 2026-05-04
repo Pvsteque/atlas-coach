@@ -3166,6 +3166,7 @@ let logRPE = null, logMood = null;
 // API LAYER
 // ═══════════════════════════════════════════════════════════════
 let _token = localStorage.getItem('atlas_token');
+let _coachName = 'Coach';
 const _cache = { athletes:[], sessions:[], assignments:[], logs:[], nutri:{} };
 
 async function api(method, path, body) {
@@ -3251,7 +3252,8 @@ function logout(){
 }
 async function startApp(coach){
   document.getElementById('auth-screen').classList.add('hidden');
-  const coachName=coach?.name||'Coach';
+  _coachName=coach?.name||'Coach';
+  const coachName=_coachName;
   document.getElementById('coach-name-display').textContent=coachName;
   document.getElementById('coach-av').textContent=coachName.charAt(0).toUpperCase();
   await loadAllData();
@@ -3959,13 +3961,7 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 
 
 
-// ═══════════════════════════════════════════════════════════════
-// DB HELPERS — SESSION LOGS & PRs
-// ═══════════════════════════════════════════════════════════════
-const getSessionLogs = () => DB.get('session_logs', []);
-const setSessionLogs = v => DB.set('session_logs', v);
-const getPRs         = () => DB.get('prs', {});
-const setPRs         = v => DB.set('prs', v);
+// (getSessionLogs / setSessionLogs / getPRs / setPRs defined above in API layer)
 
 // ═══════════════════════════════════════════════════════════════
 // SESSION RUNNER STATE
@@ -6709,10 +6705,10 @@ function deleteNutriPlanFromPage(){
 // ═══════════════════════════════════════════════════════════════════
 
 // ── DB helpers ────────────────────────────────────────────────────
-const getCheckins      = () => DB.get('checkins', []);
-const setCheckins      = v  => DB.set('checkins', v);
-const getCheckinConfig = () => DB.get('checkin_config', {});
-const setCheckinConfig = v  => DB.set('checkin_config', v);
+const getCheckins      = () => { try{const v=localStorage.getItem('atlas_checkins');return v?JSON.parse(v):[];}catch{return [];} };
+const setCheckins      = v  => { try{localStorage.setItem('atlas_checkins',JSON.stringify(v));}catch{} };
+const getCheckinConfig = () => { try{const v=localStorage.getItem('atlas_checkin_config');return v?JSON.parse(v):{};}catch{return {};} };
+const setCheckinConfig = v  => { try{localStorage.setItem('atlas_checkin_config',JSON.stringify(v));}catch{} };
 
 // ── Constantes poses & métriques ──────────────────────────────────
 const STANDARD_POSES = [
@@ -7151,10 +7147,10 @@ function deleteCheckin(checkinId) {
 // CHAT COACH ↔ ADHÉRENTS
 // ════════════════════════════════════════════════════════════════════
 
-const getMessages    = ()  => DB.get('messages', {});
-const setMessages    = v   => DB.set('messages', v);
-const getChatConfig  = ()  => DB.get('chat_config', {});
-const setChatConfig  = v   => DB.set('chat_config', v);
+const getMessages    = ()  => { try{const v=localStorage.getItem('atlas_messages');return v?JSON.parse(v):{};}catch{return {};} };
+const setMessages    = v   => { try{localStorage.setItem('atlas_messages',JSON.stringify(v));}catch{} };
+const getChatConfig  = ()  => { try{const v=localStorage.getItem('atlas_chat_config');return v?JSON.parse(v):{};}catch{return {};} };
+const setChatConfig  = v   => { try{localStorage.setItem('atlas_chat_config',JSON.stringify(v));}catch{} };
 
 let _chatAthleteId = null;
 
@@ -7283,7 +7279,7 @@ function openConv(athleteId) {
   const a = getAthletes().find(x=>x.id===athleteId);
   if(!a) return;
   const msgs = getConvMessages(athleteId);
-  const coachName = DB.get('coach_name','Coach');
+  const coachName = _coachName;
 
   // Build main area
   document.getElementById('chat-main').innerHTML =
@@ -7322,7 +7318,7 @@ function buildMsgsHTML(msgs, athlete) {
   if(!msgs.length) return '<div class="chat-empty"><div class="chat-empty-icon">✉️</div><div class="chat-empty-title">Démarrez la conversation</div><div class="chat-empty-sub">Envoyez votre premier message à '+athlete.name+' !</div></div>';
 
   let html=''; let lastDay='';
-  const coachName = DB.get('coach_name','Coach');
+  const coachName = _coachName;
 
   msgs.forEach(m=>{
     const day=formatDaySep(m.ts);
