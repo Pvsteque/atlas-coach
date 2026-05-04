@@ -786,6 +786,12 @@ select.input{cursor:pointer;}
 .prep-dot.on{background:var(--accent);}
 .prep-dot.off{background:rgba(255,255,255,.12);}
 .prep-card-series{font-size:11px;color:var(--muted);font-weight:600;}
+.sess-btn-row{display:flex;gap:8px;flex-wrap:wrap;padding:0 20px 12px;}
+.sess-btn{padding:7px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
+.sess-btn:hover{border-color:var(--accent);color:var(--accent);}
+.sess-btn.active{background:var(--accent);color:#000;border-color:var(--accent);}
+.routine-banner{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(255,122,0,.1);border:1px solid rgba(255,122,0,.25);border-radius:12px;font-weight:700;font-size:13px;color:var(--accent);margin-bottom:4px;}
+.prep-step{position:absolute;top:14px;right:14px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#000;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;}
 
 
 /* ══════════════════════════════════════════════
@@ -1570,7 +1576,7 @@ select.input{cursor:pointer;}
         <div class="page-header">
           <div><div class="page-title">Échauffement 🔥</div><div class="page-sub">Prépare le corps · Active la circulation · Réduit les blessures</div></div>
           <div class="header-actions">
-            <select class="input" id="warmup-filter" onchange="renderWarmup()" style="width:180px;">
+            <select class="input" id="warmup-filter" onchange="_warmupSession=null;document.querySelectorAll('.wsb').forEach(b=>b.classList.remove('active'));renderWarmup();" style="width:180px;">
               <option value="all">Tous les groupes</option>
               <option value="global">🌐 Global</option>
               <option value="upper">💪 Haut du corps</option>
@@ -1580,7 +1586,15 @@ select.input{cursor:pointer;}
             </select>
           </div>
         </div>
-        <div style="padding:20px;overflow-y:auto;height:calc(100% - 72px);">
+        <div class="sess-btn-row">
+          <span style="font-size:11px;color:var(--muted);font-weight:600;align-self:center;margin-right:4px;">Routine :</span>
+          <button class="sess-btn wsb" data-sess="bras" onclick="setWarmupSession('bras')">💪 Bras</button>
+          <button class="sess-btn wsb" data-sess="dos" onclick="setWarmupSession('dos')">🔙 Dos</button>
+          <button class="sess-btn wsb" data-sess="jambes" onclick="setWarmupSession('jambes')">🦵 Jambes</button>
+          <button class="sess-btn wsb" data-sess="epaules" onclick="setWarmupSession('epaules')">🏋️ Épaules</button>
+          <button class="sess-btn wsb" data-sess="pec" onclick="setWarmupSession('pec')">🫁 Pec</button>
+        </div>
+        <div style="padding:0 20px 20px;overflow-y:auto;height:calc(100% - 112px);">
           <div id="warmup-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;"></div>
         </div>
       </div>
@@ -1590,7 +1604,7 @@ select.input{cursor:pointer;}
         <div class="page-header">
           <div><div class="page-title">Étirements 🧘</div><div class="page-sub">Améliore la souplesse · Récupération musculaire · Posture</div></div>
           <div class="header-actions">
-            <select class="input" id="stretch-filter" onchange="renderStretching()" style="width:180px;">
+            <select class="input" id="stretch-filter" onchange="_stretchSession=null;document.querySelectorAll('.ssb').forEach(b=>b.classList.remove('active'));renderStretching();" style="width:180px;">
               <option value="all">Tous les groupes</option>
               <option value="upper">💪 Haut du corps</option>
               <option value="lower">🦵 Bas du corps</option>
@@ -1598,7 +1612,7 @@ select.input{cursor:pointer;}
               <option value="hanche">🏃 Hanches & Fessiers</option>
               <option value="global">🌐 Global</option>
             </select>
-            <select class="input" id="stretch-type" onchange="renderStretching()" style="width:160px;">
+            <select class="input" id="stretch-type" onchange="_stretchSession=null;document.querySelectorAll('.ssb').forEach(b=>b.classList.remove('active'));renderStretching();" style="width:160px;">
               <option value="all">Tous types</option>
               <option value="statique">Statique</option>
               <option value="dynamique">Dynamique</option>
@@ -1606,7 +1620,15 @@ select.input{cursor:pointer;}
             </select>
           </div>
         </div>
-        <div style="padding:20px;overflow-y:auto;height:calc(100% - 72px);">
+        <div class="sess-btn-row">
+          <span style="font-size:11px;color:var(--muted);font-weight:600;align-self:center;margin-right:4px;">Routine :</span>
+          <button class="sess-btn ssb" data-sess="bras" onclick="setStretchSession('bras')">💪 Bras</button>
+          <button class="sess-btn ssb" data-sess="dos" onclick="setStretchSession('dos')">🔙 Dos</button>
+          <button class="sess-btn ssb" data-sess="jambes" onclick="setStretchSession('jambes')">🦵 Jambes</button>
+          <button class="sess-btn ssb" data-sess="epaules" onclick="setStretchSession('epaules')">🏋️ Épaules</button>
+          <button class="sess-btn ssb" data-sess="pec" onclick="setStretchSession('pec')">🫁 Pec</button>
+        </div>
+        <div style="padding:0 20px 20px;overflow-y:auto;height:calc(100% - 112px);">
           <div id="stretch-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;"></div>
         </div>
       </div>
@@ -6620,12 +6642,52 @@ const GROUP_LABELS = {
   mobilite:'🔄 Mobilité',relaxation:'😌 Relaxation'
 };
 
-function prepCard(ex, showType=false) {
+const SESSION_LABELS = { bras:'💪 Bras', dos:'🔙 Dos', jambes:'🦵 Jambes', epaules:'🏋️ Épaules', pec:'🫁 Pec' };
+
+const SESSION_WARMUP_ROUTINES = {
+  bras:    ['wm2','wm8','wm11','wm14','wm10'],
+  dos:     ['wm1','wm11','wm6','wm10','wm8'],
+  jambes:  ['wm3','wm4','wm13','wm7','wm9','wm12'],
+  epaules: ['wm2','wm8','wm11','wm14','wm3'],
+  pec:     ['wm8','wm2','wm11','wm6','wm10']
+};
+
+const SESSION_STRETCH_ROUTINES = {
+  bras:    ['st9','st15','st13','st3'],
+  dos:     ['st6','st4','st10','st11','st13'],
+  jambes:  ['st2','st5','st7','st8','st1','st12'],
+  epaules: ['st13','st9','st15','st14'],
+  pec:     ['st3','st13','st11','st9']
+};
+
+let _warmupSession = null;
+let _stretchSession = null;
+
+function setWarmupSession(type) {
+  _warmupSession = _warmupSession === type ? null : type;
+  if(_warmupSession) document.getElementById('warmup-filter').value='all';
+  document.querySelectorAll('.wsb').forEach(b=>b.classList.toggle('active', b.dataset.sess===_warmupSession));
+  renderWarmup();
+}
+
+function setStretchSession(type) {
+  _stretchSession = _stretchSession === type ? null : type;
+  if(_stretchSession) {
+    document.getElementById('stretch-filter').value='all';
+    document.getElementById('stretch-type').value='all';
+  }
+  document.querySelectorAll('.ssb').forEach(b=>b.classList.toggle('active', b.dataset.sess===_stretchSession));
+  renderStretching();
+}
+
+function prepCard(ex, showType=false, step=null) {
   const dots = [1,2,3].map(i=>`<div class="prep-dot ${i<=ex.intensite?'on':'off'}"></div>`).join('');
   const typeTag = showType && ex.type ? `<span class="prep-tag prep-tag-type">${ex.type}</span>` : '';
   const muscles = ex.muscles.map(m=>`<span class="prep-muscle-tag">${m}</span>`).join('');
   const series = ex.series ? `<span class="prep-card-series">· ${ex.series} séries</span>` : '';
+  const stepBadge = step ? `<div class="prep-step">${step}</div>` : '';
   return `<div class="prep-card">
+    ${stepBadge}
     <div class="prep-card-head">
       <div class="prep-card-emoji">${ex.emoji}</div>
       <div class="prep-card-info">
@@ -6646,20 +6708,38 @@ function prepCard(ex, showType=false) {
 }
 
 function renderWarmup() {
-  const f = document.getElementById('warmup-filter')?.value||'all';
-  const data = f==='all' ? WARMUP_DATA : WARMUP_DATA.filter(e=>e.group===f);
   const grid = document.getElementById('warmup-grid');
-  if(grid) grid.innerHTML = data.map(e=>prepCard(e)).join('');
+  if(!grid) return;
+  if(_warmupSession) {
+    const ids = SESSION_WARMUP_ROUTINES[_warmupSession]||[];
+    const data = ids.map(id=>WARMUP_DATA.find(e=>e.id===id)).filter(Boolean);
+    const totalMin = data.reduce((a,e)=>a+e.intensite,0)+data.length;
+    grid.innerHTML = `<div class="routine-banner">⚡ Routine ${SESSION_LABELS[_warmupSession]} — ${data.length} exercices · ~${totalMin} min · Ordre recommandé</div>`
+      + data.map((e,i)=>prepCard(e,false,i+1)).join('');
+  } else {
+    const f = document.getElementById('warmup-filter')?.value||'all';
+    const data = f==='all' ? WARMUP_DATA : WARMUP_DATA.filter(e=>e.group===f);
+    grid.innerHTML = data.map(e=>prepCard(e)).join('');
+  }
 }
 
 function renderStretching() {
-  const fg = document.getElementById('stretch-filter')?.value||'all';
-  const ft = document.getElementById('stretch-type')?.value||'all';
-  let data = STRETCH_DATA;
-  if(fg!=='all') data = data.filter(e=>e.group===fg);
-  if(ft!=='all') data = data.filter(e=>e.type===ft);
   const grid = document.getElementById('stretch-grid');
-  if(grid) grid.innerHTML = data.map(e=>prepCard(e,true)).join('');
+  if(!grid) return;
+  if(_stretchSession) {
+    const ids = SESSION_STRETCH_ROUTINES[_stretchSession]||[];
+    const data = ids.map(id=>STRETCH_DATA.find(e=>e.id===id)).filter(Boolean);
+    const totalSec = data.reduce((a,e)=>a+(parseInt(e.duree)||45),0);
+    grid.innerHTML = `<div class="routine-banner">🧘 Étirements ${SESSION_LABELS[_stretchSession]} — ${data.length} exercices · ~${Math.ceil(totalSec/60)} min · Tenir chaque position</div>`
+      + data.map((e,i)=>prepCard(e,true,i+1)).join('');
+  } else {
+    const fg = document.getElementById('stretch-filter')?.value||'all';
+    const ft = document.getElementById('stretch-type')?.value||'all';
+    let data = STRETCH_DATA;
+    if(fg!=='all') data = data.filter(e=>e.group===fg);
+    if(ft!=='all') data = data.filter(e=>e.type===ft);
+    grid.innerHTML = data.map(e=>prepCard(e,true)).join('');
+  }
 }
 
 function renderCooldown() {
