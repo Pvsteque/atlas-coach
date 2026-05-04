@@ -1638,7 +1638,7 @@ select.input{cursor:pointer;}
         <div class="page-header">
           <div><div class="page-title">Retour au calme 🌬️</div><div class="page-sub">Réduit les courbatures · Baisse FC · Récupération active</div></div>
           <div class="header-actions">
-            <select class="input" id="cooldown-filter" onchange="renderCooldown()" style="width:180px;">
+            <select class="input" id="cooldown-filter" onchange="_cooldownSession=null;document.querySelectorAll('.csb').forEach(b=>b.classList.remove('active'));renderCooldown();" style="width:180px;">
               <option value="all">Tous</option>
               <option value="respiration">🌬️ Respiration</option>
               <option value="mobilite">🔄 Mobilité</option>
@@ -1647,7 +1647,15 @@ select.input{cursor:pointer;}
             </select>
           </div>
         </div>
-        <div style="padding:20px;overflow-y:auto;height:calc(100% - 72px);">
+        <div class="sess-btn-row">
+          <span style="font-size:11px;color:var(--muted);font-weight:600;align-self:center;margin-right:4px;">Routine :</span>
+          <button class="sess-btn csb" data-sess="bras" onclick="setCooldownSession('bras')">💪 Bras</button>
+          <button class="sess-btn csb" data-sess="dos" onclick="setCooldownSession('dos')">🔙 Dos</button>
+          <button class="sess-btn csb" data-sess="jambes" onclick="setCooldownSession('jambes')">🦵 Jambes</button>
+          <button class="sess-btn csb" data-sess="epaules" onclick="setCooldownSession('epaules')">🏋️ Épaules</button>
+          <button class="sess-btn csb" data-sess="pec" onclick="setCooldownSession('pec')">🫁 Pec</button>
+        </div>
+        <div style="padding:0 20px 20px;overflow-y:auto;height:calc(100% - 112px);">
           <div id="cooldown-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;"></div>
         </div>
       </div>
@@ -6662,6 +6670,22 @@ const SESSION_STRETCH_ROUTINES = {
 
 let _warmupSession = null;
 let _stretchSession = null;
+let _cooldownSession = null;
+
+const SESSION_COOLDOWN_ROUTINES = {
+  bras:    ['cd1','cd2','cd8','cd6','cd7'],
+  dos:     ['cd1','cd3','cd6','cd9','cd7'],
+  jambes:  ['cd1','cd4','cd5','cd8','cd11','cd3'],
+  epaules: ['cd1','cd2','cd6','cd8','cd7'],
+  pec:     ['cd1','cd3','cd6','cd9','cd7']
+};
+
+function setCooldownSession(type) {
+  _cooldownSession = _cooldownSession === type ? null : type;
+  if(_cooldownSession) document.getElementById('cooldown-filter').value='all';
+  document.querySelectorAll('.csb').forEach(b=>b.classList.toggle('active', b.dataset.sess===_cooldownSession));
+  renderCooldown();
+}
 
 function setWarmupSession(type) {
   _warmupSession = _warmupSession === type ? null : type;
@@ -6743,10 +6767,19 @@ function renderStretching() {
 }
 
 function renderCooldown() {
-  const f = document.getElementById('cooldown-filter')?.value||'all';
-  const data = f==='all' ? COOLDOWN_DATA : COOLDOWN_DATA.filter(e=>e.group===f);
   const grid = document.getElementById('cooldown-grid');
-  if(grid) grid.innerHTML = data.map(e=>prepCard(e)).join('');
+  if(!grid) return;
+  if(_cooldownSession) {
+    const ids = SESSION_COOLDOWN_ROUTINES[_cooldownSession]||[];
+    const data = ids.map(id=>COOLDOWN_DATA.find(e=>e.id===id)).filter(Boolean);
+    const totalMin = data.reduce((a,e)=>a+(parseInt(e.duree)||2),0);
+    grid.innerHTML = `<div class="routine-banner">🌬️ Retour au calme ${SESSION_LABELS[_cooldownSession]} — ${data.length} exercices · ~${totalMin} min</div>`
+      + data.map((e,i)=>prepCard(e,false,i+1)).join('');
+  } else {
+    const f = document.getElementById('cooldown-filter')?.value||'all';
+    const data = f==='all' ? COOLDOWN_DATA : COOLDOWN_DATA.filter(e=>e.group===f);
+    grid.innerHTML = data.map(e=>prepCard(e)).join('');
+  }
 }
 
 
