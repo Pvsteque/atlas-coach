@@ -11,6 +11,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // Routes API
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api', require('./routes/api'));
