@@ -1869,6 +1869,7 @@ select.input{cursor:pointer;}
         <option value="sante">❤️ Santé / Rééducation</option>
       </select>
     </div>
+    <div class="input-group"><label class="input-label">Email (pour le portail adhérent)</label><input class="input" id="na-email" type="email" placeholder="prenom@email.com"></div>
     <div class="input-group"><label class="input-label">Notes</label><input class="input" id="na-notes" placeholder="Blessures, contraintes..."></div>
     <div class="modal-actions">
       <button class="btn btn-accent" onclick="saveNewAthlete()" style="flex:1;justify-content:center;">Créer le compte ✓</button>
@@ -3449,6 +3450,7 @@ async function saveNewAthlete(){
     obj:document.getElementById('na-obj').value,
     notes:document.getElementById('na-notes').value||'',
     color,
+    email:document.getElementById('na-email').value.trim()||null,
   });
   if(!res)return;
   await loadAllData();
@@ -3982,6 +3984,53 @@ function renderNutriPlanCard(plan){
 }
 
 
+// ── PORTAL ACCESS CARD ────────────────────────────────────────────────────────
+function renderPortalCard(a){
+  const portalUrl = window.location.origin+'/athlete';
+  if(a.hasPortal){
+    return `<div style="background:var(--bg2);border:1px solid rgba(255,122,0,.25);border-radius:12px;padding:14px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:#7dca7d;display:inline-block;"></span>
+        <span style="font-size:13px;font-weight:700;color:#7dca7d;">Portail actif</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">📧 ${a.email}</div>
+      <button class="btn btn-secondary btn-sm" onclick="showPortalForm('${a.id}','${a.email||''}')">✏️ Modifier l'accès</button>
+      <a href="${portalUrl}" target="_blank" style="margin-left:8px;" class="btn btn-secondary btn-sm">🔗 Ouvrir le portail</a>
+    </div>
+    <div id="portal-form-${a.id}" style="display:none;margin-top:10px;">${portalFormHTML(a.id,a.email||'')}</div>`;
+  }
+  return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;">
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Aucun accès portail défini.<br>Créez un compte pour que l'adhérent puisse se connecter.</div>
+    ${portalFormHTML(a.id,a.email||'')}
+  </div>`;
+}
+
+function portalFormHTML(id, currentEmail){
+  return `<div style="display:flex;flex-direction:column;gap:8px;">
+    <input class="input" id="portal-email-${id}" type="email" placeholder="Email de l'adhérent" value="${currentEmail}" style="font-size:13px;">
+    <input class="input" id="portal-pass-${id}" type="password" placeholder="Mot de passe (laisser vide pour garder)" style="font-size:13px;">
+    <button class="btn btn-accent btn-sm" onclick="saveAthleteAccess('${id}')">💾 Enregistrer l'accès</button>
+  </div>`;
+}
+
+function showPortalForm(id, email){
+  const el=document.getElementById('portal-form-'+id);
+  if(el) el.style.display = el.style.display==='none' ? '' : 'none';
+}
+
+async function saveAthleteAccess(id){
+  const email=document.getElementById('portal-email-'+id)?.value.trim();
+  const password=document.getElementById('portal-pass-'+id)?.value;
+  if(!email){toast('Email requis'); return;}
+  const body={email};
+  if(password) body.password=password;
+  const res=await api('PUT','/athletes/'+id+'/access',body);
+  if(!res)return;
+  await loadAllData();
+  toast('Accès portail mis à jour ✓');
+  renderAthleteDetail(id);
+}
+
 // ═══════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════
@@ -4058,10 +4107,12 @@ function renderAthleteDetail(id){
         <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:20px 0 12px;">Historique</div>
         <div id="ath-logs-list"></div>
       </div>
-      <!-- RIGHT: nutrition + records -->
+      <!-- RIGHT: nutrition + records + portal access -->
       <div>
         <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;">Plan nutrition 🥗</div>
         ${renderNutriPlanCard(nutri)}
+        <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;">Accès portail 🔑</div>
+        <div id="ath-portal-card">${renderPortalCard(a)}</div>
         <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;">Records personnels 🏆</div>
         <div id="ath-prs-list"></div>
       </div>

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
 const { db } = require('../db');
 const requireAuth = require('../middleware/auth');
 const { randomUUID } = require('crypto');
@@ -13,11 +14,11 @@ router.get('/athletes', (req, res) => {
 });
 
 router.post('/athletes', (req, res) => {
-  const { name, age, weight, height, bf, color, obj, level, sport, notes } = req.body;
+  const { name, age, weight, height, bf, color, obj, level, sport, notes, email } = req.body;
   if (!name) return res.status(400).json({ error: 'Nom requis' });
   const id = randomUUID();
-  db.prepare('INSERT INTO athletes (id, coach_id, name, age, weight, height, bf, color, obj, level, sport, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .run(id, req.coach.id, name, age || null, weight || null, height || null, bf || null, color || '#c8ff6e', obj || '', level || '', sport || '', notes || '');
+  db.prepare('INSERT INTO athletes (id, coach_id, name, age, weight, height, bf, color, obj, level, sport, notes, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(id, req.coach.id, name, age || null, weight || null, height || null, bf || null, color || '#ff7a00', obj || '', level || '', sport || '', notes || '', email ? email.toLowerCase().trim() : null);
   res.status(201).json(mapAthlete(db.prepare('SELECT * FROM athletes WHERE id = ?').get(id)));
 });
 
@@ -37,8 +38,26 @@ router.delete('/athletes/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// PUT /athletes/:id/access — coach sets athlete portal email + password
+router.put('/athletes/:id/access', async (req, res) => {
+  const a = db.prepare('SELECT id FROM athletes WHERE id = ? AND coach_id = ?').get(req.params.id, req.coach.id);
+  if (!a) return res.status(404).json({ error: 'Athlète introuvable' });
+  const { email, password } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email requis' });
+  const existing = db.prepare('SELECT id FROM athletes WHERE email = ? AND id != ?').get(email.toLowerCase().trim(), req.params.id);
+  if (existing) return res.status(409).json({ error: 'Email déjà utilisé' });
+  if (password) {
+    if (password.length < 6) return res.status(400).json({ error: 'Mot de passe trop court (6 min)' });
+    const hash = await bcrypt.hash(password, 10);
+    db.prepare('UPDATE athletes SET email=?, password=? WHERE id=?').run(email.toLowerCase().trim(), hash, req.params.id);
+  } else {
+    db.prepare('UPDATE athletes SET email=? WHERE id=?').run(email.toLowerCase().trim(), req.params.id);
+  }
+  res.json({ ok: true });
+});
+
 function mapAthlete(r) {
-  return { id: r.id, name: r.name, age: r.age, weight: r.weight, height: r.height, bf: r.bf, color: r.color, obj: r.obj, level: r.level, sport: r.sport, notes: r.notes, createdAt: r.created_at * 1000 };
+  return { id: r.id, name: r.name, age: r.age, weight: r.weight, height: r.height, bf: r.bf, color: r.color, obj: r.obj, level: r.level, sport: r.sport, notes: r.notes, email: r.email, hasPortal: !!(r.email && r.password), createdAt: r.created_at * 1000 };
 }
 
 // ── SESSIONS ──────────────────────────────────────────────────────

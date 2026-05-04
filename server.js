@@ -18,7 +18,13 @@ app.get('/health', (req, res) => {
 
 // Routes API
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/athlete', require('./routes/athlete'));
 app.use('/api', require('./routes/api'));
+
+// Athlete portal
+app.get('/athlete', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'athlete.html'));
+});
 
 // SPA fallback
 app.get('/{*path}', (req, res) => {

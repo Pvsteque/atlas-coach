@@ -86,6 +86,10 @@ function initDB() {
           FOREIGN KEY (coach_id) REFERENCES coaches(id)
         );
       `);
+      // Migrations — ADD COLUMN silently fails if column already exists
+      ['email TEXT', 'password TEXT'].forEach(col => {
+        try { db.exec(`ALTER TABLE athletes ADD COLUMN ${col}`); } catch {}
+      });
       resolve();
     } catch (err) {
       reject(err);

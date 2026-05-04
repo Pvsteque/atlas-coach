@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Atlas — Mon Espace</title>
+<style>
+:root{
+  --bg:#0d0d0d;--bg2:#161616;--bg3:#1e1e1e;
+  --border:rgba(255,255,255,.08);
+  --text:#f0f0f0;--muted:#888;
+  --accent:#ff7a00;--accent2:#ff9f45;
+  --ease:cubic-bezier(.25,.46,.45,.94);
+  --nav-h:64px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;overflow-x:hidden;}
+
+/* AUTH */
+#auth{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+#auth.hidden{display:none;}
+.auth-logo{font-size:52px;margin-bottom:8px;}
+.auth-title{font-size:26px;font-weight:900;margin-bottom:4px;letter-spacing:-.5px;}
+.auth-title span{color:var(--accent);}
+.auth-sub{font-size:13px;color:var(--muted);margin-bottom:32px;text-align:center;}
+.auth-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px;width:100%;max-width:380px;}
+.input-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:6px;}
+.input{width:100%;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none;transition:border .15s;}
+.input:focus{border-color:var(--accent);}
+.input-group{margin-bottom:16px;}
+.auth-submit{width:100%;padding:14px;background:var(--accent);color:#000;font-weight:800;font-size:15px;border:none;border-radius:12px;cursor:pointer;transition:background .15s;}
+.auth-submit:hover{background:#ff8c1a;}
+.auth-err{font-size:13px;color:#ff6b6b;text-align:center;margin-top:12px;min-height:18px;}
+
+/* APP */
+#app{display:none;flex-direction:column;min-height:100vh;}
+#app.show{display:flex;}
+.app-header{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;background:rgba(13,13,13,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);}
+.app-logo{font-weight:900;font-size:18px;letter-spacing:-.5px;}
+.app-logo span{color:var(--accent);}
+.app-av{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#000;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+
+/* PAGES */
+.pages{flex:1;position:relative;overflow:hidden;}
+.page{position:absolute;inset:0;overflow-y:auto;padding:20px 20px calc(var(--nav-h) + 20px);display:none;}
+.page.active{display:block;animation:fadein .22s var(--ease);}
+@keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:var(--bg2);border-top:1px solid var(--border);display:flex;z-index:10;}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--muted);font-size:10px;font-weight:600;transition:color .15s;-webkit-tap-highlight-color:transparent;}
+.bnav-item.active{color:var(--accent);}
+.bnav-icon{font-size:22px;line-height:1;}
+
+/* SECTION TITLE */
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:12px;}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;}
+.card:last-child{margin-bottom:0;}
+
+/* BADGES */
+.badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap;}
+.badge-todo{background:rgba(255,122,0,.15);color:var(--accent);}
+.badge-done{background:rgba(100,200,100,.12);color:#7dca7d;}
+
+/* BUTTONS */
+.btn{padding:10px 18px;border-radius:10px;border:none;font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
+.btn-accent{background:var(--accent);color:#000;}
+.btn-accent:active{background:#ff8c1a;}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border);}
+.btn-full{width:100%;justify-content:center;}
+.btn-sm{padding:7px 14px;font-size:12px;}
+
+/* DASHBOARD */
+.greeting{font-size:22px;font-weight:800;margin-bottom:3px;}
+.greeting-date{font-size:13px;color:var(--muted);margin-bottom:22px;}
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
+.stat-mini{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;}
+.stat-mini-val{font-size:28px;font-weight:900;color:var(--accent);}
+.stat-mini-lbl{font-size:11px;color:var(--muted);margin-top:3px;}
+
+/* SESSION CARDS */
+.session-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;transition:all .15s;}
+.session-card.clickable{cursor:pointer;}
+.session-card.clickable:active{transform:scale(.98);}
+.session-card.done{opacity:.5;}
+.sc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px;}
+.sc-name{font-size:15px;font-weight:700;flex:1;}
+.sc-date{font-size:11px;color:var(--muted);}
+.sc-ex{font-size:12px;color:var(--muted);margin-top:4px;}
+
+/* LOG PANEL */
+#log-panel{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.75);display:none;align-items:flex-end;}
+#log-panel.open{display:flex;animation:fadein .2s ease;}
+.log-sheet{background:var(--bg2);border-radius:20px 20px 0 0;width:100%;padding:24px 20px;max-height:92vh;overflow-y:auto;}
+.log-handle{width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 20px;}
+.log-title{font-size:17px;font-weight:800;margin-bottom:2px;}
+.log-sub{font-size:12px;color:var(--muted);margin-bottom:20px;}
+
+.rpe-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:4px;}
+.rpe-btn{padding:10px 4px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;text-align:center;line-height:1.3;}
+.rpe-btn.sel{background:var(--accent);color:#000;border-color:var(--accent);}
+.rpe-labels{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:18px;}
+.rpe-label{font-size:9px;color:var(--muted);text-align:center;}
+
+.mood-row{display:flex;gap:8px;margin-bottom:20px;}
+.mood-btn{flex:1;padding:10px 4px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);cursor:pointer;text-align:center;font-size:22px;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.mood-btn.sel{border-color:var(--accent);background:rgba(255,122,0,.12);}
+
+.log-textarea{width:100%;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;resize:none;outline:none;min-height:80px;font-family:inherit;}
+.log-textarea:focus{border-color:var(--accent);}
+
+/* EXERCISE LIST */
+.ex-list{border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;}
+.ex-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border);}
+.ex-item:last-child{border-bottom:none;}
+.ex-num{width:24px;height:24px;border-radius:50%;background:rgba(255,122,0,.15);color:var(--accent);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ex-name{font-size:13px;font-weight:700;}
+.ex-detail{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* JOURNAL LOGS */
+.log-item{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;}
+.log-item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.log-item-name{font-size:14px;font-weight:700;}
+.log-item-date{font-size:11px;color:var(--muted);}
+.log-item-stats{display:flex;gap:12px;flex-wrap:wrap;}
+.log-stat{font-size:11px;color:var(--muted);}
+.log-stat b{color:var(--text);}
+.log-notes-preview{font-size:12px;color:var(--muted);margin-top:6px;font-style:italic;}
+
+/* NUTRITION */
+.kcal-hero{text-align:center;padding:28px 0 20px;}
+.kcal-val{font-size:52px;font-weight:900;color:var(--accent);line-height:1;}
+.kcal-lbl{font-size:12px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.06em;}
+.macros-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;}
+.macro-block{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;}
+.macro-val{font-size:24px;font-weight:900;}
+.macro-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:3px;}
+.macro-block.prot .macro-val{color:#ff9f45;}
+.macro-block.carb .macro-val{color:#7ac0ff;}
+.macro-block.fat .macro-val{color:#a8ff78;}
+.macro-bar-wrap{border-radius:8px;overflow:hidden;height:14px;display:flex;gap:3px;margin-bottom:8px;}
+.macro-bar-seg{border-radius:6px;transition:width .4s;}
+
+/* PROFILE PANEL */
+#profile-panel{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.75);display:none;align-items:flex-end;}
+#profile-panel.open{display:flex;animation:fadein .2s ease;}
+.profile-sheet{background:var(--bg2);border-radius:20px 20px 0 0;width:100%;padding:28px 20px;}
+.profile-handle{width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 24px;}
+.profile-av{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#000;margin:0 auto 12px;}
+.profile-name{font-size:20px;font-weight:800;text-align:center;margin-bottom:4px;}
+.profile-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:20px;}
+.profile-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.profile-row:last-of-type{border-bottom:none;}
+.profile-row-val{color:var(--muted);}
+
+/* TOAST */
+.toast{position:fixed;bottom:calc(var(--nav-h) + 16px);left:50%;transform:translateX(-50%);background:var(--accent);color:#000;padding:10px 22px;border-radius:12px;font-weight:800;font-size:13px;z-index:999;pointer-events:none;animation:fadein .2s ease;}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth">
+  <div class="auth-logo">⚡</div>
+  <div class="auth-title">Atlas<span>.</span></div>
+  <div class="auth-sub">Connectez-vous à votre espace adhérent</div>
+  <div class="auth-card">
+    <div class="input-group">
+      <label class="input-label">Email</label>
+      <input class="input" id="a-email" type="email" placeholder="votre@email.com" autocomplete="email"
+        onkeydown="if(event.key==='Enter')document.getElementById('a-pass').focus()">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Mot de passe</label>
+      <input class="input" id="a-pass" type="password" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doAthleteLogin()">
+    </div>
+    <button class="auth-submit" onclick="doAthleteLogin()">Se connecter →</button>
+    <div class="auth-err" id="a-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header class="app-header">
+    <div class="app-logo">Atlas<span>.</span></div>
+    <div id="app-av" class="app-av" onclick="openProfile()">?</div>
+  </header>
+
+  <div class="pages">
+    <div class="page active" id="page-dash">
+      <div class="greeting" id="greeting">Bonjour 👋</div>
+      <div class="greeting-date" id="greeting-date"></div>
+      <div class="stats-row">
+        <div class="stat-mini"><div class="stat-mini-val" id="stat-todo">0</div><div class="stat-mini-lbl">À faire</div></div>
+        <div class="stat-mini"><div class="stat-mini-val" id="stat-done">0</div><div class="stat-mini-lbl">Terminées</div></div>
+      </div>
+      <div class="section-title">Prochaines séances</div>
+      <div id="dash-upcoming"></div>
+    </div>
+
+    <div class="page" id="page-sessions">
+      <div class="section-title">À faire</div>
+      <div id="list-todo"></div>
+      <div class="section-title" style="margin-top:20px;">Terminées</div>
+      <div id="list-done"></div>
+    </div>
+
+    <div class="page" id="page-journal">
+      <div class="section-title">Historique</div>
+      <div id="log-list"></div>
+    </div>
+
+    <div class="page" id="page-nutri">
+      <div id="nutri-content"></div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <div class="bnav-item active" id="bnav-dash" onclick="showAPage('dash')">
+      <span class="bnav-icon">🏠</span>Accueil
+    </div>
+    <div class="bnav-item" id="bnav-sessions" onclick="showAPage('sessions')">
+      <span class="bnav-icon">📅</span>Séances
+    </div>
+    <div class="bnav-item" id="bnav-journal" onclick="showAPage('journal')">
+      <span class="bnav-icon">📊</span>Journal
+    </div>
+    <div class="bnav-item" id="bnav-nutri" onclick="showAPage('nutri')">
+      <span class="bnav-icon">🥗</span>Nutrition
+    </div>
+  </nav>
+</div>
+
+<!-- LOG PANEL (bottom sheet) -->
+<div id="log-panel" onclick="if(event.target.id==='log-panel')closeLogPanel()">
+  <div class="log-sheet">
+    <div class="log-handle"></div>
+    <div class="log-title" id="lp-title">Logger la séance</div>
+    <div class="log-sub" id="lp-sub">Renseignez votre ressenti</div>
+
+    <div id="lp-exercises"></div>
+
+    <div class="section-title">Difficulté perçue (RPE)</div>
+    <div class="rpe-grid">
+      <button class="rpe-btn" onclick="selRPE(1)">1</button>
+      <button class="rpe-btn" onclick="selRPE(2)">2</button>
+      <button class="rpe-btn" onclick="selRPE(3)">3</button>
+      <button class="rpe-btn" onclick="selRPE(4)">4</button>
+      <button class="rpe-btn" onclick="selRPE(5)">5</button>
+      <button class="rpe-btn" onclick="selRPE(6)">6</button>
+      <button class="rpe-btn" onclick="selRPE(7)">7</button>
+      <button class="rpe-btn" onclick="selRPE(8)">8</button>
+      <button class="rpe-btn" onclick="selRPE(9)">9</button>
+      <button class="rpe-btn" onclick="selRPE(10)">10</button>
+    </div>
+    <div class="rpe-labels">
+      <span class="rpe-label">Très facile</span>
+      <span></span>
+      <span class="rpe-label" style="text-align:center;">Modéré</span>
+      <span></span>
+      <span class="rpe-label" style="text-align:right;">Max 💀</span>
+    </div>
+
+    <div class="section-title">Humeur</div>
+    <div class="mood-row" style="margin-bottom:20px;">
+      <div class="mood-btn" onclick="selMood('😴')">😴</div>
+      <div class="mood-btn" onclick="selMood('😐')">😐</div>
+      <div class="mood-btn" onclick="selMood('🙂')">🙂</div>
+      <div class="mood-btn" onclick="selMood('😤')">😤</div>
+      <div class="mood-btn" onclick="selMood('🔥')">🔥</div>
+    </div>
+
+    <div class="section-title">Notes (optionnel)</div>
+    <textarea class="log-textarea" id="lp-notes" placeholder="Comment s'est passée la séance ? Douleurs, performances..."></textarea>
+
+    <button class="btn btn-accent btn-full" style="margin-top:16px;" onclick="submitLog()">Valider ✓</button>
+    <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="closeLogPanel()">Annuler</button>
+  </div>
+</div>
+
+<!-- PROFILE PANEL -->
+<div id="profile-panel" onclick="if(event.target.id==='profile-panel')closeProfile()">
+  <div class="profile-sheet">
+    <div class="profile-handle"></div>
+    <div class="profile-av" id="prof-av">?</div>
+    <div class="profile-name" id="prof-name">—</div>
+    <div class="profile-sub" id="prof-sub">—</div>
+    <div class="profile-row"><span>Âge</span><span class="profile-row-val" id="prof-age">—</span></div>
+    <div class="profile-row"><span>Poids</span><span class="profile-row-val" id="prof-weight">—</span></div>
+    <div class="profile-row"><span>Taille</span><span class="profile-row-val" id="prof-height">—</span></div>
+    <div class="profile-row"><span>Body fat</span><span class="profile-row-val" id="prof-bf">—</span></div>
+    <div class="profile-row"><span>Objectif</span><span class="profile-row-val" id="prof-obj">—</span></div>
+    <button class="btn btn-secondary btn-full" style="margin-top:20px;" onclick="doAthleteLogout()">Se déconnecter</button>
+    <button class="btn btn-secondary btn-full" style="margin-top:8px;color:var(--muted);" onclick="closeProfile()">Fermer</button>
+  </div>
+</div>
+
+<script>
+// ── STATE ────────────────────────────────────────────────────────────────────
+let _tok = localStorage.getItem('atlas_athlete_token');
+let _athlete = null;
+let _assignments = [];
+let _logs = [];
+let _nutri = null;
+let _sessionCache = {};
+
+let _logAssignId = null;
+let _logSessionId = null;
+let _logRPE = null;
+let _logMood = null;
+
+// ── API ──────────────────────────────────────────────────────────────────────
+async function aApi(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _tok } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch('/api/athlete' + path, opts);
+  if (res.status === 401) { doAthleteLogout(); return null; }
+  return res.json();
+}
+
+async function loadData() {
+  const [meRes, assigns, logs, nutri] = await Promise.all([
+    aApi('GET', '/me'),
+    aApi('GET', '/assignments'),
+    aApi('GET', '/logs'),
+    aApi('GET', '/nutri'),
+  ]);
+  if (!meRes) return false;
+  _athlete = meRes.athlete;
+  _assignments = assigns || [];
+  _logs = logs || [];
+  _nutri = nutri;
+  return true;
+}
+
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+async function doAthleteLogin() {
+  const email = document.getElementById('a-email').value.trim();
+  const pass = document.getElementById('a-pass').value;
+  const errEl = document.getElementById('a-err');
+  errEl.textContent = '';
+  if (!email || !pass) { errEl.textContent = 'Email et mot de passe requis'; return; }
+  const res = await fetch('/api/athlete/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password: pass }),
+  });
+  const data = await res.json();
+  if (!res.ok) { errEl.textContent = data.error || 'Erreur de connexion'; return; }
+  _tok = data.token;
+  localStorage.setItem('atlas_athlete_token', _tok);
+  _athlete = data.athlete;
+  startAthleteApp();
+}
+
+function doAthleteLogout() {
+  localStorage.removeItem('atlas_athlete_token');
+  _tok = null; _athlete = null;
+  closeProfile();
+  document.getElementById('auth').classList.remove('hidden');
+  document.getElementById('app').classList.remove('show');
+}
+
+async function startAthleteApp() {
+  document.getElementById('auth').classList.add('hidden');
+  document.getElementById('app').classList.add('show');
+  const ok = await loadData();
+  if (!ok) return;
+  updateHeader();
+  renderDash();
+  showAPage('dash');
+}
+
+function updateHeader() {
+  if (!_athlete) return;
+  const av = document.getElementById('app-av');
+  av.textContent = _athlete.name.charAt(0).toUpperCase();
+  av.style.background = _athlete.color || 'var(--accent)';
+}
+
+// ── NAVIGATION ───────────────────────────────────────────────────────────────
+function showAPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name)?.classList.add('active');
+  document.getElementById('bnav-' + name)?.classList.add('active');
+  if (name === 'sessions') renderSessions();
+  if (name === 'journal') renderJournal();
+  if (name === 'nutri') renderNutri();
+}
+
+// ── DASHBOARD ────────────────────────────────────────────────────────────────
+function renderDash() {
+  if (!_athlete) return;
+  const h = new Date().getHours();
+  const g = h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir';
+  document.getElementById('greeting').textContent = g + ' ' + _athlete.name.split(' ')[0] + ' 👋';
+  document.getElementById('greeting-date').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  const todo = _assignments.filter(a => a.status === 'assigned');
+  const done = _assignments.filter(a => a.status === 'done');
+  document.getElementById('stat-todo').textContent = todo.length;
+  document.getElementById('stat-done').textContent = done.length;
+
+  const el = document.getElementById('dash-upcoming');
+  const upcoming = todo.slice(0, 3);
+  if (!upcoming.length) {
+    el.innerHTML = '<div style="text-align:center;padding:28px;color:var(--muted);background:var(--bg2);border-radius:14px;font-size:13px;">Aucune séance en attente 🎉</div>';
+  } else {
+    el.innerHTML = upcoming.map(a => sessionCard(a)).join('');
+  }
+}
+
+// ── SESSIONS ─────────────────────────────────────────────────────────────────
+function renderSessions() {
+  const todo = _assignments.filter(a => a.status === 'assigned');
+  const done = _assignments.filter(a => a.status === 'done');
+  const emptyTodo = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">Aucune séance à faire 🎉</div>';
+  const emptyDone = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">Pas encore de séances terminées</div>';
+  document.getElementById('list-todo').innerHTML = todo.length ? todo.map(a => sessionCard(a)).join('') : emptyTodo;
+  document.getElementById('list-done').innerHTML = done.length ? done.map(a => sessionCard(a, true)).join('') : emptyDone;
+}
+
+function sessionCard(a, isDone = false) {
+  const dateStr = a.scheduledFor
+    ? new Date(a.scheduledFor).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+    : '';
+  const badge = isDone
+    ? '<span class="badge badge-done">✓ Terminée</span>'
+    : '<span class="badge badge-todo">À faire</span>';
+  const logBtn = isDone ? '' : `
+    <button class="btn btn-accent btn-sm btn-full" style="margin-top:10px;"
+      onclick="event.stopPropagation();openLogPanel('${a.id}','${a.sessionId}',${JSON.stringify(a.sessionName||'Séance')})">
+      ✓ Logger la séance
+    </button>`;
+  return `<div class="session-card clickable" onclick="openSessionDetail('${a.id}','${a.sessionId}')">
+    <div class="sc-top">
+      <div style="flex:1;">
+        <div class="sc-name">${a.sessionName || 'Séance'}</div>
+        ${dateStr ? `<div class="sc-date">📅 ${dateStr}</div>` : ''}
+      </div>
+      ${badge}
+    </div>
+    ${logBtn}
+  </div>`;
+}
+
+async function openSessionDetail(assignId, sessionId) {
+  if (!_sessionCache[sessionId]) {
+    const data = await aApi('GET', '/sessions/' + sessionId);
+    if (data) _sessionCache[sessionId] = data;
+  }
+  const s = _sessionCache[sessionId];
+  if (!s) return;
+  const assign = _assignments.find(a => a.id === assignId);
+  const isDone = assign?.status === 'done';
+
+  const exHtml = (s.exercises || []).length
+    ? `<div class="ex-list">${(s.exercises || []).map((e, i) => `
+      <div class="ex-item">
+        <div class="ex-num">${i + 1}</div>
+        <div>
+          <div class="ex-name">${e.name || e.exId || '?'}</div>
+          <div class="ex-detail">${[
+            e.sets ? e.sets + ' séries' : '',
+            e.reps ? e.reps + ' reps' : '',
+            e.kg   ? e.kg + ' kg' : '',
+            e.rest ? 'Repos ' + e.rest + 's' : '',
+          ].filter(Boolean).join(' · ')}</div>
+        </div>
+      </div>`).join('')}</div>` : '';
+
+  document.getElementById('lp-title').textContent = s.name || 'Séance';
+  document.getElementById('lp-sub').textContent = (s.exercises || []).length + ' exercice(s)' + (isDone ? ' — Séance déjà logguée' : '');
+  document.getElementById('lp-exercises').innerHTML = exHtml;
+
+  _logAssignId = assignId;
+  _logSessionId = sessionId;
+  _logRPE = null; _logMood = null;
+  document.getElementById('lp-notes').value = '';
+  document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('sel'));
+
+  const submitBtn = document.querySelector('#log-panel .btn-accent');
+  if (submitBtn) submitBtn.style.display = isDone ? 'none' : '';
+
+  document.getElementById('log-panel').classList.add('open');
+}
+
+async function openLogPanel(assignId, sessionId, sessionName) {
+  _logAssignId = assignId;
+  _logSessionId = sessionId;
+  _logRPE = null; _logMood = null;
+  document.getElementById('lp-title').textContent = sessionName || 'Séance';
+  document.getElementById('lp-sub').textContent = 'Renseignez votre ressenti après la séance';
+  document.getElementById('lp-exercises').innerHTML = '';
+  document.getElementById('lp-notes').value = '';
+  document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('sel'));
+  const submitBtn = document.querySelector('#log-panel .btn-accent');
+  if (submitBtn) submitBtn.style.display = '';
+  document.getElementById('log-panel').classList.add('open');
+}
+
+function closeLogPanel() { document.getElementById('log-panel').classList.remove('open'); }
+
+function selRPE(v) {
+  _logRPE = v;
+  document.querySelectorAll('.rpe-btn').forEach((b, i) => b.classList.toggle('sel', i + 1 === v));
+}
+function selMood(m) {
+  _logMood = m;
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.toggle('sel', b.textContent.trim() === m));
+}
+
+async function submitLog() {
+  const notes = document.getElementById('lp-notes').value.trim();
+  const res = await aApi('POST', '/logs', {
+    sessionId: _logSessionId,
+    assignId: _logAssignId,
+    date: new Date().toISOString(),
+    rpe: _logRPE,
+    mood: _logMood,
+    notes,
+  });
+  if (!res) return;
+  closeLogPanel();
+  await loadData();
+  renderDash();
+  if (document.getElementById('page-sessions').classList.contains('active')) renderSessions();
+  if (document.getElementById('page-journal').classList.contains('active')) renderJournal();
+  showToast('Séance enregistrée ✓');
+}
+
+// ── JOURNAL ──────────────────────────────────────────────────────────────────
+function renderJournal() {
+  const el = document.getElementById('log-list');
+  if (!_logs.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">Aucun log pour le moment<br><span style="font-size:11px;">Loggez vos séances pour voir votre historique</span></div>';
+    return;
+  }
+  el.innerHTML = [..._logs].sort((a, b) => new Date(b.date) - new Date(a.date)).map(l => {
+    const a = _assignments.find(x => x.id === l.assignId);
+    const name = a?.sessionName || 'Séance';
+    const date = new Date(l.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `<div class="log-item">
+      <div class="log-item-top">
+        <div class="log-item-name">${name}</div>
+        <div class="log-item-date">${date}</div>
+      </div>
+      <div class="log-item-stats">
+        ${l.rpe  ? `<span class="log-stat">RPE <b>${l.rpe}/10</b></span>` : ''}
+        ${l.mood ? `<span class="log-stat">${l.mood}</span>` : ''}
+      </div>
+      ${l.notes ? `<div class="log-notes-preview">"${l.notes.substring(0, 80)}${l.notes.length > 80 ? '…' : ''}"</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── NUTRITION ────────────────────────────────────────────────────────────────
+function renderNutri() {
+  const el = document.getElementById('nutri-content');
+  if (!_nutri) {
+    el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--muted);">
+      <div style="font-size:52px;margin-bottom:16px;">🥗</div>
+      <div style="font-size:17px;font-weight:800;color:var(--text);margin-bottom:8px;">Aucun plan nutritionnel</div>
+      <div style="font-size:13px;">Votre coach n'a pas encore défini de plan pour vous.</div>
+    </div>`;
+    return;
+  }
+  const P = _nutri.prot || 0, C = _nutri.carb || 0, F = _nutri.fat || 0;
+  const kcal = Math.round(P * 4 + C * 4 + F * 9);
+  const pPct = kcal ? Math.round(P * 4 / kcal * 100) : 0;
+  const cPct = kcal ? Math.round(C * 4 / kcal * 100) : 0;
+  const fPct = kcal ? 100 - pPct - cPct : 0;
+  el.innerHTML = `
+    <div class="kcal-hero">
+      <div class="kcal-val">${kcal}</div>
+      <div class="kcal-lbl">kcal / jour</div>
+    </div>
+    <div class="macros-grid">
+      <div class="macro-block prot"><div class="macro-val">${P}g</div><div class="macro-lbl">🥩 Protéines</div></div>
+      <div class="macro-block carb"><div class="macro-val">${C}g</div><div class="macro-lbl">🍚 Glucides</div></div>
+      <div class="macro-block fat"><div class="macro-val">${F}g</div><div class="macro-lbl">🥑 Lipides</div></div>
+    </div>
+    <div class="card">
+      <div class="section-title" style="margin-bottom:10px;">Répartition calorique</div>
+      <div class="macro-bar-wrap">
+        <div class="macro-bar-seg" style="background:#ff9f45;width:${pPct}%;"></div>
+        <div class="macro-bar-seg" style="background:#7ac0ff;width:${cPct}%;"></div>
+        <div class="macro-bar-seg" style="background:#a8ff78;width:${fPct}%;"></div>
+      </div>
+      <div style="display:flex;gap:14px;font-size:11px;color:var(--muted);">
+        <span><span style="color:#ff9f45;">■</span> Prot ${pPct}%</span>
+        <span><span style="color:#7ac0ff;">■</span> Gluc ${cPct}%</span>
+        <span><span style="color:#a8ff78;">■</span> Lip ${fPct}%</span>
+      </div>
+    </div>`;
+}
+
+// ── PROFILE ──────────────────────────────────────────────────────────────────
+function openProfile() {
+  if (!_athlete) return;
+  const objMap = { prise:'💪 Prise de masse', seche:'🔥 Sèche', maintain:'⚖️ Maintien', force:'🏋️ Force', sante:'❤️ Santé' };
+  document.getElementById('prof-av').textContent = _athlete.name.charAt(0).toUpperCase();
+  document.getElementById('prof-av').style.background = _athlete.color || 'var(--accent)';
+  document.getElementById('prof-name').textContent = _athlete.name;
+  document.getElementById('prof-sub').textContent = [_athlete.sport, _athlete.level].filter(Boolean).join(' · ') || 'Adhérent';
+  document.getElementById('prof-age').textContent = _athlete.age ? _athlete.age + ' ans' : '—';
+  document.getElementById('prof-weight').textContent = _athlete.weight ? _athlete.weight + ' kg' : '—';
+  document.getElementById('prof-height').textContent = _athlete.height ? _athlete.height + ' cm' : '—';
+  document.getElementById('prof-bf').textContent = _athlete.bf ? _athlete.bf + ' %' : '—';
+  document.getElementById('prof-obj').textContent = objMap[_athlete.obj] || _athlete.obj || '—';
+  document.getElementById('profile-panel').classList.add('open');
+}
+function closeProfile() { document.getElementById('profile-panel').classList.remove('open'); }
+
+// ── TOAST ────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+async function init() {
+  if (_tok) {
+    const res = await fetch('/api/athlete/me', { headers: { 'Authorization': 'Bearer ' + _tok } });
+    if (res.ok) {
+      await startAthleteApp();
+      return;
+    }
+    localStorage.removeItem('atlas_athlete_token');
+    _tok = null;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
