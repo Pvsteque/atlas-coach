@@ -85,11 +85,23 @@ function initDB() {
           fat REAL DEFAULT 0,
           FOREIGN KEY (coach_id) REFERENCES coaches(id)
         );
+
+        CREATE TABLE IF NOT EXISTS messages (
+          id TEXT PRIMARY KEY,
+          coach_id TEXT NOT NULL,
+          athlete_id TEXT NOT NULL,
+          sender TEXT NOT NULL,
+          text TEXT NOT NULL,
+          ts INTEGER DEFAULT (unixepoch()),
+          read INTEGER DEFAULT 0,
+          FOREIGN KEY (coach_id) REFERENCES coaches(id)
+        );
       `);
       // Migrations — ADD COLUMN silently fails if column already exists
       ['email TEXT', 'password TEXT'].forEach(col => {
         try { db.exec(`ALTER TABLE athletes ADD COLUMN ${col}`); } catch {}
       });
+      try { db.exec('ALTER TABLE logs ADD COLUMN sets_data TEXT'); } catch {}
       resolve();
     } catch (err) {
       reject(err);

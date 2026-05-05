@@ -3199,6 +3199,8 @@ let logRPE = null, logMood = null;
 let _token = localStorage.getItem('atlas_token');
 let _coachName = 'Coach';
 const _cache = { athletes:[], sessions:[], assignments:[], logs:[], nutri:{} };
+let _chatMessages = {}; // { athleteId: [{id,sender,text,ts,read}] }
+let _chatUnread   = {}; // { athleteId: count }
 
 async function api(method, path, body) {
   const opts = { method, headers:{'Content-Type':'application/json','Authorization':'Bearer '+_token} };
@@ -3209,14 +3211,24 @@ async function api(method, path, body) {
 }
 
 async function loadAllData() {
-  const [athletes,sessions,assignments,logs,nutri] = await Promise.all([
-    api('GET','/athletes'), api('GET','/sessions'), api('GET','/assignments'), api('GET','/logs'), api('GET','/nutri')
+  const [athletes,sessions,assignments,logs,nutri,chatData] = await Promise.all([
+    api('GET','/athletes'), api('GET','/sessions'), api('GET','/assignments'),
+    api('GET','/logs'), api('GET','/nutri'), api('GET','/messages')
   ]);
   _cache.athletes = athletes||[];
   _cache.sessions = sessions||[];
   _cache.assignments = assignments||[];
   _cache.logs = logs||[];
   _cache.nutri = nutri||{};
+  if (chatData) {
+    _chatMessages = {};
+    _chatUnread = {};
+    for (const [aId, info] of Object.entries(chatData)) {
+      _chatMessages[aId] = info.messages;
+      _chatUnread[aId] = info.unread;
+    }
+    updateChatBadge();
+  }
 }
 
 const getAthletes      = () => _cache.athletes;
@@ -7308,13 +7320,8 @@ function deleteCheckin(checkinId) {
 
 
 // ════════════════════════════════════════════════════════════════════
-// CHAT COACH ↔ ADHÉRENTS
+// CHAT COACH ↔ ADHÉRENTS (backend-backed)
 // ════════════════════════════════════════════════════════════════════
-
-const getMessages    = ()  => { try{const v=localStorage.getItem('atlas_messages');return v?JSON.parse(v):{};}catch{return {};} };
-const setMessages    = v   => { try{localStorage.setItem('atlas_messages',JSON.stringify(v));}catch{} };
-const getChatConfig  = ()  => { try{const v=localStorage.getItem('atlas_chat_config');return v?JSON.parse(v):{};}catch{return {};} };
-const setChatConfig  = v   => { try{localStorage.setItem('atlas_chat_config',JSON.stringify(v));}catch{} };
 
 let _chatAthleteId = null;
 
@@ -7331,30 +7338,15 @@ const QUICK_TEMPLATES = [
 
 // ── Helpers ──────────────────────────────────────────────────────────
 function getConvMessages(athleteId) {
-  return (getMessages()[athleteId] || []).sort((a,b)=>a.ts-b.ts);
-}
-
-function sendMsg(athleteId, text, sender='coach') {
-  if(!text.trim()) return;
-  const all = getMessages();
-  if(!all[athleteId]) all[athleteId] = [];
-  all[athleteId].push({ id:'msg_'+Date.now(), ts:Date.now(), text:text.trim(), sender, read:sender==='coach' });
-  setMessages(all);
-}
-
-function markRead(athleteId) {
-  const all = getMessages();
-  if(all[athleteId]) all[athleteId].forEach(m=>{ if(m.sender!=='coach') m.read=true; });
-  setMessages(all);
-  updateChatBadge();
+  return (_chatMessages[athleteId] || []).slice().sort((a,b)=>a.ts-b.ts);
 }
 
 function getUnreadCount(athleteId) {
-  return (getMessages()[athleteId]||[]).filter(m=>m.sender!=='coach'&&!m.read).length;
+  return _chatUnread[athleteId] || 0;
 }
 
 function getTotalUnread() {
-  return getAthletes().reduce((acc,a)=>acc+getUnreadCount(a.id),0);
+  return Object.values(_chatUnread).reduce((a,b)=>a+b, 0);
 }
 
 function updateChatBadge() {
@@ -7379,21 +7371,20 @@ function formatDaySep(ts) {
 }
 
 // ── Render page ───────────────────────────────────────────────────────
-function renderChatPage() {
+async function renderChatPage() {
   renderConvList();
   updateChatBadge();
-  if(_chatAthleteId) openConv(_chatAthleteId);
+  if(_chatAthleteId) await openConv(_chatAthleteId);
 }
 
 function renderConvList(filter='') {
   const athletes = getAthletes();
   const el = document.getElementById('conv-list');
   if(!el) return;
-  const all = getMessages();
 
   const sorted = [...athletes].sort((a,b)=>{
-    const la=(all[a.id]||[]).slice(-1)[0]?.ts||0;
-    const lb=(all[b.id]||[]).slice(-1)[0]?.ts||0;
+    const la=(_chatMessages[a.id]||[]).slice(-1)[0]?.ts||0;
+    const lb=(_chatMessages[b.id]||[]).slice(-1)[0]?.ts||0;
     return lb-la;
   });
 
@@ -7405,7 +7396,7 @@ function renderConvList(filter='') {
   }
 
   el.innerHTML = filtered.map(a=>{
-    const msgs = all[a.id]||[];
+    const msgs = _chatMessages[a.id]||[];
     const last = msgs[msgs.length-1];
     const unread = getUnreadCount(a.id);
     const isActive = a.id===_chatAthleteId;
@@ -7424,7 +7415,6 @@ function renderConvList(filter='') {
     '</div>';
   }).join('');
 
-  // Update total unread
   const total=getTotalUnread();
   const totalEl=document.getElementById('chat-total-unread');
   if(totalEl) totalEl.textContent=total?total+' non lu'+(total>1?'s':''):'';
@@ -7435,37 +7425,37 @@ function filterConvs(val) {
 }
 
 // ── Ouvrir une conversation ───────────────────────────────────────────
-function openConv(athleteId) {
+async function openConv(athleteId) {
   _chatAthleteId = athleteId;
-  markRead(athleteId);
+
+  const [msgs] = await Promise.all([
+    api('GET', '/messages/'+athleteId),
+    api('POST', '/messages/'+athleteId+'/read'),
+  ]);
+  if(msgs) _chatMessages[athleteId] = msgs;
+  _chatUnread[athleteId] = 0;
+  updateChatBadge();
   renderConvList(document.getElementById('chat-search')?.value||'');
 
   const a = getAthletes().find(x=>x.id===athleteId);
   if(!a) return;
-  const msgs = getConvMessages(athleteId);
-  const coachName = _coachName;
 
-  // Build main area
   document.getElementById('chat-main').innerHTML =
-    // Header
     '<div class="chat-header">'+
       '<div class="chat-header-av" style="background:'+a.color+'">'+a.name[0]+'</div>'+
       '<div>'+
         '<div class="chat-header-name">'+a.name+'</div>'+
-        '<div class="chat-header-sub">'+(a.age?a.age+'ans · ':'')+''+(a.weight?a.weight+'kg':'')+'</div>'+
+        '<div class="chat-header-sub">'+(a.age?a.age+' ans · ':'')+''+(a.weight?a.weight+' kg':'')+'</div>'+
       '</div>'+
       '<div class="chat-header-actions">'+
         '<button class="btn btn-secondary btn-sm" onclick="openConvAthleteDetail(\''+a.id+'\')">👤 Fiche</button>'+
         '<button class="btn btn-danger btn-sm" onclick="clearConv(\''+a.id+'\')">🗑 Effacer</button>'+
       '</div>'+
     '</div>'+
-    // Messages
-    '<div class="chat-messages" id="chat-msgs">'+buildMsgsHTML(msgs, a)+'</div>'+
-    // Quick templates
+    '<div class="chat-messages" id="chat-msgs">'+buildMsgsHTML(getConvMessages(athleteId), a)+'</div>'+
     '<div class="quick-templates" id="quick-tpls">'+
       QUICK_TEMPLATES.map(t=>'<button class="quick-tpl" onclick="useTemplate(\''+t.replace(/'/g,"\\'")+'\')" >'+t+'</button>').join('')+
     '</div>'+
-    // Input
     '<div class="chat-input-area">'+
       '<div class="chat-input-wrap">'+
         '<textarea class="chat-textarea" id="chat-input" placeholder="Message à '+a.name+'…" rows="1" '+
@@ -7486,10 +7476,7 @@ function buildMsgsHTML(msgs, athlete) {
 
   msgs.forEach(m=>{
     const day=formatDaySep(m.ts);
-    if(day!==lastDay){
-      html+='<div class="chat-day-sep">'+day+'</div>';
-      lastDay=day;
-    }
+    if(day!==lastDay){ html+='<div class="chat-day-sep">'+day+'</div>'; lastDay=day; }
     const isMe = m.sender==='coach';
     const avColor = isMe ? 'var(--accent)' : athlete.color;
     const avLetter = isMe ? (coachName[0]||'C') : athlete.name[0];
@@ -7515,19 +7502,20 @@ function scrollToBottom() {
   setTimeout(()=>{ const el=document.getElementById('chat-msgs'); if(el) el.scrollTop=el.scrollHeight; }, 60);
 }
 
-function doSendMsg() {
+async function doSendMsg() {
   if(!_chatAthleteId) return;
   const input=document.getElementById('chat-input');
   const text=(input?.value||'').trim();
   if(!text) return;
-  sendMsg(_chatAthleteId, text, 'coach');
   input.value='';
   input.style.height='auto';
-  // Re-render messages zone
+  const msg = await api('POST', '/messages/'+_chatAthleteId, { text });
+  if(!msg) return;
+  if(!_chatMessages[_chatAthleteId]) _chatMessages[_chatAthleteId]=[];
+  _chatMessages[_chatAthleteId].push(msg);
   const athlete=getAthletes().find(x=>x.id===_chatAthleteId);
-  const msgs=getConvMessages(_chatAthleteId);
   const el=document.getElementById('chat-msgs');
-  if(el) el.innerHTML=buildMsgsHTML(msgs, athlete);
+  if(el&&athlete) el.innerHTML=buildMsgsHTML(getConvMessages(_chatAthleteId), athlete);
   scrollToBottom();
   renderConvList(document.getElementById('chat-search')?.value||'');
 }
@@ -7546,13 +7534,14 @@ function useTemplate(text) {
   if(input){ input.value=text; input.focus(); autoResize(input); }
 }
 
-function clearConv(athleteId) {
+async function clearConv(athleteId) {
   if(!confirm('Effacer toute la conversation avec cet adhérent ?')) return;
-  const all=getMessages();
-  delete all[athleteId];
-  setMessages(all);
+  await api('DELETE', '/messages/'+athleteId);
+  _chatMessages[athleteId]=[];
+  _chatUnread[athleteId]=0;
+  updateChatBadge();
   toast('Conversation effacée');
-  openConv(athleteId);
+  await openConv(athleteId);
   renderConvList();
 }
 
@@ -7561,37 +7550,6 @@ function openConvAthleteDetail(athleteId) {
   document.querySelectorAll('.page').forEach(p=>p.style.animation='none');
   showPage('athlete-detail');
   renderAthleteDetail(athleteId);
-}
-
-// ── Simuler réponse adhérent (pour démo) ─────────────────────────────
-function simulateAthleteReply(athleteId, text) {
-  sendMsg(athleteId, text, 'athlete');
-  updateChatBadge();
-  renderConvList();
-  if(_chatAthleteId===athleteId) {
-    const athlete=getAthletes().find(x=>x.id===athleteId);
-    const msgs=getConvMessages(athleteId);
-    const el=document.getElementById('chat-msgs');
-    if(el&&athlete){
-      const m=msgs[msgs.length-1];
-        el.innerHTML=buildMsgsHTML(getConvMessages(athleteId), athlete);
-      markRead(athleteId);
-    }
-    scrollToBottom();
-  }
-}
-
-// Bouton de test pour simuler une réponse (visible uniquement en dev)
-function devSimulateReply() {
-  if(!_chatAthleteId) { toast('Ouvrez une conversation'); return; }
-  const replies=[
-    "Oui coach, j'ai bien suivi le plan cette semaine !",
-    "J'ai eu du mal avec les tractions mais j'ai tenu 💪",
-    "Merci pour les conseils, je me sens déjà mieux",
-    "Est-ce qu'on peut modifier la séance de vendredi ?",
-    "Super séance aujourd'hui, record sur le squat !",
-  ];
-  simulateAthleteReply(_chatAthleteId, replies[Math.floor(Math.random()*replies.length)]);
 }
 
 </script>

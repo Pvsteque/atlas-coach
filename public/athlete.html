@@ -157,6 +157,96 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 
 /* TOAST */
 .toast{position:fixed;bottom:calc(var(--nav-h) + 16px);left:50%;transform:translateX(-50%);background:var(--accent);color:#000;padding:10px 22px;border-radius:12px;font-weight:800;font-size:13px;z-index:999;pointer-events:none;animation:fadein .2s ease;}
+
+/* MESSAGES */
+#page-messages{padding:0!important;display:flex;flex-direction:column;}
+.msgs-area{flex:1;overflow-y:auto;padding:16px 16px calc(var(--nav-h) + 72px);}
+.msg-wrap{display:flex;gap:8px;margin-bottom:10px;align-items:flex-end;}
+.msg-wrap.me{flex-direction:row-reverse;}
+.msg-av-s{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
+.msg-bbl{max-width:78%;padding:9px 13px;border-radius:16px;font-size:13px;line-height:1.55;word-break:break-word;}
+.msg-bbl.coach{background:var(--bg2);border:1px solid var(--border);border-bottom-left-radius:4px;color:var(--text);}
+.msg-bbl.me{background:var(--accent);color:#000;border-bottom-right-radius:4px;font-weight:600;}
+.msg-bbl-time{font-size:10px;opacity:.55;margin-top:3px;}
+.msg-day{text-align:center;font-size:10px;color:var(--muted);padding:10px 0 4px;text-transform:uppercase;letter-spacing:.06em;}
+.msg-bar{position:fixed;bottom:var(--nav-h);left:0;right:0;padding:10px 14px;background:rgba(22,22,22,.96);backdrop-filter:blur(8px);border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;}
+.msg-bar input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;padding:10px 14px;outline:none;}
+.msg-bar input:focus{border-color:var(--accent);}
+.msg-send{width:40px;height:40px;border-radius:50%;background:var(--accent);border:none;color:#000;font-size:17px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.msg-empty-chat{text-align:center;padding:60px 24px;color:var(--muted);}
+.bnav-dot{position:absolute;top:6px;right:14px;width:8px;height:8px;background:var(--accent3);border-radius:50%;display:none;}
+
+/* ── LIVE SESSION ─────────────────────────────────────────────────── */
+#live-session{position:fixed;inset:0;z-index:500;background:var(--bg);display:none;flex-direction:column;overflow:hidden;}
+#live-session.open{display:flex;}
+.live-header{padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg2);}
+.live-close{width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.live-header-info{flex:1;min-width:0;}
+.live-session-name{font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.live-progress-text{font-size:11px;color:var(--muted);margin-top:1px;}
+.live-progress-bar{height:3px;background:var(--bg3);border-radius:2px;margin-top:6px;overflow:hidden;}
+.live-progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s var(--ease);}
+.live-body{flex:1;overflow-y:auto;padding:20px;padding-bottom:90px;}
+.live-ex-name{font-size:24px;font-weight:900;margin-bottom:4px;line-height:1.2;}
+.live-ex-meta{font-size:13px;color:var(--muted);margin-bottom:20px;}
+
+/* Muscle diagram */
+.muscle-diagram-wrap{display:flex;gap:12px;justify-content:center;margin-bottom:20px;}
+.muscle-diagram-col{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.muscle-diagram-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.muscle-diagram-col svg{width:88px;height:215px;}
+.muscle{fill:rgba(255,255,255,.06);transition:fill .35s ease;}
+.muscle.active{fill:var(--accent);opacity:.88;}
+.body-outline{fill:none;stroke:rgba(255,255,255,.13);stroke-width:1.5;}
+.body-fill{fill:rgba(255,255,255,.03);}
+
+/* Tip box */
+.live-tip-box{background:rgba(255,122,0,.08);border:1px solid rgba(255,122,0,.22);border-radius:14px;padding:14px 16px;margin-bottom:20px;}
+.live-tip-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:6px;}
+.live-tip-text{font-size:13px;color:var(--text);line-height:1.65;}
+
+/* Previous perf */
+.live-prev{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:20px;}
+.live-prev-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:7px;}
+.live-prev-row{display:flex;gap:8px;flex-wrap:wrap;}
+.live-prev-item{font-size:12px;font-weight:600;color:var(--text);background:var(--bg3);padding:3px 9px;border-radius:6px;}
+
+/* Set tracker */
+.sets-table{width:100%;border-collapse:collapse;margin-bottom:20px;}
+.sets-table th{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:6px 6px;text-align:left;border-bottom:1px solid var(--border);}
+.set-row td{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;}
+.set-row.done td{opacity:.5;}
+.set-row.done .set-check-btn{background:rgba(100,200,100,.2);border-color:#7dca7d;color:#7dca7d;}
+.set-num-cell{width:28px;height:28px;border-radius:50%;background:var(--bg3);color:var(--muted);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.set-row.done .set-num-cell{background:rgba(100,200,100,.15);color:#7dca7d;}
+.set-input{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-weight:700;padding:6px 6px;width:58px;text-align:center;outline:none;}
+.set-input:focus{border-color:var(--accent);}
+.set-prev{font-size:11px;color:var(--muted);}
+.set-check-btn{width:34px;height:34px;border-radius:50%;border:2px solid var(--border);background:transparent;color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.set-check-btn:active{transform:scale(.88);}
+
+/* Live nav */
+.live-nav{position:fixed;bottom:0;left:0;right:0;padding:10px 16px;background:var(--bg2);border-top:1px solid var(--border);display:flex;gap:8px;z-index:10;}
+
+/* Rest Timer */
+#rest-overlay{position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.93);display:none;flex-direction:column;align-items:center;justify-content:center;}
+#rest-overlay.open{display:flex;animation:fadein .2s ease;}
+.rest-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:16px;}
+.rest-ring-wrap{position:relative;margin-bottom:12px;}
+.rest-ring-wrap svg{transform:rotate(-90deg);}
+.rest-ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:9;}
+.rest-ring-fill{fill:none;stroke:var(--accent);stroke-width:9;stroke-linecap:round;transition:stroke-dashoffset 1s linear;}
+.rest-count{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:56px;font-weight:900;color:var(--text);}
+.rest-next-label{font-size:13px;color:var(--muted);margin-bottom:28px;}
+
+/* Summary */
+.live-summary-wrap{padding:4px 0 20px;}
+.summary-title{font-size:22px;font-weight:900;margin-bottom:4px;text-align:center;}
+.summary-sub{font-size:13px;color:var(--muted);margin-bottom:24px;text-align:center;}
+.summary-ex-item{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;}
+.summary-ex-name{font-size:14px;font-weight:700;margin-bottom:7px;}
+.summary-sets{display:flex;gap:6px;flex-wrap:wrap;}
+.summary-set-badge{font-size:11px;padding:3px 9px;border-radius:6px;background:rgba(255,122,0,.12);color:var(--accent);font-weight:600;}
 </style>
 </head>
 <body>
@@ -216,6 +306,14 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
     <div class="page" id="page-nutri">
       <div id="nutri-content"></div>
     </div>
+
+    <div class="page" id="page-messages">
+      <div class="msgs-area" id="msgs-area"></div>
+      <div class="msg-bar">
+        <input id="msg-input" type="text" placeholder="Votre message au coach…" onkeydown="if(event.key==='Enter')doSendMessage()">
+        <button class="msg-send" onclick="doSendMessage()">➤</button>
+      </div>
+    </div>
   </div>
 
   <nav class="bottom-nav">
@@ -230,6 +328,10 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
     </div>
     <div class="bnav-item" id="bnav-nutri" onclick="showAPage('nutri')">
       <span class="bnav-icon">🥗</span>Nutrition
+    </div>
+    <div class="bnav-item" id="bnav-messages" onclick="showAPage('messages')" style="position:relative;">
+      <span class="bnav-icon">💬</span>Messages
+      <span class="bnav-dot" id="msg-dot"></span>
     </div>
   </nav>
 </div>
@@ -281,6 +383,37 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
   </div>
 </div>
 
+<!-- LIVE SESSION -->
+<div id="live-session">
+  <div class="live-header">
+    <button class="live-close" onclick="confirmCloseLive()">✕</button>
+    <div class="live-header-info">
+      <div class="live-session-name" id="live-sname">Séance</div>
+      <div class="live-progress-text" id="live-prog-text">Exercice 1/1</div>
+      <div class="live-progress-bar"><div class="live-progress-fill" id="live-prog-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div class="live-body" id="live-body"></div>
+  <div class="live-nav" id="live-nav">
+    <button class="btn btn-secondary" id="live-btn-prev" onclick="livePrevEx()" style="display:none;">← Préc.</button>
+    <button class="btn btn-accent btn-full" id="live-btn-next" onclick="liveNextEx()">Exercice suivant →</button>
+  </div>
+</div>
+
+<!-- REST TIMER -->
+<div id="rest-overlay">
+  <div class="rest-title">Temps de repos</div>
+  <div class="rest-ring-wrap">
+    <svg width="160" height="160" viewBox="0 0 160 160">
+      <circle class="rest-ring-bg" cx="80" cy="80" r="68"/>
+      <circle class="rest-ring-fill" id="rest-ring" cx="80" cy="80" r="68" stroke-dasharray="427" stroke-dashoffset="0"/>
+    </svg>
+    <div class="rest-count" id="rest-count">90</div>
+  </div>
+  <div class="rest-next-label">Récupérez avant le prochain set</div>
+  <button class="btn btn-secondary" onclick="skipRest()">Passer le repos</button>
+</div>
+
 <!-- PROFILE PANEL -->
 <div id="profile-panel" onclick="if(event.target.id==='profile-panel')closeProfile()">
   <div class="profile-sheet">
@@ -305,12 +438,82 @@ let _athlete = null;
 let _assignments = [];
 let _logs = [];
 let _nutri = null;
+let _messages = [];
 let _sessionCache = {};
 
 let _logAssignId = null;
 let _logSessionId = null;
 let _logRPE = null;
 let _logMood = null;
+
+// Live session state
+let _live = null;
+let _restInt = null;
+let _restRemaining = 0;
+const REST_CIRC = 2 * Math.PI * 68; // ~427
+
+// ── MUSCLE SVG ────────────────────────────────────────────────────────────────
+const SVG_FRONT = `<svg viewBox="0 0 100 240" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="50" cy="16" r="12" class="body-outline"/>
+  <rect x="45" y="27" width="10" height="8" rx="3" class="body-fill body-outline"/>
+  <path d="M28,34 Q18,52 20,95 L27,98 L27,138 L73,138 L73,98 L80,95 Q82,52 72,34 Z" class="body-fill body-outline"/>
+  <path d="M20,35 Q10,52 8,92 L18,92 Q22,62 28,35 Z" class="body-fill body-outline"/>
+  <path d="M80,35 Q90,52 92,92 L82,92 Q78,62 72,35 Z" class="body-fill body-outline"/>
+  <path d="M27,138 L22,202 L38,202 L44,138 Z" class="body-fill body-outline"/>
+  <path d="M73,138 L78,202 L62,202 L56,138 Z" class="body-fill body-outline"/>
+  <path d="M22,202 L20,236 L38,236 L38,202 Z" class="body-fill body-outline"/>
+  <path d="M78,202 L80,236 L62,236 L62,202 Z" class="body-fill body-outline"/>
+  <ellipse data-muscle="shoulders" cx="22" cy="46" rx="11" ry="8" class="muscle"/>
+  <ellipse data-muscle="shoulders" cx="78" cy="46" rx="11" ry="8" class="muscle"/>
+  <ellipse data-muscle="chest" cx="40" cy="59" rx="12" ry="10" class="muscle"/>
+  <ellipse data-muscle="chest" cx="60" cy="59" rx="12" ry="10" class="muscle"/>
+  <ellipse data-muscle="biceps" cx="13" cy="67" rx="7" ry="13" class="muscle"/>
+  <ellipse data-muscle="biceps" cx="87" cy="67" rx="7" ry="13" class="muscle"/>
+  <ellipse data-muscle="triceps" cx="10" cy="70" rx="4" ry="10" class="muscle"/>
+  <ellipse data-muscle="triceps" cx="90" cy="70" rx="4" ry="10" class="muscle"/>
+  <ellipse data-muscle="forearms" cx="10" cy="85" rx="6" ry="11" class="muscle"/>
+  <ellipse data-muscle="forearms" cx="90" cy="85" rx="6" ry="11" class="muscle"/>
+  <rect data-muscle="abs" x="42" y="71" width="7" height="7" rx="2" class="muscle"/>
+  <rect data-muscle="abs" x="51" y="71" width="7" height="7" rx="2" class="muscle"/>
+  <rect data-muscle="abs" x="42" y="80" width="7" height="7" rx="2" class="muscle"/>
+  <rect data-muscle="abs" x="51" y="80" width="7" height="7" rx="2" class="muscle"/>
+  <rect data-muscle="abs" x="42" y="89" width="7" height="7" rx="2" class="muscle"/>
+  <rect data-muscle="abs" x="51" y="89" width="7" height="7" rx="2" class="muscle"/>
+  <ellipse data-muscle="hip" cx="39" cy="104" rx="9" ry="5" class="muscle"/>
+  <ellipse data-muscle="hip" cx="61" cy="104" rx="9" ry="5" class="muscle"/>
+  <ellipse data-muscle="quads" cx="34" cy="160" rx="13" ry="23" class="muscle"/>
+  <ellipse data-muscle="quads" cx="66" cy="160" rx="13" ry="23" class="muscle"/>
+  <ellipse data-muscle="calves" cx="31" cy="217" rx="9" ry="17" class="muscle"/>
+  <ellipse data-muscle="calves" cx="69" cy="217" rx="9" ry="17" class="muscle"/>
+</svg>`;
+
+const SVG_BACK = `<svg viewBox="0 0 100 240" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="50" cy="16" r="12" class="body-outline"/>
+  <rect x="45" y="27" width="10" height="8" rx="3" class="body-fill body-outline"/>
+  <path d="M28,34 Q18,52 20,95 L27,98 L27,138 L73,138 L73,98 L80,95 Q82,52 72,34 Z" class="body-fill body-outline"/>
+  <path d="M20,35 Q10,52 8,92 L18,92 Q22,62 28,35 Z" class="body-fill body-outline"/>
+  <path d="M80,35 Q90,52 92,92 L82,92 Q78,62 72,35 Z" class="body-fill body-outline"/>
+  <path d="M27,138 L22,202 L38,202 L44,138 Z" class="body-fill body-outline"/>
+  <path d="M73,138 L78,202 L62,202 L56,138 Z" class="body-fill body-outline"/>
+  <path d="M22,202 L20,236 L38,236 L38,202 Z" class="body-fill body-outline"/>
+  <path d="M78,202 L80,236 L62,236 L62,202 Z" class="body-fill body-outline"/>
+  <ellipse data-muscle="traps" cx="50" cy="44" rx="22" ry="12" class="muscle"/>
+  <ellipse data-muscle="shoulders" cx="22" cy="46" rx="10" ry="7" class="muscle"/>
+  <ellipse data-muscle="shoulders" cx="78" cy="46" rx="10" ry="7" class="muscle"/>
+  <ellipse data-muscle="back" cx="35" cy="79" rx="12" ry="23" class="muscle"/>
+  <ellipse data-muscle="back" cx="65" cy="79" rx="12" ry="23" class="muscle"/>
+  <ellipse data-muscle="triceps" cx="13" cy="68" rx="7" ry="13" class="muscle"/>
+  <ellipse data-muscle="triceps" cx="87" cy="68" rx="7" ry="13" class="muscle"/>
+  <ellipse data-muscle="forearms" cx="10" cy="85" rx="6" ry="11" class="muscle"/>
+  <ellipse data-muscle="forearms" cx="90" cy="85" rx="6" ry="11" class="muscle"/>
+  <ellipse data-muscle="lower-back" cx="50" cy="113" rx="14" ry="10" class="muscle"/>
+  <ellipse data-muscle="glutes" cx="37" cy="130" rx="16" ry="17" class="muscle"/>
+  <ellipse data-muscle="glutes" cx="63" cy="130" rx="16" ry="17" class="muscle"/>
+  <ellipse data-muscle="hamstrings" cx="35" cy="164" rx="12" ry="22" class="muscle"/>
+  <ellipse data-muscle="hamstrings" cx="65" cy="164" rx="12" ry="22" class="muscle"/>
+  <ellipse data-muscle="calves" cx="33" cy="217" rx="9" ry="17" class="muscle"/>
+  <ellipse data-muscle="calves" cx="67" cy="217" rx="9" ry="17" class="muscle"/>
+</svg>`;
 
 // ── API ──────────────────────────────────────────────────────────────────────
 async function aApi(method, path, body) {
@@ -322,17 +525,20 @@ async function aApi(method, path, body) {
 }
 
 async function loadData() {
-  const [meRes, assigns, logs, nutri] = await Promise.all([
+  const [meRes, assigns, logs, nutri, msgs] = await Promise.all([
     aApi('GET', '/me'),
     aApi('GET', '/assignments'),
     aApi('GET', '/logs'),
     aApi('GET', '/nutri'),
+    aApi('GET', '/messages'),
   ]);
   if (!meRes) return false;
   _athlete = meRes.athlete;
   _assignments = assigns || [];
   _logs = logs || [];
   _nutri = nutri;
+  _messages = msgs || [];
+  updateMsgDot();
   return true;
 }
 
@@ -390,6 +596,7 @@ function showAPage(name) {
   if (name === 'sessions') renderSessions();
   if (name === 'journal') renderJournal();
   if (name === 'nutri') renderNutri();
+  if (name === 'messages') renderMessages();
 }
 
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
@@ -431,11 +638,15 @@ function sessionCard(a, isDone = false) {
   const badge = isDone
     ? '<span class="badge badge-done">✓ Terminée</span>'
     : '<span class="badge badge-todo">À faire</span>';
-  const logBtn = isDone ? '' : `
-    <button class="btn btn-accent btn-sm btn-full" style="margin-top:10px;"
-      onclick="event.stopPropagation();openLogPanel('${a.id}','${a.sessionId}',${JSON.stringify(a.sessionName||'Séance')})">
-      ✓ Logger la séance
-    </button>`;
+  const btn = isDone
+    ? `<button class="btn btn-secondary btn-sm btn-full" style="margin-top:10px;"
+        onclick="event.stopPropagation();redoSession('${a.sessionId}',${JSON.stringify(a.sessionName||'Séance')})">
+        ↺ Refaire cette séance
+      </button>`
+    : `<button class="btn btn-accent btn-sm btn-full" style="margin-top:10px;"
+        onclick="event.stopPropagation();startLiveSession('${a.id}','${a.sessionId}')">
+        ▶ Commencer la séance
+      </button>`;
   return `<div class="session-card clickable" onclick="openSessionDetail('${a.id}','${a.sessionId}')">
     <div class="sc-top">
       <div style="flex:1;">
@@ -444,7 +655,7 @@ function sessionCard(a, isDone = false) {
       </div>
       ${badge}
     </div>
-    ${logBtn}
+    ${btn}
   </div>`;
 }
 
@@ -625,6 +836,426 @@ function showToast(msg) {
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2500);
+}
+
+// ── MUSCLES ───────────────────────────────────────────────────────────────────
+const MUSCLE_KW = {
+  chest:       ['bench','développé couché','fly','écarté','pec','push up','pompe','cable cross','crossover'],
+  shoulders:   ['shoulder','élévation latérale','lateral raise','front raise','overhead','ohp','military','arnold','développé épaules','press épaule'],
+  biceps:      ['curl','bicep','chin up','traction supination'],
+  triceps:     ['tricep','extension','skull','pushdown','close grip','barre au front','dips'],
+  forearms:    ['hammer','wrist','avant-bras','reverse curl','pince','farmer'],
+  abs:         ['crunch','plank','gainage','abdos','sit up','russian twist','mountain climber','oblique','leg raise relevé'],
+  quads:       ['squat','fente','lunge','leg press','leg extension','step up','hack squat','sissy'],
+  calves:      ['calf','mollet','donkey calf'],
+  hip:         ['hip thrust','hip hinge','relevé de jambe'],
+  back:        ['rowing','row','tirage','pull up','traction','pulldown','lat ','deadlift','soulevé de terre','rdl','cable row'],
+  traps:       ['shrug','haussement','trapèze','farmer','rack pull'],
+  'lower-back':['deadlift','soulevé de terre','rdl','good morning','hyperextension','back extension'],
+  glutes:      ['glute','fessier','hip thrust','squat','fente','lunge','rdl','step up','cable kickback'],
+  hamstrings:  ['ischio','hamstring','rdl','deadlift','soulevé','leg curl','good morning','hip thrust'],
+};
+
+function getMusclesForExercise(name) {
+  const n = name.toLowerCase();
+  const out = new Set();
+  for (const [m, kws] of Object.entries(MUSCLE_KW)) {
+    if (kws.some(k => n.includes(k))) out.add(m);
+  }
+  return out.size ? [...out] : ['chest'];
+}
+
+function highlightMuscles(muscles) {
+  document.querySelectorAll('[data-muscle]').forEach(el => el.classList.remove('active'));
+  muscles.forEach(m => document.querySelectorAll(`[data-muscle="${m}"]`).forEach(el => el.classList.add('active')));
+}
+
+function getTipForExercise(name) {
+  const n = name.toLowerCase();
+  const TIPS = [
+    [['bench','développé couché','pec'],
+     "Rétractez les omoplates et aplatissez-les sur le banc. Pieds à plat, barre descendue vers le bas de la poitrine. Inspirez en descendant, expirez fort en poussant."],
+    [['squat','squat'],
+     "Pieds à largeur d'épaules, orteils légèrement en dehors. Genoux dans l'axe des orteils, poitrine haute. Descendez en contrôlant, remontez en poussant le sol."],
+    [['deadlift','soulevé de terre'],
+     "Barre au-dessus des lacets, gainez le dos et les abdos. Hanches en arrière, poussez le sol — hanches et épaules montent ensemble. Ne jamais arrondir le bas du dos."],
+    [['rdl','roumain','stiff'],
+     "Pieds à largeur du bassin, légère flexion du genou. Penchez le buste en poussant les hanches en arrière. Sentez l'étirement des ischio, remontez en contractant les fessiers."],
+    [['hip thrust','fessier'],
+     "Dos contre le banc, barre sur les hanches. Poussez en contractant fort les fessiers. Tenez 1 seconde en haut. N'hyperextendez pas le bas du dos."],
+    [['row','rowing','tirage'],
+     "Dos neutre, tirez le coude vers la hanche (pas l'épaule). Rétractez l'omoplate en fin de mouvement. Contrôlez la descente sur 2-3 secondes."],
+    [['pull up','traction','chin'],
+     "Épaules rétractées dès le départ. Tirez les coudes vers les hanches. Montez jusqu'au menton au-dessus de la barre. Contrôlez la descente."],
+    [['curl','bicep'],
+     "Coudes collés aux côtes, seuls les avant-bras bougent. Supinez légèrement le poignet en montant. Descendez lentement sur 2-3 secondes."],
+    [['tricep','extension','pushdown','skull'],
+     "Coudes fixes, seuls les avant-bras bougent. Contractez fort les triceps en fin d'extension. Évitez de balancer le buste."],
+    [['overhead','ohp','military','développé épaules'],
+     "Corps bien droit, core serré. Poussez directement au-dessus de la tête. Ne laissez pas les côtes s'ouvrir ni le bas du dos se creuser."],
+    [['lateral raise','élévation latérale'],
+     "Ne montez pas au-delà de l'horizontale. Légère flexion du coude, mouvement contrôlé. Descente lente — ne balancez pas les bras."],
+    [['lunge','fente'],
+     "Grand pas en avant, genou arrière effleure le sol. Poussez sur le talon avant pour remonter. Torse droit, regard devant."],
+    [['plank','gainage'],
+     "Corps rigide des talons aux épaules. Contractez les abdos et les fessiers. Respirez régulièrement, ne laissez pas les hanches tomber."],
+    [['crunch','abdos','sit up'],
+     "Ne tirez pas sur la nuque. Contractez les abdos pour soulever les épaules, pas le dos entier. Expirez en montant, inspirez en descendant."],
+    [['calf','mollet'],
+     "Montez sur la pointe des pieds le plus haut possible. Tenez 1 seconde. Descendez lentement sous la plateforme pour étirer le mollet."],
+  ];
+  for (const [keys, tip] of TIPS) {
+    if (keys.some(k => n.includes(k))) return tip;
+  }
+  return "Concentrez-vous sur la technique avant de charger. Contrôlez chaque répétition — descendez lentement (2-3s), poussez fort. Respirez régulièrement et gardez le core gainé.";
+}
+
+// ── LIVE SESSION ──────────────────────────────────────────────────────────────
+async function startLiveSession(assignId, sessionId) {
+  let session = _sessionCache[sessionId];
+  if (!session) {
+    const data = await aApi('GET', '/sessions/' + sessionId);
+    if (!data) return;
+    _sessionCache[sessionId] = data;
+    session = data;
+  }
+  const history = await aApi('GET', '/sessions/' + sessionId + '/history');
+
+  _live = {
+    assignId, sessionId, session,
+    exIndex: 0,
+    sets: session.exercises.map(ex =>
+      Array.from({ length: parseInt(ex.sets) || 3 }, () => ({
+        kg: ex.kg || '', reps: ex.reps || '', done: false
+      }))
+    ),
+    prevLog: history,
+    startTime: Date.now(),
+    _rpe: null, _mood: null,
+  };
+
+  document.getElementById('live-sname').textContent = session.name || 'Séance';
+  document.getElementById('live-nav').style.display = '';
+  document.getElementById('live-session').classList.add('open');
+  renderLiveExercise();
+}
+
+function renderLiveExercise() {
+  const { session, exIndex, sets, prevLog } = _live;
+  const ex = session.exercises[exIndex];
+  const total = session.exercises.length;
+
+  document.getElementById('live-prog-text').textContent = `Exercice ${exIndex + 1} / ${total}`;
+  document.getElementById('live-prog-fill').style.width = (exIndex / total * 100) + '%';
+  document.getElementById('live-btn-prev').style.display = exIndex > 0 ? '' : 'none';
+  document.getElementById('live-btn-next').textContent = exIndex === total - 1 ? 'Terminer ✓' : 'Exercice suivant →';
+
+  const muscles = getMusclesForExercise(ex.name || '');
+  const tip = getTipForExercise(ex.name || '');
+
+  let prevEx = null;
+  if (prevLog?.sets_data) {
+    try { prevEx = JSON.parse(prevLog.sets_data)[exIndex]; } catch {}
+  }
+
+  const metaParts = [];
+  if (ex.sets) metaParts.push(ex.sets + ' séries');
+  if (ex.reps) metaParts.push(ex.reps + ' reps');
+  if (ex.kg) metaParts.push(ex.kg + ' kg');
+  if (ex.rest) metaParts.push('Repos ' + ex.rest + 's');
+
+  const setsRows = sets[exIndex].map((s, i) => {
+    const prevSet = prevEx?.[i];
+    return `<tr class="set-row${s.done ? ' done' : ''}" id="lset-${i}">
+      <td><div class="set-num-cell">${i + 1}</div></td>
+      <td><input class="set-input" type="number" min="0" step="0.5"
+        value="${s.kg}" placeholder="kg"
+        oninput="_live.sets[_live.exIndex][${i}].kg=this.value"></td>
+      <td><input class="set-input" type="number" min="0"
+        value="${s.reps}" placeholder="reps"
+        oninput="_live.sets[_live.exIndex][${i}].reps=this.value"></td>
+      <td class="set-prev">${prevSet ? `${prevSet.kg||'?'}×${prevSet.reps||'?'}` : '—'}</td>
+      <td><button class="set-check-btn" onclick="toggleSet(${i})">${s.done ? '✓' : '○'}</button></td>
+    </tr>`;
+  }).join('');
+
+  const prevHtml = prevEx ? `<div class="live-prev">
+    <div class="live-prev-title">📈 Séance précédente — ${new Date(prevLog.date).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</div>
+    <div class="live-prev-row">${prevEx.map((s,i)=>`<span class="live-prev-item">Set ${i+1}: ${s.kg||'?'}kg × ${s.reps||'?'}</span>`).join('')}</div>
+  </div>` : '';
+
+  document.getElementById('live-body').innerHTML = `
+    <div class="live-ex-name">${ex.name || 'Exercice'}</div>
+    <div class="live-ex-meta">${metaParts.join(' · ')}</div>
+    <div class="muscle-diagram-wrap">
+      <div class="muscle-diagram-col"><div class="muscle-diagram-label">Face</div>${SVG_FRONT}</div>
+      <div class="muscle-diagram-col"><div class="muscle-diagram-label">Dos</div>${SVG_BACK}</div>
+    </div>
+    <div class="live-tip-box">
+      <div class="live-tip-label">💡 Conseil technique</div>
+      <div class="live-tip-text">${tip}</div>
+    </div>
+    ${prevHtml}
+    <div class="section-title">Suivi des séries</div>
+    <table class="sets-table">
+      <thead><tr><th>Set</th><th>Charge</th><th>Reps</th><th>Préc.</th><th></th></tr></thead>
+      <tbody>${setsRows}</tbody>
+    </table>
+  `;
+
+  highlightMuscles(muscles);
+  document.getElementById('live-body').scrollTo(0, 0);
+}
+
+function toggleSet(i) {
+  const s = _live.sets[_live.exIndex][i];
+  // Sync inputs before toggling
+  const row = document.getElementById(`lset-${i}`);
+  if (row) {
+    const ins = row.querySelectorAll('input');
+    if (ins[0]) s.kg = ins[0].value;
+    if (ins[1]) s.reps = ins[1].value;
+  }
+  s.done = !s.done;
+  if (row) {
+    row.classList.toggle('done', s.done);
+    const btn = row.querySelector('.set-check-btn');
+    if (btn) btn.textContent = s.done ? '✓' : '○';
+  }
+  if (s.done) {
+    const remaining = _live.sets[_live.exIndex].filter(x => !x.done).length;
+    if (remaining > 0) {
+      const ex = _live.session.exercises[_live.exIndex];
+      startRestTimer(parseInt(ex.rest) || 90);
+    }
+  }
+}
+
+// ── REST TIMER ────────────────────────────────────────────────────────────────
+function startRestTimer(secs) {
+  if (_restInt) clearInterval(_restInt);
+  _restRemaining = secs;
+  const total = secs;
+  const ring = document.getElementById('rest-ring');
+  ring.style.strokeDasharray = REST_CIRC;
+  ring.style.strokeDashoffset = 0;
+  document.getElementById('rest-count').textContent = secs;
+  document.getElementById('rest-overlay').classList.add('open');
+
+  _restInt = setInterval(() => {
+    _restRemaining--;
+    document.getElementById('rest-count').textContent = _restRemaining;
+    ring.style.strokeDashoffset = REST_CIRC * (1 - _restRemaining / total);
+    if (_restRemaining <= 0) {
+      skipRest();
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    }
+  }, 1000);
+}
+
+function skipRest() {
+  if (_restInt) { clearInterval(_restInt); _restInt = null; }
+  document.getElementById('rest-overlay').classList.remove('open');
+}
+
+// ── LIVE NAV ──────────────────────────────────────────────────────────────────
+function saveLiveInputs() {
+  document.querySelectorAll('#live-body .set-row').forEach((row, i) => {
+    const ins = row.querySelectorAll('input');
+    if (ins[0]) _live.sets[_live.exIndex][i].kg = ins[0].value;
+    if (ins[1]) _live.sets[_live.exIndex][i].reps = ins[1].value;
+  });
+}
+
+function liveNextEx() {
+  saveLiveInputs();
+  if (_live.exIndex >= _live.session.exercises.length - 1) { showLiveSummary(); return; }
+  _live.exIndex++;
+  renderLiveExercise();
+}
+
+function livePrevEx() {
+  saveLiveInputs();
+  if (_live.exIndex > 0) { _live.exIndex--; renderLiveExercise(); }
+}
+
+function confirmCloseLive() {
+  if (confirm('Abandonner la séance en cours ?')) closeLiveSession();
+}
+
+function closeLiveSession() {
+  skipRest();
+  document.getElementById('live-session').classList.remove('open');
+  _live = null;
+}
+
+// ── LIVE SUMMARY ──────────────────────────────────────────────────────────────
+function showLiveSummary() {
+  const { session, sets, startTime } = _live;
+  const duration = Math.round((Date.now() - startTime) / 60000);
+  document.getElementById('live-nav').style.display = 'none';
+  document.getElementById('live-prog-fill').style.width = '100%';
+
+  const exList = session.exercises.map((ex, i) => {
+    const done = sets[i].filter(s => s.done);
+    const badges = done.length
+      ? done.map(s => `<span class="summary-set-badge">${s.kg||'?'}kg × ${s.reps||'?'}</span>`).join('')
+      : '<span style="font-size:11px;color:var(--muted)">—</span>';
+    return `<div class="summary-ex-item"><div class="summary-ex-name">${ex.name||'Exercice'}</div><div class="summary-sets">${badges}</div></div>`;
+  }).join('');
+
+  const rpeGrid = [1,2,3,4,5,6,7,8,9,10].map(v =>
+    `<button class="rpe-btn" onclick="sumSelRPE(${v},this)">${v}</button>`
+  ).join('');
+  const moodBtns = ['😴','😐','🙂','😤','🔥'].map(m =>
+    `<div class="mood-btn" onclick="sumSelMood('${m}',this)">${m}</div>`
+  ).join('');
+
+  document.getElementById('live-body').innerHTML = `
+    <div class="live-summary-wrap">
+      <div style="font-size:52px;text-align:center;margin-bottom:12px;">🎉</div>
+      <div class="summary-title">Séance terminée !</div>
+      <div class="summary-sub">${duration > 0 ? duration + ' min · ' : ''}${session.exercises.length} exercice${session.exercises.length > 1 ? 's' : ''}</div>
+      <div class="section-title">Résumé</div>
+      <div style="margin-bottom:24px;">${exList}</div>
+      <div class="section-title" style="margin-bottom:8px;">Difficulté (RPE)</div>
+      <div class="rpe-grid" id="sum-rpe">${rpeGrid}</div>
+      <div class="rpe-labels" style="margin-bottom:20px;">
+        <span class="rpe-label">Très facile</span><span></span>
+        <span class="rpe-label" style="text-align:center;">Modéré</span><span></span>
+        <span class="rpe-label" style="text-align:right;">Max 💀</span>
+      </div>
+      <div class="section-title" style="margin-bottom:8px;">Humeur</div>
+      <div class="mood-row" style="margin-bottom:20px;" id="sum-mood">${moodBtns}</div>
+      <div class="section-title" style="margin-bottom:8px;">Notes (optionnel)</div>
+      <textarea class="log-textarea" id="sum-notes" placeholder="Comment s'est passée la séance ?"></textarea>
+      <button class="btn btn-accent btn-full" style="margin-top:20px;" onclick="submitLiveLog()">Enregistrer ✓</button>
+      <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="confirmCloseLive()">Abandonner</button>
+    </div>`;
+}
+
+function sumSelRPE(v, btn) {
+  _live._rpe = v;
+  document.querySelectorAll('#sum-rpe .rpe-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+function sumSelMood(m, btn) {
+  _live._mood = m;
+  document.querySelectorAll('#sum-mood .mood-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+async function submitLiveLog() {
+  const notes = document.getElementById('sum-notes')?.value.trim() || '';
+  const res = await aApi('POST', '/logs', {
+    sessionId: _live.sessionId,
+    assignId: _live.assignId,
+    date: new Date().toISOString(),
+    rpe: _live._rpe,
+    mood: _live._mood,
+    notes,
+    sets_data: JSON.stringify(_live.sets),
+  });
+  if (!res) return;
+  document.getElementById('live-nav').style.display = '';
+  closeLiveSession();
+  await loadData();
+  renderDash();
+  if (document.getElementById('page-sessions').classList.contains('active')) renderSessions();
+  if (document.getElementById('page-journal').classList.contains('active')) renderJournal();
+  showToast('Séance enregistrée ✓');
+}
+
+// ── MESSAGES ─────────────────────────────────────────────────────────────────
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function fmtMsgTime(ts) {
+  const d = new Date(ts), now = new Date();
+  if (d.toDateString() === now.toDateString()) return d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  const y = new Date(); y.setDate(y.getDate()-1);
+  if (d.toDateString() === y.toDateString()) return 'Hier '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  return d.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+}
+
+function fmtDaySep(ts) {
+  const d = new Date(ts), now = new Date();
+  if (d.toDateString() === now.toDateString()) return "Aujourd'hui";
+  const y = new Date(); y.setDate(y.getDate()-1);
+  if (d.toDateString() === y.toDateString()) return 'Hier';
+  return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+}
+
+function updateMsgDot() {
+  const unread = _messages.filter(m => m.sender === 'coach' && !m.read).length;
+  const dot = document.getElementById('msg-dot');
+  if (dot) dot.style.display = unread ? 'block' : 'none';
+}
+
+async function renderMessages() {
+  await aApi('POST', '/messages/read');
+  _messages.forEach(m => { if (m.sender === 'coach') m.read = true; });
+  updateMsgDot();
+
+  const el = document.getElementById('msgs-area');
+  if (!el) return;
+  if (!_messages.length) {
+    el.innerHTML = '<div class="msg-empty-chat"><div style="font-size:44px;margin-bottom:12px;">💬</div><div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;">Aucun message</div><div style="font-size:13px;">Votre coach n\'a pas encore écrit.<br>Vous pouvez lui envoyer un message ci-dessous.</div></div>';
+    return;
+  }
+  let html = ''; let lastDay = '';
+  const sorted = [..._messages].sort((a,b)=>a.ts-b.ts);
+  sorted.forEach(m => {
+    const day = fmtDaySep(m.ts);
+    if (day !== lastDay) { html += '<div class="msg-day">' + day + '</div>'; lastDay = day; }
+    const isMe = m.sender === 'athlete';
+    const avColor = isMe ? (_athlete?.color || 'var(--accent)') : 'var(--bg3)';
+    const avLetter = isMe ? (_athlete?.name?.[0] || '?') : '🏋️';
+    html += '<div class="msg-wrap' + (isMe ? ' me' : '') + '">' +
+      '<div class="msg-av-s" style="background:' + avColor + ';color:' + (isMe ? '#000' : 'var(--text)') + '">' + avLetter + '</div>' +
+      '<div class="msg-bbl ' + (isMe ? 'me' : 'coach') + '">' +
+        escapeHtml(m.text) +
+        '<div class="msg-bbl-time">' + fmtMsgTime(m.ts) + '</div>' +
+      '</div>' +
+    '</div>';
+  });
+  el.innerHTML = html;
+  el.scrollTop = el.scrollHeight;
+}
+
+async function doSendMessage() {
+  const input = document.getElementById('msg-input');
+  const text = (input?.value || '').trim();
+  if (!text) return;
+  input.value = '';
+  const res = await aApi('POST', '/messages', { text });
+  if (!res) return;
+  _messages.push({ id: res.id, sender: 'athlete', text, ts: Date.now(), read: true });
+  renderMessages();
+}
+
+// Poll for new messages every 30s when on messages page
+setInterval(async () => {
+  if (!_tok) return;
+  const msgs = await aApi('GET', '/messages');
+  if (msgs) {
+    _messages = msgs;
+    updateMsgDot();
+    if (document.getElementById('page-messages')?.classList.contains('active')) {
+      renderMessages();
+    }
+  }
+}, 30000);
+
+// ── REDO SESSION ──────────────────────────────────────────────────────────────
+async function redoSession(sessionId) {
+  const res = await aApi('POST', '/redo-session', { sessionId });
+  if (!res || !res.id) return;
+  _assignments.unshift(res);
+  showToast('Séance ajoutée, bonne chance 💪');
+  showAPage('sessions');
+  await startLiveSession(res.id, res.sessionId);
 }
 
 // ── INIT ─────────────────────────────────────────────────────────────────────

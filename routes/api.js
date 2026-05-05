@@ -186,4 +186,54 @@ router.put('/nutri/:athleteId', (req, res) => {
   res.json({ ok: true });
 });
 
+// ── MESSAGES ──────────────────────────────────────────────────────────────────
+router.get('/messages/unread', (req, res) => {
+  const row = db.prepare("SELECT COUNT(*) as n FROM messages WHERE coach_id=? AND sender='athlete' AND read=0").get(req.coach.id);
+  res.json({ count: row.n });
+});
+
+router.get('/messages', (req, res) => {
+  const athletes = db.prepare('SELECT id FROM athletes WHERE coach_id=?').all(req.coach.id);
+  const result = {};
+  for (const a of athletes) {
+    const msgs = db.prepare('SELECT * FROM messages WHERE coach_id=? AND athlete_id=? ORDER BY ts ASC').all(req.coach.id, a.id);
+    const unread = db.prepare("SELECT COUNT(*) as n FROM messages WHERE coach_id=? AND athlete_id=? AND sender='athlete' AND read=0").get(req.coach.id, a.id);
+    result[a.id] = { messages: msgs.map(mapMsg), unread: unread.n };
+  }
+  res.json(result);
+});
+
+router.get('/messages/:athleteId', (req, res) => {
+  const a = db.prepare('SELECT id FROM athletes WHERE id=? AND coach_id=?').get(req.params.athleteId, req.coach.id);
+  if (!a) return res.status(404).json({ error: 'Athlète introuvable' });
+  const msgs = db.prepare('SELECT * FROM messages WHERE coach_id=? AND athlete_id=? ORDER BY ts ASC').all(req.coach.id, req.params.athleteId);
+  res.json(msgs.map(mapMsg));
+});
+
+router.post('/messages/:athleteId', (req, res) => {
+  const a = db.prepare('SELECT id FROM athletes WHERE id=? AND coach_id=?').get(req.params.athleteId, req.coach.id);
+  if (!a) return res.status(404).json({ error: 'Athlète introuvable' });
+  const { text } = req.body;
+  if (!text?.trim()) return res.status(400).json({ error: 'Message vide' });
+  const id = randomUUID();
+  db.prepare('INSERT INTO messages (id, coach_id, athlete_id, sender, text) VALUES (?,?,?,?,?)').run(id, req.coach.id, req.params.athleteId, 'coach', text.trim());
+  res.status(201).json(mapMsg(db.prepare('SELECT * FROM messages WHERE id=?').get(id)));
+});
+
+router.post('/messages/:athleteId/read', (req, res) => {
+  db.prepare("UPDATE messages SET read=1 WHERE coach_id=? AND athlete_id=? AND sender='athlete'").run(req.coach.id, req.params.athleteId);
+  res.json({ ok: true });
+});
+
+router.delete('/messages/:athleteId', (req, res) => {
+  const a = db.prepare('SELECT id FROM athletes WHERE id=? AND coach_id=?').get(req.params.athleteId, req.coach.id);
+  if (!a) return res.status(404).json({ error: 'Athlète introuvable' });
+  db.prepare('DELETE FROM messages WHERE coach_id=? AND athlete_id=?').run(req.coach.id, req.params.athleteId);
+  res.json({ ok: true });
+});
+
+function mapMsg(r) {
+  return { id: r.id, sender: r.sender, text: r.text, ts: r.ts * 1000, read: !!r.read };
+}
+
 module.exports = router;
