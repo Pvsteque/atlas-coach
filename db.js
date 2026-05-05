@@ -102,6 +102,7 @@ function initDB() {
         try { db.exec(`ALTER TABLE athletes ADD COLUMN ${col}`); } catch {}
       });
       try { db.exec('ALTER TABLE logs ADD COLUMN sets_data TEXT'); } catch {}
+      try { db.exec('ALTER TABLE logs ADD COLUMN photos TEXT'); } catch {}
       resolve();
     } catch (err) {
       reject(err);

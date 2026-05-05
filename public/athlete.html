@@ -247,6 +247,27 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .summary-ex-name{font-size:14px;font-weight:700;margin-bottom:7px;}
 .summary-sets{display:flex;gap:6px;flex-wrap:wrap;}
 .summary-set-badge{font-size:11px;padding:3px 9px;border-radius:6px;background:rgba(255,122,0,.12);color:var(--accent);font-weight:600;}
+
+/* Photo capture */
+.photo-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.photo-thumb{width:70px;height:70px;object-fit:cover;border-radius:10px;border:1px solid var(--border);}
+.photo-add-btn{width:70px;height:70px;border-radius:10px;border:2px dashed var(--border);background:var(--bg3);color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:22px;gap:2px;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+.photo-add-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.photo-input{display:none;}
+
+/* AI tip loading */
+.live-tip-loading{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);}
+.tip-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:tipdot 1s ease-in-out infinite;}
+.tip-dot:nth-child(2){animation-delay:.2s;}
+.tip-dot:nth-child(3){animation-delay:.4s;}
+@keyframes tipdot{0%,100%{opacity:.3}50%{opacity:1}}
+
+/* Journal enhancements */
+.log-item-photos{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.log-item-photo{width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer;}
+.photo-fullscreen{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.95);display:flex;align-items:center;justify-content:center;}
+.photo-fullscreen img{max-width:96vw;max-height:92vh;border-radius:10px;object-fit:contain;}
+.photo-fs-close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 </style>
 </head>
 <body>
@@ -451,6 +472,7 @@ let _live = null;
 let _restInt = null;
 let _restRemaining = 0;
 const REST_CIRC = 2 * Math.PI * 68; // ~427
+const _aiTipCache = {};
 
 // ── MUSCLE SVG ────────────────────────────────────────────────────────────────
 const SVG_FRONT = `<svg viewBox="0 0 100 240" xmlns="http://www.w3.org/2000/svg">
@@ -754,9 +776,22 @@ function renderJournal() {
     return;
   }
   el.innerHTML = [..._logs].sort((a, b) => new Date(b.date) - new Date(a.date)).map(l => {
-    const a = _assignments.find(x => x.id === l.assignId);
-    const name = a?.sessionName || 'Séance';
+    const assign = _assignments.find(x => x.id === l.assignId);
+    const name = assign?.sessionName || 'Séance';
     const date = new Date(l.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+
+    let photosHtml = '';
+    if (l.photos) {
+      try {
+        const arr = JSON.parse(l.photos);
+        if (arr.length) {
+          photosHtml = '<div class="log-item-photos">' +
+            arr.map((src, pi) => `<img class="log-item-photo" src="${src}" onclick="openPhotoFullscreen('${src}')" loading="lazy">`).join('') +
+          '</div>';
+        }
+      } catch {}
+    }
+
     return `<div class="log-item">
       <div class="log-item-top">
         <div class="log-item-name">${name}</div>
@@ -767,6 +802,8 @@ function renderJournal() {
         ${l.mood ? `<span class="log-stat">${l.mood}</span>` : ''}
       </div>
       ${l.notes ? `<div class="log-notes-preview">"${l.notes.substring(0, 80)}${l.notes.length > 80 ? '…' : ''}"</div>` : ''}
+      ${photosHtml}
+      ${l.sessionId ? `<button class="btn btn-secondary btn-sm btn-full" style="margin-top:10px;" onclick="redoSession('${l.sessionId}')">↺ Refaire cette séance</button>` : ''}
     </div>`;
   }).join('');
 }
@@ -931,7 +968,7 @@ async function startLiveSession(assignId, sessionId) {
     ),
     prevLog: history,
     startTime: Date.now(),
-    _rpe: null, _mood: null,
+    _rpe: null, _mood: null, _photos: [],
   };
 
   document.getElementById('live-sname').textContent = session.name || 'Séance';
@@ -950,8 +987,9 @@ function renderLiveExercise() {
   document.getElementById('live-btn-prev').style.display = exIndex > 0 ? '' : 'none';
   document.getElementById('live-btn-next').textContent = exIndex === total - 1 ? 'Terminer ✓' : 'Exercice suivant →';
 
-  const muscles = getMusclesForExercise(ex.name || '');
-  const tip = getTipForExercise(ex.name || '');
+  const staticMuscles = getMusclesForExercise(ex.name || '');
+  const staticTip = getTipForExercise(ex.name || '');
+  const cached = _aiTipCache[ex.name || ''];
 
   let prevEx = null;
   if (prevLog?.sets_data) {
@@ -984,6 +1022,11 @@ function renderLiveExercise() {
     <div class="live-prev-row">${prevEx.map((s,i)=>`<span class="live-prev-item">Set ${i+1}: ${s.kg||'?'}kg × ${s.reps||'?'}</span>`).join('')}</div>
   </div>` : '';
 
+  const displayTip = cached ? cached.tip : staticTip;
+  const tipHtml = cached === undefined
+    ? `<div class="live-tip-loading"><div class="tip-dot"></div><div class="tip-dot"></div><div class="tip-dot"></div><span style="margin-left:4px;">IA en cours…</span></div>`
+    : `<div class="live-tip-text" id="live-tip-text">${displayTip}</div>`;
+
   document.getElementById('live-body').innerHTML = `
     <div class="live-ex-name">${ex.name || 'Exercice'}</div>
     <div class="live-ex-meta">${metaParts.join(' · ')}</div>
@@ -991,9 +1034,9 @@ function renderLiveExercise() {
       <div class="muscle-diagram-col"><div class="muscle-diagram-label">Face</div>${SVG_FRONT}</div>
       <div class="muscle-diagram-col"><div class="muscle-diagram-label">Dos</div>${SVG_BACK}</div>
     </div>
-    <div class="live-tip-box">
-      <div class="live-tip-label">💡 Conseil technique</div>
-      <div class="live-tip-text">${tip}</div>
+    <div class="live-tip-box" id="live-tip-box">
+      <div class="live-tip-label">✨ Conseil IA</div>
+      ${tipHtml}
     </div>
     ${prevHtml}
     <div class="section-title">Suivi des séries</div>
@@ -1003,8 +1046,27 @@ function renderLiveExercise() {
     </table>
   `;
 
+  const muscles = cached ? (cached.muscles || staticMuscles) : staticMuscles;
   highlightMuscles(muscles);
   document.getElementById('live-body').scrollTo(0, 0);
+
+  if (cached === undefined) fetchAiTip(ex.name || '', exIndex);
+}
+
+async function fetchAiTip(exerciseName, forExIndex) {
+  const res = await aApi('POST', '/ai/tip', { exerciseName });
+  _aiTipCache[exerciseName] = res; // null means "fetched but AI unavailable"
+  if (!_live || _live.exIndex !== forExIndex) return;
+  const staticMuscles = getMusclesForExercise(exerciseName);
+  const staticTip = getTipForExercise(exerciseName);
+  const tip = res?.tip || staticTip;
+  const muscles = (res?.muscles?.length) ? res.muscles : staticMuscles;
+  const box = document.getElementById('live-tip-box');
+  if (box) {
+    const label = res ? '✨ Conseil IA' : '💡 Conseil technique';
+    box.innerHTML = `<div class="live-tip-label">${label}</div><div class="live-tip-text">${tip}</div>`;
+  }
+  highlightMuscles(muscles);
 }
 
 function toggleSet(i) {
@@ -1129,6 +1191,13 @@ function showLiveSummary() {
       <div class="mood-row" style="margin-bottom:20px;" id="sum-mood">${moodBtns}</div>
       <div class="section-title" style="margin-bottom:8px;">Notes (optionnel)</div>
       <textarea class="log-textarea" id="sum-notes" placeholder="Comment s'est passée la séance ?"></textarea>
+      <div class="section-title" style="margin-bottom:8px;margin-top:20px;">📷 Photos (optionnel)</div>
+      <div class="photo-strip" id="photo-strip">
+        <div class="photo-add-btn" onclick="document.getElementById('photo-file-input').click()">
+          <span>📷</span><span class="photo-add-label">Ajouter</span>
+        </div>
+      </div>
+      <input class="photo-input" type="file" id="photo-file-input" accept="image/*" capture="environment" multiple onchange="handlePhotoInput(this)">
       <button class="btn btn-accent btn-full" style="margin-top:20px;" onclick="submitLiveLog()">Enregistrer ✓</button>
       <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="confirmCloseLive()">Abandonner</button>
     </div>`;
@@ -1147,6 +1216,7 @@ function sumSelMood(m, btn) {
 
 async function submitLiveLog() {
   const notes = document.getElementById('sum-notes')?.value.trim() || '';
+  const photos = _live._photos?.length ? JSON.stringify(_live._photos) : null;
   const res = await aApi('POST', '/logs', {
     sessionId: _live.sessionId,
     assignId: _live.assignId,
@@ -1155,6 +1225,7 @@ async function submitLiveLog() {
     mood: _live._mood,
     notes,
     sets_data: JSON.stringify(_live.sets),
+    photos,
   });
   if (!res) return;
   document.getElementById('live-nav').style.display = '';
@@ -1164,6 +1235,54 @@ async function submitLiveLog() {
   if (document.getElementById('page-sessions').classList.contains('active')) renderSessions();
   if (document.getElementById('page-journal').classList.contains('active')) renderJournal();
   showToast('Séance enregistrée ✓');
+}
+
+// ── PHOTO HANDLING ───────────────────────────────────────────────────────────
+function resizeAndEncodeImage(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 800;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.75));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handlePhotoInput(input) {
+  if (!input.files?.length) return;
+  for (const file of input.files) {
+    const b64 = await resizeAndEncodeImage(file);
+    _live._photos.push(b64);
+    const strip = document.getElementById('photo-strip');
+    if (strip) {
+      const img = document.createElement('img');
+      img.className = 'photo-thumb';
+      img.src = b64;
+      strip.insertBefore(img, strip.lastElementChild);
+    }
+  }
+  input.value = '';
+}
+
+function openPhotoFullscreen(src) {
+  const fs = document.createElement('div');
+  fs.className = 'photo-fullscreen';
+  fs.innerHTML = `<button class="photo-fs-close" onclick="this.parentElement.remove()">✕</button><img src="${src}">`;
+  fs.addEventListener('click', e => { if (e.target === fs) fs.remove(); });
+  document.body.appendChild(fs);
 }
 
 // ── MESSAGES ─────────────────────────────────────────────────────────────────

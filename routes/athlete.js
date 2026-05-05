@@ -4,6 +4,13 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { db } = require('../db');
 const { randomUUID } = require('crypto');
+const Anthropic = require('@anthropic-ai/sdk');
+
+const anthropic = process.env.ANTHROPIC_API_KEY
+  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  : null;
+
+const VALID_MUSCLES = ['chest','shoulders','biceps','triceps','forearms','abs','quads','calves','hip','back','traps','lower-back','glutes','hamstrings'];
 
 const SECRET = process.env.JWT_SECRET || 'atlas-dev-secret-change-in-prod';
 
@@ -64,19 +71,20 @@ router.get('/logs', requireAthlete, (req, res) => {
   res.json(rows.map(r => ({
     id: r.id, sessionId: r.session_id, assignId: r.assign_id,
     date: r.date, rpe: r.rpe, mood: r.mood, notes: r.notes,
+    setsData: r.sets_data || null, photos: r.photos || null,
   })));
 });
 
 // POST /api/athlete/logs
 router.post('/logs', requireAthlete, (req, res) => {
-  const { sessionId, assignId, date, rpe, mood, notes, sets_data } = req.body;
+  const { sessionId, assignId, date, rpe, mood, notes, sets_data, photos } = req.body;
   if (!sessionId) return res.status(400).json({ error: 'sessionId requis' });
   const athlete = db.prepare('SELECT coach_id FROM athletes WHERE id = ?').get(req.athleteId);
   if (!athlete) return res.status(404).json({ error: 'Adhérent introuvable' });
   const id = randomUUID();
-  db.prepare('INSERT INTO logs (id, coach_id, athlete_id, session_id, assign_id, date, rpe, mood, notes, seen, sets_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)')
+  db.prepare('INSERT INTO logs (id, coach_id, athlete_id, session_id, assign_id, date, rpe, mood, notes, seen, sets_data, photos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)')
     .run(id, athlete.coach_id, req.athleteId, sessionId, assignId || null,
-      date || new Date().toISOString(), rpe || null, mood || null, notes || '', sets_data || null);
+      date || new Date().toISOString(), rpe || null, mood || null, notes || '', sets_data || null, photos || null);
   if (assignId) db.prepare("UPDATE assignments SET status='done' WHERE id=?").run(assignId);
   res.status(201).json({ ok: true, id });
 });
@@ -108,6 +116,47 @@ router.get('/nutri', requireAthlete, (req, res) => {
   const plan = db.prepare('SELECT * FROM nutri_plans WHERE athlete_id = ?').get(req.athleteId);
   if (!plan) return res.json(null);
   res.json({ prot: plan.prot, carb: plan.carb, fat: plan.fat });
+});
+
+// POST /api/athlete/ai/tip — AI exercise guidance
+router.post('/ai/tip', requireAthlete, async (req, res) => {
+  const { exerciseName } = req.body;
+  if (!exerciseName) return res.status(400).json({ error: 'exerciseName requis' });
+  if (!anthropic) return res.json(null);
+
+  const athlete = db.prepare('SELECT level, sport, obj FROM athletes WHERE id = ?').get(req.athleteId);
+  const profileCtx = athlete
+    ? `Niveau: ${athlete.level || 'non spécifié'}, Sport: ${athlete.sport || 'non spécifié'}, Objectif: ${athlete.obj || 'non spécifié'}`
+    : '';
+
+  try {
+    const msg = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 400,
+      messages: [{
+        role: 'user',
+        content: `Tu es un coach sportif expert. Pour l'exercice "${exerciseName}", donne:
+1. Un conseil technique précis de 2-3 phrases adapté au profil (en français, sans markdown)
+2. Les groupes musculaires recrutés parmi cette liste uniquement: ${VALID_MUSCLES.join(', ')}
+
+Profil athlète: ${profileCtx}
+
+Réponds UNIQUEMENT avec du JSON valide (pas de texte avant/après):
+{"tip": "...", "muscles": ["muscle1", "muscle2"]}`
+      }],
+    });
+
+    const text = msg.content[0].text.trim();
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) return res.json(null);
+
+    const data = JSON.parse(match[0]);
+    const muscles = (data.muscles || []).filter(m => VALID_MUSCLES.includes(m));
+    res.json({ tip: data.tip || null, muscles: muscles.length ? muscles : null });
+  } catch (err) {
+    console.error('AI tip error:', err.message);
+    res.json(null);
+  }
 });
 
 // ── MESSAGES ─────────────────────────────────────────────────────────────────
