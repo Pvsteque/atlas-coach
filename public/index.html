@@ -185,6 +185,12 @@ select.input{cursor:pointer;}
 .athlete-ex-row:last-child{border-bottom:none;}
 .athlete-ex-row:hover{background:rgba(255,255,255,.04);}
 
+/* ── Export programme modal ── */
+.export-session-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:border-color .15s;user-select:none;}
+.export-session-item:hover{border-color:rgba(255,122,0,.4);}
+.export-session-item input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px;flex-shrink:0;cursor:pointer;}
+.export-session-item.checked{border-color:rgba(255,122,0,.5);background:rgba(255,122,0,.05);}
+
 /* ── Logs ── */
 .log-item{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;}
 .log-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
@@ -1953,6 +1959,34 @@ select.input{cursor:pointer;}
     <div class="log-section-m"><span class="log-lbl-m">Notes / Douleurs</span><textarea class="log-ta-m" id="log-ta-m" rows="3" placeholder="Comment ça s'est passé ?"></textarea></div>
     <button class="btn-save-log-m" id="btn-save-log-m">Enregistrer 💪</button>
     <button onclick="closeLogModal()" style="width:100%;background:none;border:none;color:var(--muted);font-family:var(--font);font-size:14px;padding:10px;cursor:pointer;margin-top:4px;">Annuler</button>
+  </div>
+</div>
+
+<!-- ── EXPORT PROGRAMME MODAL ── -->
+<div class="modal-overlay" id="modal-export-program">
+  <div class="modal-box" style="max-width:560px;max-height:88vh;overflow-y:auto;">
+    <div class="modal-title">📄 Exporter un programme</div>
+    <div id="ep-athlete-name" style="font-size:14px;color:var(--muted);margin-bottom:20px;"></div>
+    <div class="input-group">
+      <label class="input-label">Titre du programme</label>
+      <input class="input" id="ep-title" placeholder="Programme Hypertrophie — Printemps 2025">
+    </div>
+    <div class="input-group" style="margin-top:14px;">
+      <label class="input-label">Note (optionnel)</label>
+      <textarea class="input" id="ep-note" rows="2" placeholder="Objectifs, consignes, durée..." style="resize:none;"></textarea>
+    </div>
+    <div style="margin-top:18px;">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px;">
+        Séances à inclure
+        <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--accent);cursor:pointer;margin-left:10px;" onclick="toggleAllEpSessions(true)">Tout</span> /
+        <span style="font-weight:400;text-transform:none;letter-spacing:0;cursor:pointer;color:var(--muted);" onclick="toggleAllEpSessions(false)">Aucun</span>
+      </div>
+      <div id="ep-sessions-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="btn btn-accent" onclick="generateProgram()" style="flex:1;justify-content:center;">📄 Générer PDF</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-export-program')" style="flex:1;justify-content:center;">Annuler</button>
+    </div>
   </div>
 </div>
 
@@ -4044,6 +4078,158 @@ async function saveAthleteAccess(id){
 }
 
 // ═══════════════════════════════════════════════════════════════
+// EXPORT PROGRAMME
+// ═══════════════════════════════════════════════════════════════
+let _epAthleteId = null;
+
+function openExportProgramModal(athleteId) {
+  _epAthleteId = athleteId;
+  const a = getAthletes().find(x => x.id === athleteId);
+  if (!a) return;
+  document.getElementById('ep-athlete-name').textContent = `Adhérent : ${a.name}`;
+  document.getElementById('ep-title').value = `Programme — ${a.name}`;
+  document.getElementById('ep-note').value = '';
+  const sessions = getCoachSessions();
+  const assignedIds = new Set(getAssignments().filter(x => x.athleteId === athleteId).map(x => x.sessionId));
+  document.getElementById('ep-sessions-list').innerHTML = sessions.length
+    ? sessions.map(s => {
+        const assigned = assignedIds.has(s.id);
+        return `<label class="export-session-item${assigned?' checked':''}" id="ep-item-${s.id}">
+          <input type="checkbox" value="${s.id}" ${assigned?'checked':''} onchange="updateEpItem(this)">
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:600;">${s.name}</div>
+            <div style="font-size:11px;color:var(--muted);">${s.exercises.length} exercice${s.exercises.length!==1?'s':''}${assigned?' · <span style="color:var(--accent);">assignée</span>':''}</div>
+          </div>
+        </label>`;
+      }).join('')
+    : `<div style="text-align:center;padding:20px;color:var(--muted);">Aucune séance disponible</div>`;
+  openModal('modal-export-program');
+}
+
+function updateEpItem(cb) {
+  const item = document.getElementById(`ep-item-${cb.value}`);
+  if (item) item.classList.toggle('checked', cb.checked);
+}
+
+function toggleAllEpSessions(state) {
+  document.querySelectorAll('#ep-sessions-list input[type=checkbox]').forEach(cb => {
+    cb.checked = state;
+    updateEpItem(cb);
+  });
+}
+
+function generateProgram() {
+  const a = getAthletes().find(x => x.id === _epAthleteId);
+  if (!a) return;
+  const title = document.getElementById('ep-title').value.trim() || `Programme — ${a.name}`;
+  const note = document.getElementById('ep-note').value.trim();
+  const selectedIds = [...document.querySelectorAll('#ep-sessions-list input[type=checkbox]:checked')].map(c => c.value);
+  if (!selectedIds.length) { toast('Sélectionnez au moins une séance'); return; }
+  const sessions = getCoachSessions().filter(s => selectedIds.includes(s.id));
+  const dateStr = new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
+  const OBJ_MAP = { perte:'Perte de poids', masse:'Prise de masse', force:'Force', forme:'Maintien forme', perf:'Performance' };
+
+  const sessionBlocks = sessions.map((s, idx) => {
+    const rows = s.exercises.map(e => {
+      const ex = EXERCISES.find(x => x.id === e.exId);
+      if (!ex) return '';
+      const method = e.method ? INTENSITY_METHODS.find(m => m.id === e.method) : null;
+      const muscles = ex.muscles.filter(m => m.primary).slice(0,2).map(m => m.n).join(', ');
+      return `<tr>
+        <td class="ex-icon">${ex.icon||'🏋️'}</td>
+        <td>
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-sub">${ex.sub||''}${muscles?' · '+muscles:''}</div>
+          ${method?`<div class="method-pill">${method.icon} ${method.name}</div>`:''}
+        </td>
+        <td class="ex-num">${e.sets}</td>
+        <td class="ex-num">${e.reps}</td>
+        <td class="ex-num">${e.kg>0?e.kg+' kg':'Corps'}</td>
+        <td class="ex-num">${e.rest}s</td>
+        <td class="notes-col"></td>
+      </tr>`;
+    }).join('');
+    return `<div class="session-block">
+      <div class="session-header">
+        <span class="session-num">Séance ${idx+1}</span>
+        <span class="session-name">${s.name}</span>
+        <span class="session-count">${s.exercises.length} exercice${s.exercises.length!==1?'s':''}</span>
+      </div>
+      <table class="ex-table">
+        <thead><tr><th></th><th>Exercice</th><th>Séries</th><th>Reps</th><th>Charge</th><th>Repos</th><th>Notes coach</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+
+  const statsRow = [
+    {v:a.age?a.age+' ans':'—',l:'Âge'},
+    {v:a.weight?a.weight+' kg':'—',l:'Poids'},
+    {v:a.height?a.height+' cm':'—',l:'Taille'},
+    {v:a.sport||'—',l:'Sport'},
+  ].map(s=>`<div class="athlete-stat"><div class="athlete-stat-val">${s.v}</div><div class="athlete-stat-lbl">${s.l}</div></div>`).join('');
+
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>${title}</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,sans-serif;background:#fff;color:#0a0a0f;font-size:12px;}
+.page{max-width:800px;margin:0 auto;padding:32px 24px;}
+.doc-header{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #ff7a00;padding-bottom:18px;margin-bottom:24px;}
+.brand{font-size:22px;font-weight:800;letter-spacing:-.02em;}
+.brand span{color:#ff7a00;}
+.doc-date{font-size:11px;color:#666;text-align:right;line-height:1.5;}
+.program-title{font-size:26px;font-weight:800;margin-bottom:6px;}
+.program-athlete{font-size:13px;color:#666;margin-bottom:16px;}
+.program-note{background:#fff8f0;border-left:3px solid #ff7a00;padding:10px 14px;border-radius:4px;font-size:12px;color:#333;margin-bottom:20px;}
+.athlete-card{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;background:#f8f8f8;border-radius:10px;padding:14px;margin-bottom:28px;}
+.athlete-stat{text-align:center;}
+.athlete-stat-val{font-size:16px;font-weight:800;}
+.athlete-stat-lbl{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
+.session-block{margin-bottom:28px;page-break-inside:avoid;}
+.session-header{display:flex;align-items:center;gap:10px;background:#0a0a0f;color:#fff;padding:10px 14px;border-radius:8px 8px 0 0;}
+.session-num{font-size:10px;font-weight:700;background:#ff7a00;color:#0a0a0f;padding:2px 8px;border-radius:20px;}
+.session-name{font-weight:700;font-size:14px;flex:1;}
+.session-count{font-size:11px;color:#aaa;}
+.ex-table{width:100%;border-collapse:collapse;border:1px solid #e5e5e5;border-top:none;}
+.ex-table thead{background:#f3f3f3;}
+.ex-table th{padding:7px 10px;font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:#888;font-weight:700;text-align:left;border-bottom:1px solid #e5e5e5;}
+.ex-table td{padding:9px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top;}
+.ex-table tbody tr:last-child td{border-bottom:none;}
+.ex-table tbody tr:nth-child(even){background:#fafafa;}
+.ex-icon{font-size:18px;text-align:center;width:32px;}
+.ex-name{font-weight:700;font-size:12px;}
+.ex-sub{font-size:10px;color:#888;margin-top:2px;}
+.method-pill{display:inline-block;margin-top:4px;font-size:10px;background:#fff4eb;color:#ff7a00;border:1px solid #ffd5aa;padding:1px 7px;border-radius:20px;font-weight:600;}
+.ex-num{text-align:center;font-weight:700;font-size:13px;white-space:nowrap;}
+.notes-col{min-width:120px;border-left:2px dashed #e5e5e5 !important;}
+.doc-footer{border-top:1px solid #e5e5e5;padding-top:14px;margin-top:16px;display:flex;justify-content:space-between;font-size:10px;color:#aaa;}
+@media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact;}.page{padding:12px 16px;}.session-block{page-break-inside:avoid;}}
+</style></head><body>
+<div class="page">
+  <div class="doc-header">
+    <div class="brand">Atlas<span>Coach</span></div>
+    <div class="doc-date">Généré le ${dateStr}<br>par ${_coachName}</div>
+  </div>
+  <div class="program-title">${title}</div>
+  <div class="program-athlete">Adhérent · ${a.name}${a.level?' · '+a.level:''}${a.obj?' · '+(OBJ_MAP[a.obj]||a.obj):''}</div>
+  ${note?`<div class="program-note">${note}</div>`:''}
+  <div class="athlete-card">${statsRow}</div>
+  ${sessionBlocks}
+  <div class="doc-footer">
+    <span>Atlas Coach · Programme généré automatiquement</span>
+    <span>${sessions.length} séance${sessions.length!==1?'s':''} · ${sessions.reduce((t,s)=>t+s.exercises.length,0)} exercices au total</span>
+  </div>
+</div>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 600);
+  closeModal('modal-export-program');
+}
+
+// ═══════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════
 function openModal(id){document.getElementById(id).classList.add('open');}
@@ -4108,6 +4294,7 @@ function renderAthleteDetail(id){
       <div style="display:flex;flex-direction:column;gap:8px;">
         <button class="btn btn-accent btn-sm" onclick="showPage('assign')">📤 Assigner</button>
         <button class="btn btn-secondary btn-sm" onclick="openNutriModal()">🥗 Plan nutrition</button>
+        <button class="btn btn-secondary btn-sm" onclick="openExportProgramModal('${id}')">📄 Exporter</button>
       </div>
     </div>
 
