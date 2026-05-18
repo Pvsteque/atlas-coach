@@ -276,8 +276,16 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 <div id="auth">
   <div class="auth-logo">⚡</div>
   <div class="auth-title">Atlas<span>.</span></div>
-  <div class="auth-sub">Connectez-vous à votre espace adhérent</div>
-  <div class="auth-card">
+  <div class="auth-sub" id="auth-sub">Connectez-vous à votre espace adhérent</div>
+
+  <!-- Onglets -->
+  <div style="display:flex;gap:0;background:var(--bg3);border-radius:12px;padding:4px;width:100%;max-width:380px;margin-bottom:20px;">
+    <button id="tab-login-btn" onclick="switchAthleteTab('login')" style="flex:1;padding:9px;border:none;border-radius:9px;background:var(--accent);color:#000;font-weight:800;font-size:13px;cursor:pointer;transition:all .15s;">Connexion</button>
+    <button id="tab-register-btn" onclick="switchAthleteTab('register')" style="flex:1;padding:9px;border:none;border-radius:9px;background:transparent;color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;">Créer mon compte</button>
+  </div>
+
+  <!-- Formulaire connexion -->
+  <div id="auth-login-form" class="auth-card">
     <div class="input-group">
       <label class="input-label">Email</label>
       <input class="input" id="a-email" type="email" placeholder="votre@email.com" autocomplete="email"
@@ -290,6 +298,33 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
     </div>
     <button class="auth-submit" onclick="doAthleteLogin()">Se connecter →</button>
     <div class="auth-err" id="a-err"></div>
+  </div>
+
+  <!-- Formulaire inscription -->
+  <div id="auth-register-form" class="auth-card" style="display:none;">
+    <div class="input-group">
+      <label class="input-label">Prénom & Nom</label>
+      <input class="input" id="r-name" type="text" placeholder="Ex : Marc Dupont" autocomplete="name"
+        onkeydown="if(event.key==='Enter')document.getElementById('r-email').focus()">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Email</label>
+      <input class="input" id="r-email" type="email" placeholder="votre@email.com" autocomplete="email"
+        onkeydown="if(event.key==='Enter')document.getElementById('r-pass').focus()">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Mot de passe</label>
+      <input class="input" id="r-pass" type="password" placeholder="6 caractères min" autocomplete="new-password"
+        onkeydown="if(event.key==='Enter')document.getElementById('r-code').focus()">
+    </div>
+    <div class="input-group" style="margin-bottom:20px;">
+      <label class="input-label">Code coach</label>
+      <input class="input" id="r-code" type="text" placeholder="Ex : A8K2X3" autocomplete="off" maxlength="6"
+        style="text-transform:uppercase;letter-spacing:3px;font-weight:700;"
+        onkeydown="if(event.key==='Enter')doAthleteRegister()">
+    </div>
+    <button class="auth-submit" onclick="doAthleteRegister()">Créer mon compte →</button>
+    <div class="auth-err" id="a-reg-err"></div>
   </div>
 </div>
 
@@ -565,6 +600,19 @@ async function loadData() {
 }
 
 // ── AUTH ─────────────────────────────────────────────────────────────────────
+function switchAthleteTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('auth-login-form').style.display = isLogin ? '' : 'none';
+  document.getElementById('auth-register-form').style.display = isLogin ? 'none' : '';
+  document.getElementById('auth-sub').textContent = isLogin ? 'Connectez-vous à votre espace adhérent' : 'Créez votre compte avec votre code coach';
+  const btnLogin = document.getElementById('tab-login-btn');
+  const btnReg = document.getElementById('tab-register-btn');
+  btnLogin.style.background = isLogin ? 'var(--accent)' : 'transparent';
+  btnLogin.style.color = isLogin ? '#000' : 'var(--muted)';
+  btnReg.style.background = isLogin ? 'transparent' : 'var(--accent)';
+  btnReg.style.color = isLogin ? 'var(--muted)' : '#000';
+}
+
 async function doAthleteLogin() {
   const email = document.getElementById('a-email').value.trim();
   const pass = document.getElementById('a-pass').value;
@@ -578,6 +626,27 @@ async function doAthleteLogin() {
   });
   const data = await res.json();
   if (!res.ok) { errEl.textContent = data.error || 'Erreur de connexion'; return; }
+  _tok = data.token;
+  localStorage.setItem('atlas_athlete_token', _tok);
+  _athlete = data.athlete;
+  startAthleteApp();
+}
+
+async function doAthleteRegister() {
+  const name = document.getElementById('r-name').value.trim();
+  const email = document.getElementById('r-email').value.trim();
+  const pass = document.getElementById('r-pass').value;
+  const code = document.getElementById('r-code').value.trim().toUpperCase();
+  const errEl = document.getElementById('a-reg-err');
+  errEl.textContent = '';
+  if (!name || !email || !pass || !code) { errEl.textContent = 'Tous les champs sont requis'; return; }
+  const res = await fetch('/api/athlete/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, password: pass, coach_code: code }),
+  });
+  const data = await res.json();
+  if (!res.ok) { errEl.textContent = data.error || 'Erreur de création'; return; }
   _tok = data.token;
   localStorage.setItem('atlas_athlete_token', _tok);
   _athlete = data.athlete;

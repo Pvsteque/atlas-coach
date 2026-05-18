@@ -103,6 +103,16 @@ function initDB() {
       });
       try { db.exec('ALTER TABLE logs ADD COLUMN sets_data TEXT'); } catch {}
       try { db.exec('ALTER TABLE logs ADD COLUMN photos TEXT'); } catch {}
+      try { db.exec('ALTER TABLE coaches ADD COLUMN coach_code TEXT'); } catch {}
+      // Génère un code pour les coaches qui n'en ont pas encore
+      const charset = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+      const genCode = () => Array.from({ length: 6 }, () => charset[Math.floor(Math.random() * charset.length)]).join('');
+      const coachesWithoutCode = db.prepare('SELECT id FROM coaches WHERE coach_code IS NULL').all();
+      for (const c of coachesWithoutCode) {
+        let code;
+        do { code = genCode(); } while (db.prepare('SELECT id FROM coaches WHERE coach_code = ?').get(code));
+        db.prepare('UPDATE coaches SET coach_code = ? WHERE id = ?').run(code, c.id);
+      }
       resolve();
     } catch (err) {
       reject(err);

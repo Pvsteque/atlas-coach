@@ -28,6 +28,31 @@ function requireAthlete(req, res, next) {
   }
 }
 
+// POST /api/athlete/register — auto-inscription avec code coach
+router.post('/register', async (req, res) => {
+  const { name, email, password, coach_code } = req.body;
+  if (!name || !email || !password || !coach_code) return res.status(400).json({ error: 'Tous les champs sont requis' });
+  if (password.length < 6) return res.status(400).json({ error: 'Mot de passe trop court (6 min)' });
+
+  const coach = db.prepare('SELECT id FROM coaches WHERE coach_code = ?').get(coach_code.toUpperCase().trim());
+  if (!coach) return res.status(404).json({ error: 'Code coach invalide' });
+
+  const existing = db.prepare('SELECT id FROM athletes WHERE email = ?').get(email.toLowerCase().trim());
+  if (existing) return res.status(409).json({ error: 'Email déjà utilisé' });
+
+  try {
+    const hash = await bcrypt.hash(password, 10);
+    const id = randomUUID();
+    db.prepare('INSERT INTO athletes (id, coach_id, name, email, password, color) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(id, coach.id, name, email.toLowerCase().trim(), hash, '#ff7a00');
+    const athlete = db.prepare('SELECT * FROM athletes WHERE id = ?').get(id);
+    const token = jwt.sign({ athleteId: id, type: 'athlete' }, SECRET, { expiresIn: '30d' });
+    res.status(201).json({ token, athlete: mapAthlete(athlete) });
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 // POST /api/athlete/login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;

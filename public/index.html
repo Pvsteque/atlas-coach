@@ -1281,6 +1281,11 @@ select.input{cursor:pointer;}
 
     </nav>
     <div class="sidebar-footer">
+      <div id="coach-code-bar" style="display:none;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,122,0,.08);border-radius:10px;margin-bottom:8px;cursor:pointer;" title="Cliquer pour copier le code" onclick="copyCoachCode()">
+        <span style="font-size:11px;color:var(--muted);flex-shrink:0;">Code adhérent</span>
+        <span id="coach-code-display" style="font-family:monospace;font-size:14px;font-weight:700;color:var(--accent);letter-spacing:2px;flex:1;text-align:center;"></span>
+        <span id="coach-code-copy-icon" style="font-size:13px;color:var(--muted);">⎘</span>
+      </div>
       <div class="coach-pill">
         <div class="coach-av" id="coach-av">C</div>
         <div><div class="coach-name" id="coach-name-display">Coach</div><div class="coach-role">Coach</div></div>
@@ -3333,8 +3338,21 @@ async function startApp(coach){
   const coachName=_coachName;
   document.getElementById('coach-name-display').textContent=coachName;
   document.getElementById('coach-av').textContent=coachName.charAt(0).toUpperCase();
+  if(coach?.coach_code){
+    document.getElementById('coach-code-display').textContent=coach.coach_code;
+    document.getElementById('coach-code-bar').style.display='flex';
+  }
   await loadAllData();
   showPage('dashboard');
+}
+function copyCoachCode(){
+  const code=document.getElementById('coach-code-display').textContent;
+  if(!code)return;
+  navigator.clipboard.writeText(code).then(()=>{
+    const icon=document.getElementById('coach-code-copy-icon');
+    icon.textContent='✓'; icon.style.color='var(--accent)';
+    setTimeout(()=>{icon.textContent='⎘';icon.style.color='var(--muted)';},1500);
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════

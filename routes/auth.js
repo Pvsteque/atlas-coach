@@ -6,6 +6,10 @@ const { db } = require('../db');
 const { randomUUID } = require('crypto');
 
 const SECRET = process.env.JWT_SECRET || 'atlas-dev-secret-change-in-prod';
+const CHARSET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function generateCoachCode() {
+  return Array.from({ length: 6 }, () => CHARSET[Math.floor(Math.random() * CHARSET.length)]).join('');
+}
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
@@ -17,12 +21,15 @@ router.post('/register', async (req, res) => {
     const existing = db.prepare('SELECT id FROM coaches WHERE email = ?').get(email);
     if (existing) return res.status(409).json({ error: 'Email déjà utilisé' });
 
+    let coach_code;
+    do { coach_code = generateCoachCode(); } while (db.prepare('SELECT id FROM coaches WHERE coach_code = ?').get(coach_code));
+
     const hash = await bcrypt.hash(password, 12);
     const id = randomUUID();
-    db.prepare('INSERT INTO coaches (id, name, email, password) VALUES (?, ?, ?, ?)').run(id, name, email, hash);
+    db.prepare('INSERT INTO coaches (id, name, email, password, coach_code) VALUES (?, ?, ?, ?, ?)').run(id, name, email, hash, coach_code);
 
     const token = jwt.sign({ id, name, email }, SECRET, { expiresIn: '30d' });
-    res.json({ token, coach: { id, name, email } });
+    res.json({ token, coach: { id, name, email, coach_code } });
   } catch (err) {
     res.status(500).json({ error: 'Erreur serveur' });
   }
@@ -41,7 +48,7 @@ router.post('/login', async (req, res) => {
     if (!ok) return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
 
     const token = jwt.sign({ id: coach.id, name: coach.name, email: coach.email }, SECRET, { expiresIn: '30d' });
-    res.json({ token, coach: { id: coach.id, name: coach.name, email: coach.email } });
+    res.json({ token, coach: { id: coach.id, name: coach.name, email: coach.email, coach_code: coach.coach_code } });
   } catch (err) {
     res.status(500).json({ error: 'Erreur serveur' });
   }
@@ -53,7 +60,7 @@ router.get('/me', (req, res) => {
   if (!auth?.startsWith('Bearer ')) return res.status(401).json({ error: 'Non authentifié' });
   try {
     const payload = jwt.verify(auth.slice(7), SECRET);
-    const coach = db.prepare('SELECT id, name, email FROM coaches WHERE id = ?').get(payload.id);
+    const coach = db.prepare('SELECT id, name, email, coach_code FROM coaches WHERE id = ?').get(payload.id);
     if (!coach) return res.status(401).json({ error: 'Coach introuvable' });
     res.json({ coach });
   } catch {
