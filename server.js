@@ -21,14 +21,24 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/athlete', require('./routes/athlete'));
 app.use('/api', require('./routes/api'));
 
+// Landing page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+});
+
+// Coach portal
+app.get('/coach', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // Athlete portal
 app.get('/athlete', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'athlete.html'));
 });
 
-// SPA fallback
+// SPA fallback for coach portal sub-paths
 app.get('/{*path}', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'landing.html'));
 });
 
 initDB().then(() => {

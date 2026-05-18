@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atlas Coach</title>
+<style>
+:root{
+  --bg:#0d0d0d;--bg2:#161616;--bg3:#1e1e1e;
+  --border:rgba(255,255,255,.08);
+  --text:#f0f0f0;--muted:#888;
+  --accent:#ff7a00;--accent2:#ff9f45;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+
+.brand{text-align:center;margin-bottom:48px;}
+.brand-logo{font-size:52px;margin-bottom:12px;}
+.brand-name{font-size:36px;font-weight:900;letter-spacing:-1px;line-height:1;}
+.brand-name span{color:var(--accent);}
+.brand-tagline{font-size:14px;color:var(--muted);margin-top:10px;letter-spacing:.02em;}
+
+.question{font-size:15px;font-weight:600;color:var(--muted);text-align:center;margin-bottom:24px;letter-spacing:.02em;}
+
+.cards{display:flex;gap:16px;width:100%;max-width:480px;flex-wrap:wrap;}
+
+.card{
+  flex:1;min-width:180px;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:32px 24px;
+  text-align:center;
+  cursor:pointer;
+  text-decoration:none;
+  color:var(--text);
+  transition:border-color .2s, transform .18s, box-shadow .2s;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+}
+.card:hover{
+  border-color:var(--accent);
+  transform:translateY(-3px);
+  box-shadow:0 12px 40px rgba(255,122,0,.15);
+}
+.card-icon{
+  width:60px;height:60px;border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;
+  background:rgba(255,122,0,.1);
+}
+.card:hover .card-icon{background:rgba(255,122,0,.18);}
+.card-title{font-size:17px;font-weight:800;letter-spacing:-.3px;}
+.card-desc{font-size:12px;color:var(--muted);line-height:1.5;}
+
+.card-coach .card-icon{background:rgba(255,122,0,.12);}
+.card-coach:hover{border-color:var(--accent);}
+
+.card-athlete .card-icon{background:rgba(100,180,255,.1);}
+.card-athlete:hover{border-color:#64b4ff;box-shadow:0 12px 40px rgba(100,180,255,.12);}
+.card-athlete:hover .card-icon{background:rgba(100,180,255,.18);}
+
+.footer{margin-top:48px;font-size:11px;color:rgba(255,255,255,.18);text-align:center;}
+</style>
+</head>
+<body>
+
+<div class="brand">
+  <div class="brand-logo">⚡</div>
+  <div class="brand-name">Atlas<span>.</span></div>
+  <div class="brand-tagline">La plateforme de coaching sportif</div>
+</div>
+
+<p class="question">Bonjour — qui êtes-vous ?</p>
+
+<div class="cards">
+  <a class="card card-coach" href="/coach">
+    <div class="card-icon">🏋️</div>
+    <div>
+      <div class="card-title">Je suis coach</div>
+      <div class="card-desc">Gérez vos adhérents,<br>créez des programmes,<br>suivez les performances.</div>
+    </div>
+  </a>
+  <a class="card card-athlete" href="/athlete">
+    <div class="card-icon">🎯</div>
+    <div>
+      <div class="card-title">Je suis adhérent</div>
+      <div class="card-desc">Accédez à vos séances,<br>suivez votre progression,<br>échangez avec votre coach.</div>
+    </div>
+  </a>
+</div>
+
+<div class="footer">Atlas Coach &copy; 2025</div>
+
+</body>
+</html>
