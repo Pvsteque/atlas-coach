@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QR Code — Altaï Coach</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;background:#fff;color:#111;padding:48px 24px;gap:28px;
+}
+.logo{font-size:32px;font-weight:900;letter-spacing:-1px;}
+.logo span{color:#ff7a00;}
+canvas{border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.1);}
+.url{font-size:13px;color:#999;word-break:break-all;text-align:center;max-width:340px;}
+.scan{font-size:15px;color:#555;text-align:center;max-width:320px;line-height:1.5;}
+.print-btn{
+  background:#ff7a00;color:#fff;border:none;
+  padding:14px 36px;border-radius:12px;font-size:16px;font-weight:700;
+  cursor:pointer;font-family:inherit;
+  transition:background .2s;
+}
+.print-btn:hover{background:#ff9f45;}
+@media print{
+  .print-btn{display:none;}
+  body{justify-content:flex-start;padding-top:24px;}
+}
+</style>
+</head>
+<body>
+<div class="logo">⚡ <span>ALTAÏ</span> COACH</div>
+<canvas id="qr"></canvas>
+<p class="scan">Scannez pour accéder au site, prendre contact ou vous connecter à votre espace.</p>
+<div class="url">atlas-coach-production-4c79.up.railway.app</div>
+<button class="print-btn" onclick="window.print()">🖨️ Imprimer / Exporter</button>
+<script>
+QRCode.toCanvas(document.getElementById('qr'),
+  'https://atlas-coach-production-4c79.up.railway.app',
+  { width: 320, margin: 2, color: { dark: '#000000', light: '#ffffff' } }
+);
+</script>
+</body>
+</html>

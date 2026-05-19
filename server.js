@@ -36,6 +36,11 @@ app.get('/athlete', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'athlete.html'));
 });
 
+// QR code printable page
+app.get('/qr', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'qr.html'));
+});
+
 // SPA fallback for coach portal sub-paths
 app.get('/{*path}', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'landing.html'));
