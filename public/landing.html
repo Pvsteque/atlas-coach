@@ -326,34 +326,36 @@ section{padding:100px 24px;}
 .tab-panel.active{display:block;}
 .sub-panel{display:none;}
 .sub-panel.active{display:block;}
-.price-table{width:100%;border-collapse:collapse;}
+.price-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.price-table thead tr{background:rgba(255,255,255,.04);}
 .price-table th{
   text-align:left;font-size:10px;font-weight:700;color:var(--muted);
   text-transform:uppercase;letter-spacing:.09em;
-  padding:0 12px 10px;border-bottom:1px solid var(--border);
+  padding:10px 14px 10px;border-bottom:1px solid var(--border);
 }
 .price-table td{
-  padding:13px 12px;border-bottom:1px solid rgba(255,255,255,.04);
+  padding:13px 14px;border-bottom:1px solid rgba(255,255,255,.04);
   font-size:14px;vertical-align:middle;
 }
-.price-table tr:last-child td{border-bottom:none;}
-.price-table tr:hover td{background:rgba(255,255,255,.025);}
+.price-table tbody tr:nth-child(even) td{background:rgba(255,255,255,.02);}
+.price-table tbody tr:last-child td{border-bottom:none;}
+.price-table tbody tr:hover td{background:rgba(255,122,0,.05);}
 .td-name{font-weight:600;}
 .td-price{color:var(--accent);font-weight:800;font-size:15px;white-space:nowrap;}
+.td-price small{font-size:11px;font-weight:500;color:var(--muted);margin-left:2px;}
 .td-av{font-size:12px;color:var(--muted);}
 .td-av.has{color:#5cc874;}
 .table-section-title{
   font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--muted);margin:20px 0 12px;padding-bottom:8px;
-  border-bottom:1px solid var(--border);
+  color:var(--muted);margin:24px 0 10px;
 }
 .table-section-title:first-child{margin-top:0;}
 
 /* ic-tarifs button (info card) */
-.ic-price-hint{
-  font-size:13px;color:var(--muted);margin-bottom:14px;
+.ic-tarifs-label{
+  font-size:13px;font-weight:700;color:var(--accent);
+  text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;
 }
-.ic-price-hint strong{color:var(--text);font-size:15px;}
 .ic-tarifs-btn{
   display:block;width:100%;
   background:rgba(255,122,0,.1);border:1px solid rgba(255,122,0,.3);
@@ -475,7 +477,7 @@ footer{
       <div class="info-card">
         <div class="ic-name">Altaï Malaquier</div>
         <div class="ic-title">Coach Sportif Certifié · BPJEPS AF</div>
-        <div class="ic-price-hint">À partir de <strong>60€</strong> / mois</div>
+        <div class="ic-tarifs-label">Les tarifs</div>
         <button class="ic-tarifs-btn" onclick="openTarifs()">Voir la grille tarifaire 2026 →</button>
         <a href="#contact" class="ic-cta">Prendre contact</a>
       </div>
