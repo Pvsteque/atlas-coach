@@ -271,6 +271,98 @@ section{padding:100px 24px;}
 }
 .btn-login:hover{background:var(--accent2);transform:translateY(-2px);}
 
+/* ── MODAL TARIFS ───────────────────────────────── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;padding:16px;
+  opacity:0;pointer-events:none;transition:opacity .28s;
+}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{
+  background:var(--bg2);border:1px solid var(--border);border-radius:24px;
+  width:100%;max-width:700px;max-height:88vh;
+  display:flex;flex-direction:column;
+  transform:translateY(24px);transition:transform .28s;
+}
+.modal-overlay.open .modal{transform:translateY(0);}
+.modal-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:24px 28px 0;flex-shrink:0;
+}
+.modal-head h2{font-size:19px;font-weight:900;letter-spacing:-.5px;}
+.modal-head h2 em{color:var(--accent);font-style:normal;}
+.modal-close{
+  background:rgba(255,255,255,.08);border:none;color:var(--text);
+  width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:background .2s;flex-shrink:0;
+}
+.modal-close:hover{background:rgba(255,255,255,.16);}
+.modal-tabs{
+  display:flex;gap:6px;padding:18px 28px 0;
+  flex-shrink:0;overflow-x:auto;scrollbar-width:none;
+}
+.modal-tabs::-webkit-scrollbar{display:none;}
+.mtab{
+  background:none;border:1px solid var(--border);color:var(--muted);
+  padding:8px 16px;border-radius:100px;font-size:13px;font-weight:600;
+  cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .2s;
+}
+.mtab.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.mtab:hover:not(.active){border-color:rgba(255,122,0,.4);color:var(--text);}
+.sub-tabs{
+  display:flex;gap:6px;padding:14px 28px 0;flex-shrink:0;
+}
+.stab{
+  background:none;border:1px solid var(--border);color:var(--muted);
+  padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:all .2s;
+}
+.stab.active{background:rgba(255,122,0,.1);border-color:rgba(255,122,0,.35);color:var(--accent);}
+.stab:hover:not(.active){border-color:var(--muted);color:var(--text);}
+.sub-tabs.hidden{display:none;}
+.modal-body{padding:20px 28px 28px;overflow-y:auto;flex:1;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.sub-panel{display:none;}
+.sub-panel.active{display:block;}
+.price-table{width:100%;border-collapse:collapse;}
+.price-table th{
+  text-align:left;font-size:10px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.09em;
+  padding:0 12px 10px;border-bottom:1px solid var(--border);
+}
+.price-table td{
+  padding:13px 12px;border-bottom:1px solid rgba(255,255,255,.04);
+  font-size:14px;vertical-align:middle;
+}
+.price-table tr:last-child td{border-bottom:none;}
+.price-table tr:hover td{background:rgba(255,255,255,.025);}
+.td-name{font-weight:600;}
+.td-price{color:var(--accent);font-weight:800;font-size:15px;white-space:nowrap;}
+.td-av{font-size:12px;color:var(--muted);}
+.td-av.has{color:#5cc874;}
+.table-section-title{
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin:20px 0 12px;padding-bottom:8px;
+  border-bottom:1px solid var(--border);
+}
+.table-section-title:first-child{margin-top:0;}
+
+/* ic-tarifs button (info card) */
+.ic-price-hint{
+  font-size:13px;color:var(--muted);margin-bottom:14px;
+}
+.ic-price-hint strong{color:var(--text);font-size:15px;}
+.ic-tarifs-btn{
+  display:block;width:100%;
+  background:rgba(255,122,0,.1);border:1px solid rgba(255,122,0,.3);
+  color:var(--accent);font-size:14px;font-weight:700;
+  padding:13px;border-radius:11px;cursor:pointer;font-family:inherit;
+  transition:background .2s,border-color .2s;margin-bottom:12px;
+}
+.ic-tarifs-btn:hover{background:rgba(255,122,0,.18);border-color:rgba(255,122,0,.5);}
+
 /* ── FOOTER ────────────────────────────────────── */
 footer{
   padding:28px 24px;border-top:1px solid var(--border);
@@ -383,11 +475,8 @@ footer{
       <div class="info-card">
         <div class="ic-name">Altaï Malaquier</div>
         <div class="ic-title">Coach Sportif Certifié · BPJEPS AF</div>
-        <div class="ic-price">
-          <div class="ic-price-label">Tarif</div>
-          <div class="ic-price-amount">60€</div>
-          <div class="ic-price-unit">/ mois — formule de base</div>
-        </div>
+        <div class="ic-price-hint">À partir de <strong>60€</strong> / mois</div>
+        <button class="ic-tarifs-btn" onclick="openTarifs()">Voir la grille tarifaire 2026 →</button>
         <a href="#contact" class="ic-cta">Prendre contact</a>
       </div>
     </div>
@@ -494,6 +583,119 @@ footer{
   </div>
 </section>
 
+<!-- ══ MODAL TARIFS ════════════════════════════════ -->
+<div class="modal-overlay" id="tarifsModal" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Grille tarifaire <em>2026</em></h2>
+      <button class="modal-close" onclick="closeTarifs()">✕</button>
+    </div>
+
+    <div class="modal-tabs">
+      <button class="mtab active" onclick="switchTab('individuel')">Individuel</button>
+      <button class="mtab" onclick="switchTab('duo')">Duo</button>
+      <button class="mtab" onclick="switchTab('carnets')">Carnets</button>
+      <button class="mtab" onclick="switchTab('programme')">Programme</button>
+    </div>
+
+    <div class="sub-tabs" id="subTabs">
+      <button class="stab active" onclick="switchSub('45')">45 min</button>
+      <button class="stab" onclick="switchSub('30')">30 min</button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- INDIVIDUEL -->
+      <div class="tab-panel active" id="panel-individuel">
+        <div class="sub-panel active" id="sub-individuel-45">
+          <table class="price-table">
+            <thead><tr><th>Formule</th><th>Tarif</th><th>Avantages</th></tr></thead>
+            <tbody>
+              <tr><td class="td-name">1 Séance</td><td class="td-price">90 €<small>/séance</small></td><td class="td-av">—</td></tr>
+              <tr><td class="td-name">3 mois · 1 séance/sem.</td><td class="td-price">300 €<small>/mois</small></td><td class="td-av">—</td></tr>
+              <tr><td class="td-name">3 mois · 2 séances/sem.</td><td class="td-price">560 €<small>/mois</small></td><td class="td-av">—</td></tr>
+              <tr><td class="td-name">6 mois · 1 séance/sem.</td><td class="td-price">260 €<small>/mois</small></td><td class="td-av has">+ 3 invitations + programme</td></tr>
+              <tr><td class="td-name">6 mois · 2 séances/sem.</td><td class="td-price">480 €<small>/mois</small></td><td class="td-av has">+ 5 invitations</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="sub-panel" id="sub-individuel-30">
+          <table class="price-table">
+            <thead><tr><th>Formule</th><th>Tarif</th><th>Avantages</th></tr></thead>
+            <tbody>
+              <tr><td class="td-name">1 Séance</td><td class="td-price">70 €<small>/séance</small></td><td class="td-av">—</td></tr>
+              <tr><td class="td-name">3 mois · 1 séance/sem.</td><td class="td-price">220 €<small>/mois</small></td><td class="td-av">—</td></tr>
+              <tr><td class="td-name">3 mois · 2 séances/sem.</td><td class="td-price">440 €<small>/mois</small></td><td class="td-av">—</td></tr>
+              <tr><td class="td-name">6 mois · 1 séance/sem.</td><td class="td-price">200 €<small>/mois</small></td><td class="td-av has">+ 3 invitations + programme</td></tr>
+              <tr><td class="td-name">6 mois · 2 séances/sem.</td><td class="td-price">360 €<small>/mois</small></td><td class="td-av has">+ 5 invitations</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DUO -->
+      <div class="tab-panel" id="panel-duo">
+        <div class="sub-panel active" id="sub-duo-45">
+          <table class="price-table">
+            <thead><tr><th>Formule</th><th>Tarif</th><th>Avantages</th></tr></thead>
+            <tbody>
+              <tr><td class="td-name">1 Séance</td><td class="td-price">120 €<small>/séance</small></td><td class="td-av">—</td></tr>
+              <tr><td class="td-name">3 mois · 1 séance/sem.</td><td class="td-price">380 €<small>/mois</small></td><td class="td-av">—</td></tr>
+              <tr><td class="td-name">3 mois · 2 séances/sem.</td><td class="td-price">760 €<small>/mois</small></td><td class="td-av">—</td></tr>
+              <tr><td class="td-name">6 mois · 1 séance/sem.</td><td class="td-price">320 €<small>/mois</small></td><td class="td-av has">+ 3 invitations + programme</td></tr>
+              <tr><td class="td-name">6 mois · 2 séances/sem.</td><td class="td-price">640 €<small>/mois</small></td><td class="td-av has">+ 5 invitations</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="sub-panel" id="sub-duo-30">
+          <table class="price-table">
+            <thead><tr><th>Formule</th><th>Tarif</th><th>Avantages</th></tr></thead>
+            <tbody>
+              <tr><td class="td-name">1 Séance</td><td class="td-price">100 €<small>/séance</small></td><td class="td-av">—</td></tr>
+              <tr><td class="td-name">3 mois · 1 séance/sem.</td><td class="td-price">320 €<small>/mois</small></td><td class="td-av">—</td></tr>
+              <tr><td class="td-name">3 mois · 2 séances/sem.</td><td class="td-price">640 €<small>/mois</small></td><td class="td-av">—</td></tr>
+              <tr><td class="td-name">6 mois · 1 séance/sem.</td><td class="td-price">280 €<small>/mois</small></td><td class="td-av has">+ 3 invitations + programme</td></tr>
+              <tr><td class="td-name">6 mois · 2 séances/sem.</td><td class="td-price">560 €<small>/mois</small></td><td class="td-av has">+ 5 invitations</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CARNETS -->
+      <div class="tab-panel" id="panel-carnets">
+        <div class="table-section-title">Individuel — Carnet 10 séances (DLC 3 mois)</div>
+        <table class="price-table">
+          <thead><tr><th>Format</th><th>Prix</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">10 × 45 min</td><td class="td-price">850 €</td></tr>
+            <tr><td class="td-name">10 × 30 min</td><td class="td-price">650 €</td></tr>
+          </tbody>
+        </table>
+        <div class="table-section-title">Duo — Carnet 10 séances (DLC 3 mois)</div>
+        <table class="price-table">
+          <thead><tr><th>Format</th><th>Prix</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">10 × 45 min</td><td class="td-price">950 €</td></tr>
+            <tr><td class="td-name">10 × 30 min</td><td class="td-price">850 €</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PROGRAMME -->
+      <div class="tab-panel" id="panel-programme">
+        <table class="price-table">
+          <thead><tr><th>Nb séances / mois</th><th>Prix / mois</th></tr></thead>
+          <tbody>
+            <tr><td class="td-name">2 – 3 séances</td><td class="td-price">100 €</td></tr>
+            <tr><td class="td-name">4 – 5 séances</td><td class="td-price">120 €</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <footer>
   <p>Altaï Malaquier — Coach Sportif Certifié BPJEPS AF &nbsp;·&nbsp; Atlas Coach &copy; 2025</p>
 </footer>
@@ -577,6 +779,50 @@ document.getElementById('dismissIos').addEventListener('click', () => {
   document.getElementById('iosBar').classList.add('hidden');
   sessionStorage.setItem('iosDismissed', '1');
 });
+
+/* ── Modal tarifs ───────────────────────────── */
+let currentTab = 'individuel';
+let currentSub = '45';
+
+function openTarifs() {
+  document.getElementById('tarifsModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeTarifs() {
+  document.getElementById('tarifsModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('tarifsModal')) closeTarifs();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTarifs(); });
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.mtab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+  const subTabs = document.getElementById('subTabs');
+  const hasSubTabs = tab === 'individuel' || tab === 'duo';
+  subTabs.classList.toggle('hidden', !hasSubTabs);
+  if (hasSubTabs) {
+    document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll(`#panel-${tab} .sub-panel`).forEach(p => p.classList.remove('active'));
+    const activeSub = document.querySelector(`#panel-${tab} #sub-${tab}-${currentSub}`);
+    if (activeSub) activeSub.classList.add('active');
+    document.querySelector(`.stab[onclick="switchSub('${currentSub}')"]`).classList.add('active');
+  }
+}
+
+function switchSub(min) {
+  currentSub = min;
+  document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.querySelectorAll(`#panel-${currentTab} .sub-panel`).forEach(p => p.classList.remove('active'));
+  const target = document.getElementById(`sub-${currentTab}-${min}`);
+  if (target) target.classList.add('active');
+}
 
 /* ── Contact form ───────────────────────────── */
 function sendContact() {
