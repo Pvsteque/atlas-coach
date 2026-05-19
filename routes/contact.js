@@ -8,7 +8,10 @@ function getTransporter() {
     auth: {
       user: 'amalaquierpro@gmail.com',
       pass: process.env.GMAIL_APP_PASSWORD
-    }
+    },
+    connectionTimeout: 6000,
+    greetingTimeout: 6000,
+    socketTimeout: 6000
   });
 }
 
@@ -17,6 +20,7 @@ router.post('/', async (req, res) => {
   if (!name || !message) return res.status(400).json({ error: 'Champs manquants' });
 
   if (!process.env.GMAIL_APP_PASSWORD) {
+    console.warn('GMAIL_APP_PASSWORD non configuré');
     return res.status(503).json({ error: 'Email non configuré' });
   }
 
@@ -44,7 +48,7 @@ router.post('/', async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('Contact mail error:', err.message);
-    res.status(500).json({ error: 'Erreur envoi' });
+    res.status(500).json({ error: err.message });
   }
 });
 

@@ -984,22 +984,37 @@ async function sendContact() {
   btn.disabled = true;
   btn.textContent = 'Envoi en cours…';
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
   try {
     const res = await fetch('/api/contact', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, message: msg })
+      body: JSON.stringify({ name, email, message: msg }),
+      signal: controller.signal
     });
+    clearTimeout(timer);
     if (res.ok) {
-      showFormMsg('Message envoyé ! Je vous répondrai rapidement. 🎯', 'success');
+      showFormMsg('Message envoyé ! Je vous répondrai rapidement.', 'success');
       document.getElementById('fname').value = '';
       document.getElementById('femail').value = '';
       document.getElementById('fmsg').value = '';
     } else {
-      showFormMsg("Erreur lors de l'envoi. Contactez-moi directement par téléphone.", 'error');
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 503) {
+        showFormMsg("Service email non configuré. Contactez-moi au 07 83 75 14 34.", 'error');
+      } else {
+        showFormMsg("Erreur lors de l'envoi. Contactez-moi directement par téléphone.", 'error');
+      }
+      console.error('Contact error:', data);
     }
-  } catch {
-    showFormMsg('Erreur réseau. Vérifiez votre connexion.', 'error');
+  } catch (e) {
+    clearTimeout(timer);
+    if (e.name === 'AbortError') {
+      showFormMsg('Délai dépassé. Réessayez ou contactez-moi au 07 83 75 14 34.', 'error');
+    } else {
+      showFormMsg('Erreur réseau. Vérifiez votre connexion.', 'error');
+    }
   } finally {
     btn.disabled = false;
     btn.textContent = 'Envoyer le message';
