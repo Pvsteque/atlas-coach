@@ -1,4 +1,4 @@
-const CACHE = 'atlas-v5';
+const CACHE = 'atlas-v6';
 const SHELL = ['/', '/manifest.json', '/icon.svg'];
 
 self.addEventListener('install', e => {

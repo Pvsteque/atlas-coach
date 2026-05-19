@@ -280,6 +280,58 @@ section{padding:100px 24px;}
 .feat-name{font-size:15px;font-weight:800;margin-bottom:6px;}
 .feat-desc{font-size:13px;color:var(--muted);line-height:1.5;}
 
+/* ── DOWNLOAD ──────────────────────────────────── */
+.app-dl{margin-top:52px;padding-top:40px;border-top:1px solid var(--border);}
+.app-dl-title{font-size:18px;font-weight:800;margin-bottom:6px;}
+.app-dl-sub{font-size:14px;color:var(--muted);margin-bottom:24px;}
+.dl-btns{display:flex;gap:12px;flex-wrap:wrap;}
+.dl-btn{
+  display:flex;align-items:center;gap:14px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:16px;padding:16px 24px;cursor:pointer;
+  font-family:inherit;color:var(--text);
+  transition:border-color .2s,transform .18s;min-width:200px;
+}
+.dl-btn:hover{border-color:rgba(255,122,0,.4);transform:translateY(-2px);}
+.dl-btn-icon{
+  width:44px;height:44px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;
+}
+.dl-btn.android .dl-btn-icon{background:rgba(61,220,132,.12);}
+.dl-btn.android:hover{border-color:rgba(61,220,132,.4);}
+.dl-btn.ios .dl-btn-icon{background:rgba(200,200,200,.1);}
+.dl-store{display:block;font-size:10px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;}
+.dl-name{display:block;font-size:16px;font-weight:800;letter-spacing:-.3px;}
+.ios-steps{
+  margin-top:20px;
+  background:var(--bg3);border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;padding:20px 24px;
+  display:flex;flex-direction:column;gap:12px;
+  animation:fadeIn .2s ease;
+}
+.ios-steps.hidden{display:none;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.ios-step{
+  display:flex;align-items:center;gap:12px;
+  font-size:14px;line-height:1.4;
+}
+.step-num{
+  width:26px;height:26px;border-radius:50%;
+  background:rgba(255,122,0,.15);border:1px solid rgba(255,122,0,.3);
+  color:var(--accent);font-size:12px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.ios-step strong{color:var(--text);}
+.dl-toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);font-size:14px;font-weight:500;
+  padding:12px 20px;border-radius:100px;
+  opacity:0;pointer-events:none;transition:opacity .3s;
+  white-space:nowrap;z-index:300;
+}
+.dl-toast.show{opacity:1;}
+
 /* ── LOGIN ─────────────────────────────────────── */
 #login{background:var(--bg);text-align:center;}
 .login-card{
@@ -595,8 +647,36 @@ footer{
         <div class="feat-desc">Capturez votre transformation en fin de séance et visualisez vos progrès</div>
       </div>
     </div>
+
+    <div class="app-dl">
+      <div class="app-dl-title">Télécharger l'application</div>
+      <div class="app-dl-sub">Accès instantané depuis votre écran d'accueil — aucun store requis.</div>
+      <div class="dl-btns">
+        <button class="dl-btn android" onclick="dlAndroid()">
+          <div class="dl-btn-icon">🤖</div>
+          <div>
+            <span class="dl-store">Installer sur</span>
+            <span class="dl-name">Android</span>
+          </div>
+        </button>
+        <button class="dl-btn ios" onclick="dlIos()">
+          <div class="dl-btn-icon">🍎</div>
+          <div>
+            <span class="dl-store">Installer sur</span>
+            <span class="dl-name">iPhone / iPad</span>
+          </div>
+        </button>
+      </div>
+      <div id="iosSteps" class="ios-steps hidden">
+        <div class="ios-step"><span class="step-num">1</span> Ouvre cette page dans <strong>Safari</strong></div>
+        <div class="ios-step"><span class="step-num">2</span> Appuie sur le bouton <strong>Partager ↑</strong> en bas de l'écran</div>
+        <div class="ios-step"><span class="step-num">3</span> Sélectionne <strong>Sur l'écran d'accueil</strong></div>
+      </div>
+    </div>
   </div>
 </section>
+
+<div class="dl-toast" id="dlToast"></div>
 
 <!-- ══ ME CONNECTER ══════════════════════════════════════ -->
 <section id="login">
@@ -851,6 +931,29 @@ function switchSub(min) {
   document.querySelectorAll(`#panel-${currentTab} .sub-panel`).forEach(p => p.classList.remove('active'));
   const target = document.getElementById(`sub-${currentTab}-${min}`);
   if (target) target.classList.add('active');
+}
+
+/* ── Download buttons ──────────────────────── */
+function showToast(msg) {
+  const t = document.getElementById('dlToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function dlAndroid() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+  } else if (isStandalone()) {
+    showToast("L'application est déjà installée !");
+  } else {
+    showToast("Ouvre cette page dans Chrome Android pour installer.");
+  }
+}
+
+function dlIos() {
+  document.getElementById('iosSteps').classList.toggle('hidden');
 }
 
 /* ── Contact form ───────────────────────────── */
