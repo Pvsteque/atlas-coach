@@ -959,14 +959,51 @@ function dlIos() {
 }
 
 /* ── Contact form ───────────────────────────── */
-function sendContact() {
+function showFormMsg(msg, type) {
+  let el = document.getElementById('formMsg');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'formMsg';
+    document.querySelector('.btn-send').insertAdjacentElement('afterend', el);
+  }
+  el.textContent = msg;
+  const ok = type === 'success';
+  el.style.cssText = `margin-top:12px;font-size:13px;padding:10px 14px;border-radius:8px;
+    background:${ok ? 'rgba(92,200,116,.1)' : 'rgba(255,80,80,.1)'};
+    border:1px solid ${ok ? 'rgba(92,200,116,.3)' : 'rgba(255,80,80,.3)'};
+    color:${ok ? '#5cc874' : '#ff6060'};`;
+}
+
+async function sendContact() {
   const name = document.getElementById('fname').value.trim();
   const email = document.getElementById('femail').value.trim();
   const msg = document.getElementById('fmsg').value.trim();
-  if (!name || !msg) { alert('Merci de renseigner votre nom et votre message.'); return; }
-  const sub = encodeURIComponent('Demande de renseignements — Altaï Coach');
-  const body = encodeURIComponent(`Nom : ${name}\nEmail : ${email}\n\nMessage :\n${msg}`);
-  window.location.href = `mailto:amalaquierpro@gmail.com?subject=${sub}&body=${body}`;
+  if (!name || !msg) { showFormMsg('Merci de renseigner votre nom et votre message.', 'error'); return; }
+
+  const btn = document.querySelector('.btn-send');
+  btn.disabled = true;
+  btn.textContent = 'Envoi en cours…';
+
+  try {
+    const res = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, message: msg })
+    });
+    if (res.ok) {
+      showFormMsg('Message envoyé ! Je vous répondrai rapidement. 🎯', 'success');
+      document.getElementById('fname').value = '';
+      document.getElementById('femail').value = '';
+      document.getElementById('fmsg').value = '';
+    } else {
+      showFormMsg("Erreur lors de l'envoi. Contactez-moi directement par téléphone.", 'error');
+    }
+  } catch {
+    showFormMsg('Erreur réseau. Vérifiez votre connexion.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Envoyer le message';
+  }
 }
 </script>
 

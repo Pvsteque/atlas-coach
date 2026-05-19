@@ -25,6 +25,7 @@ app.get('/health', (req, res) => {
 // Routes API
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/athlete', require('./routes/athlete'));
+app.use('/api/contact', require('./routes/contact'));
 app.use('/api', require('./routes/api'));
 
 // Landing page
