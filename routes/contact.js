@@ -4,16 +4,26 @@ const nodemailer = require('nodemailer');
 
 function getTransporter() {
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
     auth: {
       user: 'amalaquierpro@gmail.com',
       pass: process.env.GMAIL_APP_PASSWORD
     },
-    connectionTimeout: 6000,
-    greetingTimeout: 6000,
-    socketTimeout: 6000
+    connectionTimeout: 8000,
+    greetingTimeout: 8000,
+    socketTimeout: 8000
   });
 }
+
+// Route de diagnostic (à supprimer après confirmation)
+router.get('/test', (req, res) => {
+  res.json({
+    configured: !!process.env.GMAIL_APP_PASSWORD,
+    passLength: process.env.GMAIL_APP_PASSWORD?.replace(/\s/g,'').length ?? 0
+  });
+});
 
 router.post('/', async (req, res) => {
   const { name, email, message } = req.body;
