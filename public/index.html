@@ -1289,7 +1289,8 @@ select.input{cursor:pointer;}
       <div class="coach-pill">
         <div class="coach-av" id="coach-av">C</div>
         <div><div class="coach-name" id="coach-name-display">Coach</div><div class="coach-role">Coach</div></div>
-        <button onclick="logout()" title="Déconnexion" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px 6px;border-radius:6px;transition:color .15s;" onmouseover="this.style.color='var(--accent3)'" onmouseout="this.style.color='var(--muted)'" >⏻</button>
+        <button onclick="downloadBackup()" title="Sauvegarder les données" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px 6px;border-radius:6px;transition:color .15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">💾</button>
+        <button onclick="logout()" title="Déconnexion" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px 6px;border-radius:6px;transition:color .15s;" onmouseover="this.style.color='var(--accent3)'" onmouseout="this.style.color='var(--muted)'" >⏻</button>
       </div>
     </div>
   </div>
@@ -3332,6 +3333,21 @@ function logout(){
   localStorage.removeItem('atlas_token'); _token=null;
   document.getElementById('auth-screen').classList.remove('hidden');
   document.getElementById('auth-err').classList.remove('show');
+}
+async function downloadBackup(){
+  try{
+    const res=await fetch('/api/admin/export',{headers:{Authorization:'Bearer '+_token}});
+    if(res.status===401){toast('Non authentifié');return;}
+    if(!res.ok){toast('Erreur export');return;}
+    const blob=await res.blob();
+    const date=new Date().toISOString().slice(0,10);
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`atlas-backup-${date}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('Backup téléchargé ✓');
+  }catch(e){toast('Erreur backup : '+e.message);}
 }
 async function startApp(coach){
   document.getElementById('auth-screen').classList.add('hidden');

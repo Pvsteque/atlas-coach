@@ -1,4 +1,4 @@
-const CACHE = 'atlas-v7';
+const CACHE = 'atlas-v8';
 
 self.addEventListener('install', e => {
   e.waitUntil(
