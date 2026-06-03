@@ -38,18 +38,22 @@
   </div>
 
   <div id="main" style="display:none">
-    <div class="section">
+    <div class="status ok" id="emptyDbNotice" style="display:none;margin-bottom:20px">
+      DB vide détectée — restaure ton backup pour récupérer toutes tes données.
+    </div>
+
+    <div class="section" id="exportSection" style="display:none">
       <h2>1. Télécharger la sauvegarde</h2>
       <p>À faire <strong>avant</strong> chaque déploiement. Télécharge un fichier JSON avec toutes tes données.</p>
       <button class="btn-export" id="btnExport">Télécharger atlas-backup.json</button>
       <div class="status" id="exportStatus"></div>
     </div>
 
-    <hr>
+    <hr id="divider" style="display:none">
 
     <div class="section">
-      <h2>2. Restaurer une sauvegarde</h2>
-      <p>À faire <strong>après</strong> un déploiement. Sélectionne le fichier JSON téléchargé précédemment. Toutes les données actuelles seront remplacées.</p>
+      <h2 id="importTitle">2. Restaurer une sauvegarde</h2>
+      <p>Sélectionne le fichier JSON téléchargé précédemment. Toutes les données actuelles seront remplacées.</p>
       <button class="btn-import" id="btnImport">Choisir un fichier de backup…</button>
       <input type="file" id="fileInput" accept=".json">
       <div class="status" id="importStatus"></div>
@@ -60,11 +64,31 @@
 <script>
 const token = localStorage.getItem('atlas_token');
 
-if (!token) {
-  document.getElementById('not-logged').style.display = 'block';
-} else {
-  document.getElementById('main').style.display = 'block';
+// Vérifie si la DB est vide (mode restauration d'urgence)
+async function init() {
+  if (token) {
+    document.getElementById('main').style.display = 'block';
+    document.getElementById('exportSection').style.display = 'block';
+    document.getElementById('divider').style.display = 'block';
+    return;
+  }
+  // Pas de token — on vérifie si la DB est vide côté serveur
+  try {
+    const res = await fetch('/api/admin/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    // Si on reçoit 400 (format invalide) = DB vide, import autorisé sans auth
+    // Si on reçoit 401 = DB non vide, auth requise
+    if (res.status === 400) {
+      document.getElementById('main').style.display = 'block';
+      document.getElementById('emptyDbNotice').style.display = 'block';
+    } else {
+      document.getElementById('not-logged').style.display = 'block';
+    }
+  } catch {
+    document.getElementById('not-logged').style.display = 'block';
+  }
 }
+
+init();
 
 document.getElementById('btnExport').addEventListener('click', async () => {
   const btn = document.getElementById('btnExport');
@@ -112,14 +136,12 @@ document.getElementById('fileInput').addEventListener('change', async (e) => {
   try {
     const text = await file.text();
     const data = JSON.parse(text);
-    const res = await fetch('/api/admin/import', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify(data),
-    });
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = 'Bearer ' + token;
+    const res = await fetch('/api/admin/import', { method: 'POST', headers, body: JSON.stringify(data) });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error);
-    showStatus('importStatus', 'ok', `Restauration réussie — ${json.athletes} athlètes, ${json.logs} logs, ${json.messages} messages.`);
+    showStatus('importStatus', 'ok', `Restauration réussie — ${json.athletes} athlètes, ${json.logs} logs, ${json.messages} messages. Tu peux maintenant te connecter sur /coach.`);
   } catch (e) {
     showStatus('importStatus', 'err', 'Erreur : ' + e.message);
   } finally {

@@ -3,9 +3,13 @@ const router = express.Router();
 const { db } = require('../db');
 const requireAuth = require('../middleware/auth');
 
-router.use(requireAuth);
+function requireAuthOrEmptyDB(req, res, next) {
+  const isEmpty = db.prepare('SELECT COUNT(*) as n FROM coaches').get().n === 0;
+  if (isEmpty) return next();
+  requireAuth(req, res, next);
+}
 
-router.get('/export', (req, res) => {
+router.get('/export', requireAuth, (req, res) => {
   const data = {
     exported_at: new Date().toISOString(),
     coaches: db.prepare('SELECT * FROM coaches').all(),
@@ -21,7 +25,7 @@ router.get('/export', (req, res) => {
   res.json(data);
 });
 
-router.post('/import', express.json({ limit: '50mb' }), (req, res) => {
+router.post('/import', express.json({ limit: '50mb' }), requireAuthOrEmptyDB, (req, res) => {
   const data = req.body;
   if (!data || !Array.isArray(data.coaches)) return res.status(400).json({ error: 'Format de backup invalide' });
 
