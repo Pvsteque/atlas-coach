@@ -4363,6 +4363,7 @@ function renderAthleteDetail(id){
         <button class="btn btn-accent btn-sm" onclick="showPage('assign')">📤 Assigner</button>
         <button class="btn btn-secondary btn-sm" onclick="openNutriModal()">🥗 Plan nutrition</button>
         <button class="btn btn-secondary btn-sm" onclick="openExportProgramModal('${id}')">📄 Exporter</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteAthlete('${id}')">🗑 Retirer</button>
       </div>
     </div>
 
@@ -4501,6 +4502,22 @@ function renderAthPRs(prs){
 // ═══════════════════════════════════════════════════════════════
 // SESSION RUNNER
 // ═══════════════════════════════════════════════════════════════
+
+// ── Retirer un adhérent ───────────────────────────────────────────────────
+async function deleteAthlete(id){
+  const a = getAthletes().find(x=>x.id===id);
+  if(!a) return;
+  if(!confirm(`Retirer ${a.name} ? Cette action est irréversible.`)) return;
+  const res = await api('DELETE','/athletes/'+id);
+  if(!res){ toast('❌ Erreur — réessaie'); return; }
+  _cache.athletes = _cache.athletes.filter(x=>x.id!==id);
+  _cache.assignments = _cache.assignments.filter(x=>x.athleteId!==id);
+  _cache.logs = _cache.logs.filter(x=>x.athleteId!==id);
+  showPage('athletes');
+  renderAthletes();
+  renderDashboard();
+  toast(`${a.name} retiré(e) ✓`);
+}
 
 // ── Supprimer une assignation ─────────────────────────────────────────────
 async function deleteAssign(assignId){
