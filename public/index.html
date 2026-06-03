@@ -3557,6 +3557,7 @@ async function saveNewAthlete(){
     email:document.getElementById('na-email').value.trim()||null,
   });
   if(!res)return;
+  _cache.athletes.push(res);
   await loadAllData();
   closeModal('modal-athlete');
   toast(`${name} ajouté(e) ✓`);
@@ -3613,6 +3614,7 @@ function editSession(id){
 async function deleteSession(id){
   if(!confirm('Supprimer cette séance ?'))return;
   await api('DELETE','/sessions/'+id);
+  _cache.sessions = _cache.sessions.filter(s=>s.id!==id);
   await loadAllData();
   renderSessions();
   toast('Séance supprimée');
@@ -3756,6 +3758,7 @@ async function doAssign(){
   const s=getCoachSessions().find(x=>x.id===sessionId);
   const res=await api('POST','/assignments',{athleteId,sessionId,sessionName:s?.name||'?',athleteName:a?.name||'?',scheduledFor:dateVal||null,status:'assigned'});
   if(!res)return;
+  _cache.assignments.push(res);
   await loadAllData();
   document.getElementById('assign-date-inp').value='';
   toast(`Séance assignée à ${a?.name} ✓`);
@@ -4043,6 +4046,7 @@ async function assignNutriPlan(){
   if(!P&&!C&&!F){ toast('Renseignez au moins une macro'); return; }
   const res=await api('PUT','/nutri/'+currentAthleteId,{prot:P,carb:C,fat:F});
   if(!res)return;
+  _cache.nutri[currentAthleteId]={prot:P,carb:C,fat:F};
   await loadAllData();
   closeModal('modal-nutri');
   toast('✅ Plan nutrition assigné !');
@@ -4134,6 +4138,8 @@ async function saveAthleteAccess(id){
   if(password) body.password=password;
   const res=await api('PUT','/athletes/'+id+'/access',body);
   if(!res)return;
+  const idx=_cache.athletes.findIndex(a=>a.id===id);
+  if(idx>=0) _cache.athletes[idx]={..._cache.athletes[idx],email:body.email,hasPortal:true};
   await loadAllData();
   toast('Accès portail mis à jour ✓');
   renderAthleteDetail(id);
@@ -4500,6 +4506,7 @@ function renderAthPRs(prs){
 async function deleteAssign(assignId){
   if(!confirm('Supprimer cette assignation ?')) return;
   await api('DELETE','/assignments/'+assignId);
+  _cache.assignments = _cache.assignments.filter(a=>a.id!==assignId);
   await loadAllData();
   toast('Assignation supprimée');
   renderAthleteDetail(currentAthleteId);
@@ -6500,6 +6507,7 @@ async function saveAthleteNutriPlan() {
   if(!_nutriLastKcal){ toast("Calculez d'abord le profil nutritionnel"); return; }
   const res=await api('PUT','/nutri/'+athleteId,{prot:_nutriLastProt,carb:_nutriLastCarb,fat:_nutriLastFat});
   if(!res)return;
+  _cache.nutri[athleteId]={prot:_nutriLastProt,carb:_nutriLastCarb,fat:_nutriLastFat};
   await loadAllData();
   toast('✅ Plan assigné à ' + (getAthletes().find(a=>a.id===athleteId)?.name||"l'adhérent"));
   if(currentAthleteId===athleteId && document.getElementById('athlete-detail-content'))
@@ -6512,6 +6520,7 @@ async function deleteNutriPlan(athleteId){
   const a = getAthletes().find(x=>x.id===athleteId);
   if(!confirm('Supprimer le plan nutrition de ' + (a?.name||'cet adhérent') + ' ?')) return;
   await api('PUT','/nutri/'+athleteId,{prot:0,carb:0,fat:0});
+  _cache.nutri[athleteId]={prot:0,carb:0,fat:0};
   await loadAllData();
   toast('Plan nutrition supprimé');
   renderAthleteDetail(athleteId);
