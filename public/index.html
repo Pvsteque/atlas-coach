@@ -3719,15 +3719,18 @@ async function saveBuilderSession(){
   const name=document.getElementById('builder-session-name').value.trim();
   if(!name){toast('Donnez un nom à la séance');return;}
   if(!builderSessionExercises.length){toast('Ajoutez au moins un exercice');return;}
+  const btn=document.querySelector('#page-builder .btn-accent');
+  if(btn){btn.disabled=true;btn.textContent='Sauvegarde...';}
   const res=await api('POST','/sessions',{name,exercises:[...builderSessionExercises]});
-  if(!res){toast('❌ Échec de la sauvegarde — session expirée ou serveur redémarré. Restaure ton backup depuis /admin puis reconnecte-toi.');return;}
+  if(btn){btn.disabled=false;btn.textContent='💾 Sauvegarder';}
+  if(!res){toast('❌ Échec — connecte-toi à nouveau ou restaure ton backup sur /admin');return;}
   await loadAllData();
   builderSessionExercises=[];
   document.getElementById('builder-session-name').value='';
   renderBuilderList();
   renderBuilderSession();
   toast(`"${name}" sauvegardée ✓`);
-  renderSessions();
+  showPage('sessions');
 }
 
 // ═══════════════════════════════════════════════════════════════
