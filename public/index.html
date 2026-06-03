@@ -3267,11 +3267,11 @@ async function loadAllData() {
     api('GET','/athletes'), api('GET','/sessions'), api('GET','/assignments'),
     api('GET','/logs'), api('GET','/nutri'), api('GET','/messages')
   ]);
-  _cache.athletes = athletes||[];
-  _cache.sessions = sessions||[];
-  _cache.assignments = assignments||[];
-  _cache.logs = logs||[];
-  _cache.nutri = nutri||{};
+  if(athletes !== null) _cache.athletes = athletes;
+  if(sessions !== null) _cache.sessions = sessions;
+  if(assignments !== null) _cache.assignments = assignments;
+  if(logs !== null) _cache.logs = logs;
+  if(nutri !== null) _cache.nutri = nutri;
   if (chatData) {
     _chatMessages = {};
     _chatUnread = {};
@@ -3732,8 +3732,6 @@ async function saveBuilderSession(){
   renderBuilderSession();
   toast(`"${name}" sauvegardée ✓`);
   showPage('sessions');
-  // Rechargement complet en arrière-plan
-  loadAllData().then(()=>renderSessions()).catch(()=>{});
 }
 
 // ═══════════════════════════════════════════════════════════════
