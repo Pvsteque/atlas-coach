@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atlas Coach — Admin</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #0f0f0f; color: #e0e0e0; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+  .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 32px; width: 100%; max-width: 480px; }
+  h1 { font-size: 1.2rem; font-weight: 600; margin-bottom: 8px; color: #ff7a00; }
+  p.sub { font-size: 0.85rem; color: #888; margin-bottom: 28px; }
+  .section { margin-bottom: 24px; }
+  .section h2 { font-size: 0.9rem; font-weight: 600; color: #ccc; margin-bottom: 8px; }
+  .section p { font-size: 0.82rem; color: #666; margin-bottom: 12px; line-height: 1.5; }
+  button { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+  button:hover { opacity: 0.85; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-export { background: #ff7a00; color: #fff; }
+  .btn-import { background: #2a2a2a; color: #e0e0e0; border: 1px solid #444; }
+  input[type="file"] { display: none; }
+  .status { margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: 0.83rem; display: none; }
+  .status.ok { background: #1a3a1a; color: #4caf50; border: 1px solid #2a5a2a; }
+  .status.err { background: #3a1a1a; color: #f44336; border: 1px solid #5a2a2a; }
+  .not-logged { text-align: center; padding: 20px 0; }
+  .not-logged a { color: #ff7a00; text-decoration: none; }
+  hr { border: none; border-top: 1px solid #2a2a2a; margin: 24px 0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>⚙️ Atlas Coach — Backup</h1>
+  <p class="sub">Sauvegarde et restauration des données avant/après déploiement.</p>
+
+  <div id="not-logged" class="not-logged" style="display:none">
+    <p>Tu dois être connecté en tant que coach.</p>
+    <p style="margin-top:10px"><a href="/coach">→ Portail coach</a></p>
+  </div>
+
+  <div id="main" style="display:none">
+    <div class="section">
+      <h2>1. Télécharger la sauvegarde</h2>
+      <p>À faire <strong>avant</strong> chaque déploiement. Télécharge un fichier JSON avec toutes tes données.</p>
+      <button class="btn-export" id="btnExport">Télécharger atlas-backup.json</button>
+      <div class="status" id="exportStatus"></div>
+    </div>
+
+    <hr>
+
+    <div class="section">
+      <h2>2. Restaurer une sauvegarde</h2>
+      <p>À faire <strong>après</strong> un déploiement. Sélectionne le fichier JSON téléchargé précédemment. Toutes les données actuelles seront remplacées.</p>
+      <button class="btn-import" id="btnImport">Choisir un fichier de backup…</button>
+      <input type="file" id="fileInput" accept=".json">
+      <div class="status" id="importStatus"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem('atlas_token');
+
+if (!token) {
+  document.getElementById('not-logged').style.display = 'block';
+} else {
+  document.getElementById('main').style.display = 'block';
+}
+
+document.getElementById('btnExport').addEventListener('click', async () => {
+  const btn = document.getElementById('btnExport');
+  const status = document.getElementById('exportStatus');
+  btn.disabled = true;
+  btn.textContent = 'Téléchargement…';
+  status.style.display = 'none';
+  try {
+    const res = await fetch('/api/admin/export', { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) throw new Error(await res.text());
+    const blob = await res.blob();
+    const date = new Date().toISOString().slice(0, 10);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `atlas-backup-${date}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showStatus('exportStatus', 'ok', 'Sauvegarde téléchargée avec succès.');
+  } catch (e) {
+    showStatus('exportStatus', 'err', 'Erreur : ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Télécharger atlas-backup.json';
+  }
+});
+
+document.getElementById('btnImport').addEventListener('click', () => {
+  document.getElementById('fileInput').click();
+});
+
+document.getElementById('fileInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const btn = document.getElementById('btnImport');
+  const status = document.getElementById('importStatus');
+  status.style.display = 'none';
+
+  if (!confirm(`Restaurer "${file.name}" ?\n\nATTENTION : toutes les données actuelles seront remplacées.`)) {
+    e.target.value = '';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Restauration en cours…';
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const res = await fetch('/api/admin/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error);
+    showStatus('importStatus', 'ok', `Restauration réussie — ${json.athletes} athlètes, ${json.logs} logs, ${json.messages} messages.`);
+  } catch (e) {
+    showStatus('importStatus', 'err', 'Erreur : ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Choisir un fichier de backup…';
+    e.target.value = '';
+  }
+});
+
+function showStatus(id, type, msg) {
+  const el = document.getElementById(id);
+  el.className = 'status ' + type;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+</script>
+</body>
+</html>

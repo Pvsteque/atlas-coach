@@ -26,6 +26,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/athlete', require('./routes/athlete'));
 app.use('/api/contact', require('./routes/contact'));
+app.use('/api/admin', require('./routes/admin'));
 app.use('/api', require('./routes/api'));
 
 // Landing page
@@ -46,6 +47,11 @@ app.get('/athlete', (req, res) => {
 // QR code printable page
 app.get('/qr', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'qr.html'));
+});
+
+// Admin backup page
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 // SPA fallback for coach portal sub-paths
