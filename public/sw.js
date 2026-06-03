@@ -1,4 +1,4 @@
-const CACHE = 'atlas-v8';
+const CACHE = 'atlas-v9';
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -18,6 +18,9 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+
+  const url = new URL(e.request.url);
+  if (url.pathname.startsWith('/api/')) return;
 
   const isHTML = e.request.headers.get('accept')?.includes('text/html');
 
