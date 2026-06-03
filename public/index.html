@@ -3556,7 +3556,7 @@ async function saveNewAthlete(){
     color,
     email:document.getElementById('na-email').value.trim()||null,
   });
-  if(!res)return;
+  if(!res){toast('❌ Échec — reconnecte-toi');return;}
   _cache.athletes.push(res);
   await loadAllData();
   closeModal('modal-athlete');
@@ -3757,7 +3757,7 @@ async function doAssign(){
   const a=getAthletes().find(x=>x.id===athleteId);
   const s=getCoachSessions().find(x=>x.id===sessionId);
   const res=await api('POST','/assignments',{athleteId,sessionId,sessionName:s?.name||'?',athleteName:a?.name||'?',scheduledFor:dateVal||null,status:'assigned'});
-  if(!res)return;
+  if(!res){toast('❌ Échec de l\'assignation — reconnecte-toi');return;}
   _cache.assignments.push(res);
   await loadAllData();
   document.getElementById('assign-date-inp').value='';
@@ -4045,7 +4045,7 @@ async function assignNutriPlan(){
   const F=+document.getElementById('mn-fat').value||0;
   if(!P&&!C&&!F){ toast('Renseignez au moins une macro'); return; }
   const res=await api('PUT','/nutri/'+currentAthleteId,{prot:P,carb:C,fat:F});
-  if(!res)return;
+  if(!res){toast('❌ Échec — reconnecte-toi');return;}
   _cache.nutri[currentAthleteId]={prot:P,carb:C,fat:F};
   await loadAllData();
   closeModal('modal-nutri');
@@ -4137,7 +4137,7 @@ async function saveAthleteAccess(id){
   const body={email};
   if(password) body.password=password;
   const res=await api('PUT','/athletes/'+id+'/access',body);
-  if(!res)return;
+  if(!res){toast('❌ Échec — reconnecte-toi');return;}
   const idx=_cache.athletes.findIndex(a=>a.id===id);
   if(idx>=0) _cache.athletes[idx]={..._cache.athletes[idx],email:body.email,hasPortal:true};
   await loadAllData();
@@ -6506,7 +6506,7 @@ async function saveAthleteNutriPlan() {
   if(!athleteId) { toast('Sélectionnez un adhérent'); return; }
   if(!_nutriLastKcal){ toast("Calculez d'abord le profil nutritionnel"); return; }
   const res=await api('PUT','/nutri/'+athleteId,{prot:_nutriLastProt,carb:_nutriLastCarb,fat:_nutriLastFat});
-  if(!res)return;
+  if(!res){toast('❌ Échec — reconnecte-toi');return;}
   _cache.nutri[athleteId]={prot:_nutriLastProt,carb:_nutriLastCarb,fat:_nutriLastFat};
   await loadAllData();
   toast('✅ Plan assigné à ' + (getAthletes().find(a=>a.id===athleteId)?.name||"l'adhérent"));
