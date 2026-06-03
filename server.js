@@ -59,6 +59,11 @@ app.get('/{*path}', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'landing.html'));
 });
 
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Erreur serveur' });
+});
+
 initDB().then(() => {
   app.listen(PORT, () => {
     console.log(`Atlas Coach running on http://localhost:${PORT}`);

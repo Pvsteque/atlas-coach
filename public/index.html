@@ -3246,9 +3246,20 @@ let _chatUnread   = {}; // { athleteId: count }
 async function api(method, path, body) {
   const opts = { method, headers:{'Content-Type':'application/json','Authorization':'Bearer '+_token} };
   if(body) opts.body = JSON.stringify(body);
-  const res = await fetch('/api'+path, opts);
-  if(res.status===401){ logout(); return null; }
-  return res.json();
+  try {
+    const res = await fetch('/api'+path, opts);
+    if(res.status===401){ logout(); return null; }
+    if(!res.ok){
+      let err={};
+      try{ err=await res.json(); }catch{}
+      console.error('API',method,path,res.status,err);
+      return null;
+    }
+    return res.json();
+  } catch(e) {
+    console.error('API fetch error', method, path, e);
+    return null;
+  }
 }
 
 async function loadAllData() {
@@ -3329,7 +3340,19 @@ async function doRegister(){
   if(!res.ok){showAuthError(data.error||'Erreur de création');return;}
   _token=data.token; localStorage.setItem('atlas_token',_token); startApp(data.coach);
 }
-function logout(){
+async function logout(){
+  try{
+    const res=await fetch('/api/admin/export',{headers:{Authorization:'Bearer '+_token}});
+    if(res.ok){
+      const blob=await res.blob();
+      const date=new Date().toISOString().slice(0,10);
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download=`atlas-backup-${date}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+  }catch{}
   localStorage.removeItem('atlas_token'); _token=null;
   document.getElementById('auth-screen').classList.remove('hidden');
   document.getElementById('auth-err').classList.remove('show');
@@ -3697,7 +3720,7 @@ async function saveBuilderSession(){
   if(!name){toast('Donnez un nom à la séance');return;}
   if(!builderSessionExercises.length){toast('Ajoutez au moins un exercice');return;}
   const res=await api('POST','/sessions',{name,exercises:[...builderSessionExercises]});
-  if(!res)return;
+  if(!res){toast('❌ Échec de la sauvegarde — session expirée ou serveur redémarré. Restaure ton backup depuis /admin puis reconnecte-toi.');return;}
   await loadAllData();
   builderSessionExercises=[];
   document.getElementById('builder-session-name').value='';
