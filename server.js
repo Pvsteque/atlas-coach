@@ -22,6 +22,12 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
+// Pas de cache HTTP sur les réponses API
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+});
+
 // Routes API
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/athlete', require('./routes/athlete'));
