@@ -151,8 +151,9 @@ section{padding:100px 24px;}
 /* texte toujours au-dessus de la photo */
 #hero .container{position:relative;z-index:1;}
 @media(max-width:900px){
-  .hero-photo-wrap{width:50%;opacity:.55;}
-  .hero-photo{object-position:top center;}
+  .hero-photo-wrap{width:50%;opacity:.6;}
+  .hero-photo{object-position:20% top;}
+  .hero-photo-wrap::before{background:linear-gradient(to right, var(--bg) 0%, rgba(13,13,13,.5) 18%, transparent 40%);}
 }
 .hero-badge{
   display:inline-block;

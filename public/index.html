@@ -3723,14 +3723,17 @@ async function saveBuilderSession(){
   if(btn){btn.disabled=true;btn.textContent='Sauvegarde...';}
   const res=await api('POST','/sessions',{name,exercises:[...builderSessionExercises]});
   if(btn){btn.disabled=false;btn.textContent='💾 Sauvegarder';}
-  if(!res){toast('❌ Échec — connecte-toi à nouveau ou restaure ton backup sur /admin');return;}
-  await loadAllData();
+  if(!res){toast('❌ Échec — reconnecte-toi ou restaure ton backup sur /admin');return;}
+  // Mise à jour optimiste : ajoute immédiatement au cache sans attendre le rechargement
+  _cache.sessions.push(res);
   builderSessionExercises=[];
   document.getElementById('builder-session-name').value='';
   renderBuilderList();
   renderBuilderSession();
   toast(`"${name}" sauvegardée ✓`);
   showPage('sessions');
+  // Rechargement complet en arrière-plan
+  loadAllData().then(()=>renderSessions()).catch(()=>{});
 }
 
 // ═══════════════════════════════════════════════════════════════
