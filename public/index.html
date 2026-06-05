@@ -3608,7 +3608,7 @@ function renderSessions(){
         </div>
         <div class="card-body">
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
-            ${s.exercises.slice(0,5).map(e=>{const ex=EXERCISES.find(x=>x.id===e.exId);return ex?`<span class="tag tag-green">${ex.icon} ${ex.name.split(' ').slice(0,2).join(' ')}</span>`:''}).join('')}
+            ${s.exercises.slice(0,5).map(e=>{const ex=findExercise(e.exId);return ex?`<span class="tag tag-green">${ex.icon} ${ex.name.split(' ').slice(0,2).join(' ')}</span>`:''}).join('')}
             ${s.exercises.length>5?`<span class="tag" style="background:var(--bg2);color:var(--muted);">+${s.exercises.length-5}</span>`:''}
           </div>
           <div style="display:flex;gap:8px;">
@@ -4229,8 +4229,21 @@ function generateProgram() {
 
   const sessionBlocks = sessions.map((s, idx) => {
     const rows = s.exercises.map(e => {
-      const ex = EXERCISES.find(x => x.id === e.exId);
+      const ex = findExercise(e.exId);
       if (!ex) return '';
+      if(ex.isMobility){
+        const muscles = ex.muscles.slice(0,2).map(m=>m.n).join(', ');
+        return `<tr>
+          <td class="ex-icon">${ex.icon}</td>
+          <td>
+            <div class="ex-name">${ex.name}</div>
+            <div class="ex-sub">Mobilité${muscles?' · '+muscles:''}</div>
+          </td>
+          <td class="ex-num" colspan="3" style="color:#ff7a00;font-weight:600;text-align:left;padding-left:8px;">⏱ ${ex.duree}${ex.series?' × '+ex.series:''}</td>
+          <td class="ex-num">—</td>
+          <td class="notes-col"></td>
+        </tr>`;
+      }
       const method = e.method ? INTENSITY_METHODS.find(m => m.id === e.method) : null;
       const muscles = ex.muscles.filter(m => m.primary).slice(0,2).map(m => m.n).join(', ');
       return `<tr>
@@ -4454,13 +4467,19 @@ function renderAthAssigns(athleteId, assigns, sessionLogs, prs){
         </div>
       </div>
       ${(s.exercises||[]).map(e=>{
-        const ex = EXERCISES.find(x=>x.id===e.exId);
+        const ex = findExercise(e.exId);
         if(!ex) return '';
+        if(ex.isMobility) return `<div class="ex-row-detail">
+          <div class="ex-row-icon">${ex.icon}</div>
+          <div class="ex-row-info">
+            <div class="ex-row-name">${ex.name}</div>
+            <div class="ex-row-params" style="color:var(--accent);">⏱ ${ex.duree}${ex.series?' · '+ex.series+' séries':''}</div>
+          </div>
+        </div>`;
         // Données séance précédente
         const prevSets = prevLog ? (prevLog.sets||[]).filter(s=>s.exId===e.exId) : [];
         const bestPrevKg = prevSets.length ? Math.max(...prevSets.map(s=>s.kg||0)) : 0;
         const prevReps   = prevSets.length ? prevSets[prevSets.length-1].reps : 0;
-        // Record perso
         const pr = prs[e.exId];
         return `<div class="ex-row-detail">
           <div class="ex-row-icon">${ex.icon||'🏋️'}</div>
@@ -4516,7 +4535,7 @@ function renderAthPRs(prs){
   const entries = Object.entries(prs);
   if(!entries.length){ el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:16px;text-align:center;background:var(--bg3);border-radius:12px;">Pas encore de records — démarrez une séance !</div>'; return; }
   el.innerHTML = entries.map(([exId,pr])=>{
-    const ex = EXERCISES.find(x=>x.id===exId);
+    const ex = findExercise(exId);
     return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;">
       <span style="font-size:18px;">${ex?.icon||'🏋️'}</span>
       <div style="flex:1;font-size:12px;font-weight:600;">${ex?.name||exId}</div>
@@ -4623,7 +4642,7 @@ function startSession(assignId, sessionId, athleteId){
 
 function srRenderExercise(){
   const exConf = _sr.session.exercises[_sr.exIndex];
-  const ex     = EXERCISES.find(x=>x.id===exConf.exId);
+  const ex     = findExercise(exConf.exId);
   if(!ex) return;
 
   // Progress
@@ -4880,7 +4899,7 @@ function srStartRest(seconds, exId, setIndex){
 
   // Afficher le timer
   const exConf = _sr.session.exercises[_sr.exIndex];
-  const ex = EXERCISES.find(x=>x.id===exConf.exId);
+  const ex = findExercise(exConf.exId);
 
   // Insérer le timer box en haut du panel
   const panel = document.getElementById('sr-right-panel');
@@ -4926,7 +4945,7 @@ function srRemoveSet(i, exId){
   // Renumeroter
   sets.forEach((s,idx)=>s.setNum=idx+1);
   const exConf = _sr.session.exercises[_sr.exIndex];
-  const ex = EXERCISES.find(x=>x.id===exConf.exId);
+  const ex = findExercise(exConf.exId);
   srRenderSetsPanel(exConf, ex);
 }
 
@@ -4935,7 +4954,7 @@ function srAddSet(exId){
   const last  = sets[sets.length-1]||{kg:0,reps:10};
   sets.push({setNum:sets.length+1,kg:last.kg,reps:last.reps,rpe:null,done:false,isPR:false});
   const exConf = _sr.session.exercises[_sr.exIndex];
-  const ex = EXERCISES.find(x=>x.id===exConf.exId);
+  const ex = findExercise(exConf.exId);
   srRenderSetsPanel(exConf, ex);
 }
 
@@ -5064,7 +5083,7 @@ function srShowSummary(allSets, prs, duration, avgRPE){
       <div style="margin-bottom:20px;">
         <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px;">Détail par exercice</div>
         ${s.exercises.map(e=>{
-          const ex = EXERCISES.find(x=>x.id===e.exId);
+          const ex = findExercise(e.exId);
           const eSets = allSets.filter(s=>s.exId===e.exId);
           if(!eSets.length) return '';
           return `<div class="ex-summary-row">
@@ -5165,7 +5184,7 @@ function viewSessionLog(logId){
       ${log.notes?`<div style="font-size:13px;font-style:italic;color:var(--muted);padding:12px;background:var(--bg3);border-radius:10px;margin-bottom:20px;">"${log.notes}"</div>`:''}
       <div style="margin-bottom:20px;">
         ${(s?.exercises||[]).map(e=>{
-          const ex = EXERCISES.find(x=>x.id===e.exId);
+          const ex = findExercise(e.exId);
           const eSets = (log.sets||[]).filter(s=>s.exId===e.exId);
           if(!eSets.length) return '';
           return `<div class="ex-summary-row">
@@ -5174,7 +5193,7 @@ function viewSessionLog(logId){
           </div>`;
         }).join('')}
       </div>
-      ${(log.prs||[]).length?`<div style="background:rgba(255,122,0,.06);border:1px solid rgba(255,122,0,.2);border-radius:10px;padding:12px;"><strong style="color:var(--accent);">🏆 Records établis cette séance :</strong><br>${log.prs.map(p=>{const ex=EXERCISES.find(x=>x.id===p.exId);return `${ex?.name||p.exId} — ${p.kg}kg × ${p.reps}r`;}).join('<br>')}</div>`:''}
+      ${(log.prs||[]).length?`<div style="background:rgba(255,122,0,.06);border:1px solid rgba(255,122,0,.2);border-radius:10px;padding:12px;"><strong style="color:var(--accent);">🏆 Records établis cette séance :</strong><br>${log.prs.map(p=>{const ex=findExercise(p.exId);return `${ex?.name||p.exId} — ${p.kg}kg × ${p.reps}r`;}).join('<br>')}</div>`:''}
     </div>`;
 }
 
@@ -5323,7 +5342,7 @@ function coachFinishSession(prsCount, totalSets, duration){
 // ── Questions à Claude IA ──────────────────────────────────────
 async function coachAsk(type){
   const exConf = _sr.session?.exercises?.[_sr.exIndex];
-  const ex     = exConf ? EXERCISES.find(x=>x.id===exConf.exId) : null;
+  const ex     = exConf ? findExercise(exConf.exId) : null;
   if(!ex) { coachSay("Je n'ai pas d'exercice sélectionné pour l'instant.", {expr:'neutral'}); return; }
 
   const prompts = {
@@ -7186,6 +7205,17 @@ function renderCooldown() {
   }
 }
 
+
+// ── Résolution exercice (normal + mobilité) ──────────────────────────────
+function findExercise(id){
+  const ex = EXERCISES.find(e=>e.id===id);
+  if(ex) return ex;
+  const mob = MOBILITY_DATA.find(e=>e.id===id);
+  if(!mob) return null;
+  return {id:mob.id, name:mob.name, icon:mob.emoji, cat:'mobilite', sub:'Mobilité',
+          isMobility:true, duree:mob.duree, series:mob.series||'',
+          muscles:mob.muscles.map(m=>({n:m,pct:50,primary:true})), fibers:{}, tips:[]};
+}
 
 // ── MOBILITÉ ─────────────────────────────────────────────────────────────
 const MOB_CATEGORIES = {
