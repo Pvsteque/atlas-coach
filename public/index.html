@@ -792,6 +792,13 @@ select.input{cursor:pointer;}
 .prep-dot.on{background:var(--accent);}
 .prep-dot.off{background:rgba(255,255,255,.12);}
 .prep-card-series{font-size:11px;color:var(--muted);font-weight:600;}
+/* ── Mobilité ── */
+.mob-cat-tab{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;transition:all .15s;}
+.mob-cat-tab.active{background:var(--accent);color:#000;border-color:var(--accent);}
+.mob-cat-tab:hover:not(.active){border-color:rgba(255,122,0,.4);color:var(--text);}
+.mob-add-btn{margin-top:10px;width:100%;padding:8px 0;border:1px solid rgba(255,122,0,.35);border-radius:8px;background:rgba(255,122,0,.07);color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;font-family:var(--font);}
+.mob-add-btn:hover{background:rgba(255,122,0,.18);border-color:var(--accent);}
+.mob-add-btn.added{background:rgba(255,122,0,.22);border-color:var(--accent);color:var(--accent);}
 .sess-btn-row{display:flex;gap:8px;flex-wrap:wrap;padding:0 20px 12px;}
 .sess-btn{padding:7px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
 .sess-btn:hover{border-color:var(--accent);color:var(--accent);}
@@ -1277,6 +1284,7 @@ select.input{cursor:pointer;}
       <div class="nav-item" data-page="warmup" onclick="showPage('warmup')"><span class="nav-icon">🔥</span>Échauffement</div>
       <div class="nav-item" data-page="stretching" onclick="showPage('stretching')"><span class="nav-icon">🧘</span>Étirements</div>
       <div class="nav-item" data-page="cooldown" onclick="showPage('cooldown')"><span class="nav-icon">🌬️</span>Retour au calme</div>
+      <div class="nav-item" data-page="mobility" onclick="showPage('mobility')"><span class="nav-icon">🦾</span>Mobilité</div>
 
 
     </nav>
@@ -1669,6 +1677,22 @@ select.input{cursor:pointer;}
         </div>
         <div style="padding:0 20px 20px;overflow-y:auto;height:calc(100% - 112px);">
           <div id="cooldown-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;"></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════ MOBILITÉ -->
+      <div class="page" id="page-mobility">
+        <div class="page-header">
+          <div><div class="page-title">Mobilité 🦾</div><div class="page-sub">Ouverture de cage · Déblocage épaule · Déblocage hanches · Ajouter aux séances</div></div>
+        </div>
+        <div style="display:flex;gap:10px;padding:0 20px 14px;flex-wrap:wrap;">
+          <button class="mob-cat-tab active" data-cat="cage" onclick="setMobilityCategory('cage')">🫁 Cage thoracique</button>
+          <button class="mob-cat-tab" data-cat="epaule" onclick="setMobilityCategory('epaule')">🦾 Épaule</button>
+          <button class="mob-cat-tab" data-cat="hanche" onclick="setMobilityCategory('hanche')">🏃 Hanches</button>
+        </div>
+        <div class="sess-btn-row" id="mob-sub-row" style="padding:0 20px 12px;"></div>
+        <div style="padding:0 20px 20px;overflow-y:auto;height:calc(100% - 175px);">
+          <div id="mobility-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;"></div>
         </div>
       </div>
 
@@ -3416,6 +3440,7 @@ function showPage(name){
   if(name==='warmup') renderWarmup();
   if(name==='stretching') renderStretching();
   if(name==='cooldown') renderCooldown();
+  if(name==='mobility'){ renderMobilitySubRow(); renderMobility(); }
   if(name==='checkins') renderCheckinsPage();
   if(name==='chat') renderChatPage();
   const renders = {
@@ -6982,6 +7007,42 @@ const WARMUP_DATA = [{"id": "wm1", "name": "Rotations cervicales", "emoji": "�
 const STRETCH_DATA = [{"id": "st1", "name": "Étirement pigeon (hanches)", "emoji": "🕊️", "group": "hanche", "type": "statique", "duree": "60 sec/côté", "objectif": "Étirer le piriforme et les rotateurs externes de hanche, réduire les douleurs lombaires", "desc": "Au sol, jambe avant fléchie perpendiculairement au corps, jambe arrière tendue. S'allonger progressivement vers l'avant.", "intensite": 2, "muscles": ["Piriforme", "Fessiers", "Rotateurs ext. de hanche"]}, {"id": "st2", "name": "Étirement ischio-jambiers debout", "emoji": "🦵", "group": "lower", "type": "statique", "duree": "45 sec/côté", "objectif": "Allonger les ischio-jambiers, améliorer la flexion de hanche", "desc": "Debout, pied posé sur une surface élevée, torse incliné vers l'avant dos plat.", "intensite": 1, "muscles": ["Ischio-jambiers", "Fessiers"]}, {"id": "st3", "name": "Étirement du grand pectoral", "emoji": "💪", "group": "upper", "type": "statique", "duree": "45 sec/côté", "objectif": "Contrebalancer le travail de développé, améliorer la posture", "desc": "Avant-bras posé sur un montant ou mur, rotation du corps en sens opposé jusqu'à ressentir l'étirement pectoral.", "intensite": 1, "muscles": ["Grand pectoral", "Deltoïde ant.", "Biceps"]}, {"id": "st4", "name": "Torsion lombaire couchée", "emoji": "🌀", "group": "dos", "type": "statique", "duree": "60 sec/côté", "objectif": "Mobiliser la colonne lombaire, détendre les érecteurs et les carré des lombes", "desc": "Allongé sur le dos, genou ramené sur la poitrine puis guidé vers le sol du côté opposé. Regard inverse.", "intensite": 1, "muscles": ["Érecteurs spinaux", "Carré des lombes", "Piriformis"]}, {"id": "st5", "name": "Étirement quadriceps debout", "emoji": "🦵", "group": "lower", "type": "statique", "duree": "45 sec/côté", "objectif": "Allonger le droit fémoral et le vaste, réduire la tension sur la rotule", "desc": "Debout, saisir le pied derrière soi, genou pointé vers le bas. Bassin en rétroversion légère.", "intensite": 1, "muscles": ["Quadriceps", "Droit fémoral", "Psoas"]}, {"id": "st6", "name": "Étirement du grand dorsal", "emoji": "🔙", "group": "dos", "type": "statique", "duree": "45 sec/côté", "objectif": "Étirer le grand dorsal souvent raccourci par les tractions et rameurs", "desc": "Accroché à un support fixe, s'incliner latéralement en laissant le bras monter.", "intensite": 2, "muscles": ["Grand dorsal", "Dentelé ant."]}, {"id": "st7", "name": "Hip Flexor Stretch (fléchisseurs)", "emoji": "🏃", "group": "hanche", "type": "statique", "duree": "60 sec/côté", "objectif": "Réduire l'antéversion du bassin, améliorer la posture et la foulée", "desc": "Position de fente basse, genou arrière au sol, bassin poussé vers l'avant et le bas.", "intensite": 2, "muscles": ["Psoas-iliaque", "Droit fémoral", "Quadriceps"]}, {"id": "st8", "name": "Étirement des mollets contre mur", "emoji": "🦶", "group": "lower", "type": "statique", "duree": "45 sec/côté", "objectif": "Prévenir les contractures du mollet et les tendinites du tendon d'Achille", "desc": "Mains au mur, pied arrière talon au sol et jambe tendue, pied avant légèrement fléchi.", "intensite": 1, "muscles": ["Gastrocnémien", "Soléaire", "Tendon d'Achille"]}, {"id": "st9", "name": "Bras croisé épaule", "emoji": "💪", "group": "upper", "type": "statique", "duree": "30 sec/côté", "objectif": "Étirer le deltoïde postérieur et le petit rond", "desc": "Bras tendu croisé devant la poitrine, l'autre main l'attire vers soi au niveau du coude.", "intensite": 1, "muscles": ["Deltoïde post.", "Teres minor", "Rhomboïdes"]}, {"id": "st10", "name": "Étirement chat-vache (Cat-Cow)", "emoji": "🐄", "group": "dos", "type": "dynamique", "duree": "10 reps", "objectif": "Mobiliser toute la colonne vertébrale, activer les muscles profonds du dos", "desc": "En quadrupédie, alterner flexion complète (chat) et extension (vache) de la colonne, au rythme de la respiration.", "intensite": 1, "muscles": ["Colonne vertébrale", "Érecteurs", "Abdominaux"]}, {"id": "st11", "name": "Cobra / Sphinx", "emoji": "🐍", "group": "dos", "type": "statique", "duree": "45 sec", "objectif": "Étirer les abdominaux, contrebalancer le travail de flexion du tronc", "desc": "À plat ventre, mains sous les épaules, extension des coudes en gardant le bassin au sol.", "intensite": 2, "muscles": ["Rectus abdominis", "Pectoraux inf.", "Fléchisseurs de hanche"]}, {"id": "st12", "name": "Étirement adducteurs papillon", "emoji": "🦋", "group": "hanche", "type": "statique", "duree": "60 sec", "objectif": "Ouvrir les hanches, étirer les adducteurs, améliorer la souplesse en abduction", "desc": "Assis, plantes des pieds en contact, genoux qui s'abaissent vers le sol, dos droit.", "intensite": 2, "muscles": ["Adducteurs", "Gracilis", "Pectiné"]}, {"id": "st13", "name": "Thread the Needle (épaule/thorax)", "emoji": "🧵", "group": "upper", "type": "statique", "duree": "45 sec/côté", "objectif": "Rotation thoracique et étirement des rotateurs internes de l'épaule", "desc": "En quadrupédie, glisser un bras sous le corps jusqu'à poser l'épaule au sol. L'autre bras levé.", "intensite": 2, "muscles": ["Rhomboïdes", "Deltoïde post.", "Colonne thoracique"]}, {"id": "st14", "name": "World's Greatest Stretch", "emoji": "🌍", "group": "global", "type": "dynamique", "duree": "5/côté", "objectif": "Mobilité globale : hanche, thorax, ischio, épaule — exercice complet d'activation", "desc": "Depuis planche, pied amené à côté de la main, coude vers le sol, rotation thoracique bras vers le plafond.", "intensite": 2, "muscles": ["Tout le corps"]}, {"id": "st15", "name": "Étirement biceps triceps sur tête", "emoji": "💪", "group": "upper", "type": "statique", "duree": "30 sec/côté", "objectif": "Étirer la longue portion du triceps et le biceps en supination", "desc": "Bras levé, coude plié derrière la tête. Autre main aide à accentuer l'étirement.", "intensite": 1, "muscles": ["Triceps (long chef)", "Biceps"]}];
 const COOLDOWN_DATA = [{"id": "cd1", "name": "Marche lente 2-3 min", "emoji": "🚶", "group": "cardio", "duree": "2-3 min", "objectif": "Abaisser progressivement la fréquence cardiaque, éviter l'hypotension orthostatique", "desc": "Marche calme à rythme décroissant. Ne jamais s'arrêter brusquement après un effort intense.", "intensite": 1, "muscles": ["Système cardiovasculaire"]}, {"id": "cd2", "name": "Respiration 4-7-8", "emoji": "🌬️", "group": "respiration", "duree": "5 cycles", "objectif": "Activer le système nerveux parasympathique, réduire le cortisol post-effort", "desc": "Inspirer 4 sec, retenir 7 sec, expirer lentement 8 sec. Position assise ou allongée.", "intensite": 1, "muscles": ["Diaphragme", "Système nerveux"]}, {"id": "cd3", "name": "Respiration diaphragmatique", "emoji": "🫁", "group": "respiration", "duree": "3-5 min", "objectif": "Récupération du souffle, oxygénation musculaire, réduction des courbatures", "desc": "Allongé, main sur le ventre. Inspirer par le nez en gonflant le ventre, expirer lentement par la bouche.", "intensite": 1, "muscles": ["Diaphragme", "Intercostaux"]}, {"id": "cd4", "name": "Foam Rolling quadriceps", "emoji": "🧴", "group": "mobilite", "duree": "60 sec/côté", "objectif": "Myofascia release : réduire l'inflammation et les adhérences musculaires", "desc": "Face au sol, rouleau sous la cuisse. Se propulser lentement de haut en bas. S'arrêter sur les points douloureux 10 sec.", "intensite": 2, "muscles": ["Quadriceps", "Droit fémoral"]}, {"id": "cd5", "name": "Foam Rolling IT Band", "emoji": "🧴", "group": "mobilite", "duree": "60 sec/côté", "objectif": "Réduire la tension de la bandelette ilio-tibiale, prévenir le syndrome de l'essuie-glace", "desc": "Sur le côté, rouleau sur la face latérale de la cuisse de la hanche au genou. Jambe supérieure posée devant.", "intensite": 2, "muscles": ["Bandelette IT", "TFL", "Vaste latéral"]}, {"id": "cd6", "name": "Posture de l'enfant (Child's Pose)", "emoji": "🧒", "group": "relaxation", "duree": "90 sec", "objectif": "Décompression lombaire, étirement des érecteurs et des dorsaux, repos total", "desc": "À genoux, s'asseoir sur les talons, bras tendus devant, front posé au sol. Respiration profonde.", "intensite": 1, "muscles": ["Érecteurs spinaux", "Grand dorsal", "Épaules"]}, {"id": "cd7", "name": "Savasana (relaxation totale)", "emoji": "😌", "group": "relaxation", "duree": "3-5 min", "objectif": "Récupération du système nerveux, intégration de la séance, préparation à la récupération", "desc": "Allongé sur le dos, bras le long du corps paumes vers le haut. Relâchement conscient de chaque muscle.", "intensite": 1, "muscles": ["Tout le corps — relaxation"]}, {"id": "cd8", "name": "Étirement ischio allongé", "emoji": "🦵", "group": "mobilite", "duree": "60 sec/côté", "objectif": "Étirer les ischio-jambiers à froid progressif, maintenir la souplesse post-séance", "desc": "Allongé, jambe levée verticalement tenue par une sangle ou la main. L'autre jambe à plat.", "intensite": 1, "muscles": ["Ischio-jambiers", "Fessiers", "Mollets"]}, {"id": "cd9", "name": "Happy Baby (Ananda Balasana)", "emoji": "👶", "group": "relaxation", "duree": "90 sec", "objectif": "Ouverture des hanches, décompression du sacrum, relaxation profonde", "desc": "Allongé sur le dos, genoux ramenés vers les aisselles, mains saisissant l'extérieur des pieds.", "intensite": 1, "muscles": ["Adducteurs", "Fessiers", "Lombaires"]}, {"id": "cd10", "name": "Marche légère + respiration", "emoji": "🚶‍♂️", "group": "cardio", "duree": "5 min", "objectif": "Transition douce entre l'effort et le repos complet, évacuation des déchets métaboliques", "desc": "Marche tranquille avec inspirations profondes par le nez, expirations lentes par la bouche. Bras détendus.", "intensite": 1, "muscles": ["Système cardio", "Jambes"]}, {"id": "cd11", "name": "Foam Rolling mollets", "emoji": "🧴", "group": "mobilite", "duree": "60 sec/côté", "objectif": "Relâcher les contractures du gastrocnémien et soléaire post-entraînement", "desc": "Assis, rouleau sous le mollet, se propulser avec les mains de la cheville au genou.", "intensite": 2, "muscles": ["Gastrocnémien", "Soléaire"]}, {"id": "cd12", "name": "Box Breathing (cohérence cardiaque)", "emoji": "📦", "group": "respiration", "duree": "5 min", "objectif": "Régulation du système nerveux autonome, HRV, récupération mentale et physique", "desc": "Inspirer 4 sec → Retenir 4 sec → Expirer 4 sec → Retenir 4 sec. Yeux fermés, position assise.", "intensite": 1, "muscles": ["Diaphragme", "Système nerveux autonome"]}];
 
+const MOBILITY_DATA = [
+  // ── CAGE THORACIQUE ─────────────────────────────────────────────────────
+  {id:'mb-cage1',cat:'cage',sub:'vertebral',emoji:'🌀',name:'Rotation thoracique en quadrupédie',duree:'10 rép/côté',series:'3',intensite:1,objectif:'Restaurer la rotation de la colonne thoracique, libérer les vertèbres T3 à T9',desc:'En position 4 pattes, main derrière la tête. Ouvrir le coude vers le plafond en inspirant, revenir en expirant. Lent et contrôlé — seul le thorax tourne, les lombaires restent stables.',muscles:['Colonne thoracique','Intercostaux','Rotateurs profonds du dos']},
+  {id:'mb-cage2',cat:'cage',sub:'vertebral',emoji:'🧴',name:'Extension thoracique sur foam roller',duree:'90 sec',series:'2',intensite:2,objectif:'Mobiliser les vertèbres thoraciques en extension, contrebalancer les positions assises prolongées',desc:'Foam roller perpendiculaire à la colonne, placé sous les omoplates. Bras croisés sur la poitrine, se laisser s\'étendre vertèbre par vertèbre. Avancer le rouleau par paliers de 2 cm vers le haut.',muscles:['Érecteurs spinaux thoraciques','Rhomboïdes','Grand pectoral (étirement)']},
+  {id:'mb-cage3',cat:'cage',sub:'vertebral',emoji:'🧵',name:'Thread the Needle (aiguille)',duree:'45 sec/côté',series:'3',intensite:1,objectif:'Rotation thoracique unilatérale profonde, étirement des rhomboïdes et dentelé antérieur',desc:'En quadrupédie, glisser un bras sous le corps jusqu\'à poser l\'épaule et la tempe au sol. L\'autre bras monte vers le plafond ou reste au sol. Respirer dans la position.',muscles:['Rhomboïdes','Dentelé antérieur','Colonne thoracique','Rotateurs d\'épaule']},
+  {id:'mb-cage4',cat:'cage',sub:'vertebral',emoji:'🐱',name:'T-spine cat-camel',duree:'12 rép',series:'3',intensite:1,objectif:'Mobilisation rythmique de la colonne thoracique, réhydratation des disques intervertébraux',desc:'En quadrupédie, alterner flexion (arrondir vers le plafond) et extension (creuser vers le sol) au rythme de la respiration. Concentrer le mouvement sur la zone thoracique (milieu du dos).',muscles:['Colonne thoracique','Intercostaux','Abdominaux profonds']},
+  {id:'mb-cage5',cat:'cage',sub:'intercostal',emoji:'🫁',name:'Ouverture pectorale sur foam roller',duree:'2 min',series:'1',intensite:2,objectif:'Étirer les pectoraux et intercostaux, permettre une expansion maximale de la cage thoracique',desc:'Foam roller dans l\'axe de la colonne vertébrale, allongé dessus. Bras ouverts en croix ou en chandelier (90°). Laisser la gravité ouvrir la poitrine. Inspirer profondément pour maximiser l\'étirement.',muscles:['Grand pectoral','Petits pectoraux','Intercostaux','Scalènes']},
+  {id:'mb-cage6',cat:'cage',sub:'intercostal',emoji:'🌬️',name:'Respiration expansive 360°',duree:'5 min',series:'1',intensite:1,objectif:'Mobiliser la cage thoracique dans toutes ses directions, libérer les blocages respiratoires profonds',desc:'Assis ou allongé, mains sur les côtes latérales. Inspirer en gonflant vers l\'avant, les côtés ET le dos simultanément. Sentir les côtes s\'écarter dans chaque direction. Expirer lentement et complètement.',muscles:['Diaphragme','Intercostaux','Scalènes','Érecteurs thoraciques']},
+  {id:'mb-cage7',cat:'cage',sub:'intercostal',emoji:'🌙',name:'Ouverture latérale bras levé',duree:'45 sec/côté',series:'2',intensite:1,objectif:'Étirer les intercostaux latéraux et le grand dentelé, créer de l\'espace entre les côtes',desc:'Debout, un bras tendu au-dessus de la tête. S\'incliner latéralement lentement en inspirant profondément. Sentir l\'étirement des côtes du côté surélevé. Tenir et respirer dans la position.',muscles:['Intercostaux latéraux','Grand dentelé','Grand dorsal','Obliques']},
+  {id:'mb-cage8',cat:'cage',sub:'postural',emoji:'🐍',name:'Cobra progressif',duree:'30 sec',series:'3',intensite:2,objectif:'Extension thoracique active, renforcement des érecteurs et ouverture de la face antérieure du thorax',desc:'À plat ventre, mains sous les épaules. Monter en inspirant en cherchant à utiliser les muscles du dos — les bras aident mais ne portent pas. Focus sur l\'extension thoracique, pas lombaire.',muscles:['Érecteurs spinaux thoraciques','Rhomboïdes','Grand pectoral (étirement)','Abdominaux (étirement)']},
+  {id:'mb-cage9',cat:'cage',sub:'postural',emoji:'🚪',name:'Doorway Chest Opener',duree:'45 sec/côté',series:'2',intensite:1,objectif:'Étirer les pectoraux et le deltoïde antérieur, corriger la posture enroulée des épaules',desc:'Avant-bras posé contre le montant d\'une porte (coude à 90°). Faire un pas en avant et tourner le corps en sens opposé. Varier la hauteur du bras pour cibler différentes fibres pectorales.',muscles:['Grand pectoral','Deltoïde antérieur','Biceps brachial','Ligament coracoïde']},
+  {id:'mb-cage10',cat:'cage',sub:'postural',emoji:'🦭',name:'Seal Stretch (ouverture totale)',duree:'30 sec',series:'3',intensite:2,objectif:'Extension maximale thoracique et cervicale, ouverture complète de toute la face antérieure du corps',desc:'À plat ventre, mains larges sous les épaules. Extension complète des coudes, regard vers le plafond. Respirer en cherchant à soulever le sternum vers le haut. Amplitude progressive.',muscles:['Grand pectoral','Abdominaux (étirement)','Fléchisseurs de hanche','Érecteurs spinaux']},
+  // ── ÉPAULE ────────────────────────────────────────────────────────────────
+  {id:'mb-ep1',cat:'epaule',sub:'glenohumeral',emoji:'🔄',name:'CARS d\'épaule (Controlled Articular Rotations)',duree:'5 rép/côté',series:'3',intensite:1,objectif:'Mapper et maintenir l\'amplitude articulaire active maximale de l\'articulation gléno-humérale',desc:'Debout, bras le long du corps. Tracer le plus grand cercle possible avec le bras en maintenant une résistance musculaire active dans toute l\'amplitude. Mouvement lent et contrôlé (~10 sec/cercle). Aucune compensation du tronc.',muscles:['Coiffe des rotateurs (4 muscles)','Deltoïde (3 faisceaux)','Subscapulaire']},
+  {id:'mb-ep2',cat:'epaule',sub:'glenohumeral',emoji:'⏳',name:'Pendule de Codman',duree:'2 min/côté',series:'2',intensite:1,objectif:'Décoaptation articulaire par gravité, augmentation de l\'espace sous-acromial, relaxation capsulaire',desc:'Penché en avant, main saine sur un appui. Laisser le bras traiter librement. Effectuer de petits cercles et oscillations en utilisant le poids du bras, sans aucune contraction musculaire active de l\'épaule.',muscles:['Capsule gléno-humérale (décoaptation passive)','Coiffe des rotateurs (relâchement)']},
+  {id:'mb-ep3',cat:'epaule',sub:'glenohumeral',emoji:'🧱',name:'Wall Slide (glissé mural)',duree:'12 rép',series:'3',intensite:1,objectif:'Restaurer la mécanique scapulo-thoracique et gléno-humérale lors de l\'élévation du bras',desc:'Dos au mur, bras en position candélabre (90/90). Glisser les bras vers le haut en maintenant l\'ensemble du dos, des coudes et des poignets collés au mur. S\'arrêter là où le contact se perd.',muscles:['Trapèze inférieur et moyen','Dentelé antérieur','Supra-épineux','Rotateurs externes']},
+  {id:'mb-ep4',cat:'epaule',sub:'glenohumeral',emoji:'🤸',name:'Banded Shoulder Distraction active',duree:'2 min/côté',series:'2',intensite:2,objectif:'Explorer activement l\'amplitude gléno-humérale pendant une traction articulaire, gagner de la mobilité fonctionnelle',desc:'Élastique fixé en bas, passé à l\'aisselle. Le bras levé, la bande exerce une traction inférieure. Explorer différentes positions en rotation interne et externe sous légère décoaptation.',muscles:['Capsule gléno-humérale','Deltoïde','Coiffe des rotateurs (actif)']},
+  {id:'mb-ep5',cat:'epaule',sub:'coiffe',emoji:'🎗️',name:'Rotation externe 90/90 avec élastique',duree:'15 rép/côté',series:'3',intensite:2,objectif:'Renforcer en amplitude les rotateurs externes, stabiliser la tête humérale dans la cavité',desc:'Bras à 90° d\'abduction, coude à 90°. Élastique fixé à hauteur du coude. Rotation externe lente (paume vers le plafond), retour contrôlé. Maintenir le bras à l\'horizontale. 3 sec concentriq / 3 sec excentrique.',muscles:['Infra-épineux','Petit rond','Deltoïde postérieur']},
+  {id:'mb-ep6',cat:'epaule',sub:'coiffe',emoji:'🚪',name:'Rotation isométrique porte (int./ext.)',duree:'10 sec × 6',series:'2',intensite:1,objectif:'Activer le subscapulaire et les rotateurs externes de façon isométrique, rééquilibrer la coiffe',desc:'Coude à 90°, avant-bras appuyé contre un montant de porte. Pousser le poignet (rotation interne) sans mouvement, tenir 10 sec. Puis retourner le bras et pousser en rotation externe. Alterner.',muscles:['Subscapulaire (rotation interne)','Infra-épineux','Petit rond (rotation externe)']},
+  {id:'mb-ep7',cat:'epaule',sub:'coiffe',emoji:'🔗',name:'Face Pull à l\'élastique',duree:'15 rép',series:'3',intensite:2,objectif:'Renforcer les rotateurs externes et rétracteurs scapulaires, corriger la rotation interne excessive',desc:'Élastique fixé à hauteur du visage. Tirer vers le front en écartant les mains et en effectuant une rotation externe maximale des épaules. Coudes hauts, maintenir 2 sec en fin de mouvement.',muscles:['Infra-épineux','Petit rond','Trapèze moyen et inférieur','Rhomboïdes']},
+  {id:'mb-ep8',cat:'epaule',sub:'capsule',emoji:'😴',name:'Sleeper Stretch',duree:'60 sec/côté',series:'3',intensite:2,objectif:'Étirer la capsule postérieure gléno-humérale, souvent rétractée chez les sportifs',desc:'Allongé sur le côté, épaule cible à 90° de flexion, coude à 90°. L\'autre main pousse doucement le poignet vers le sol (rotation interne forcée). Pas de douleur aiguë — intensité de 4-5/10.',muscles:['Capsule postérieure gléno-humérale','Infra-épineux','Petit rond (étirement)']},
+  {id:'mb-ep9',cat:'epaule',sub:'capsule',emoji:'🎯',name:'Cross-body shoulder stretch',duree:'45 sec/côté',series:'3',intensite:1,objectif:'Étirer la capsule postérieure et le deltoïde postérieur, améliorer la flexion horizontale',desc:'Bras tendu croisé devant la poitrine à hauteur des épaules. L\'autre main attire le coude vers soi. Garder l\'épaule basse — ne pas hausser les trapèzes. Tenir sans rebond.',muscles:['Deltoïde postérieur','Capsule postérieure','Infra-épineux','Petit rond']},
+  {id:'mb-ep10',cat:'epaule',sub:'capsule',emoji:'🧘',name:'Shoulder Extension au mur (pectoraux ant.)',duree:'45 sec/côté',series:'2',intensite:1,objectif:'Étirer la capsule antérieure et les pectoraux, améliorer l\'extension gléno-humérale souvent limitée',desc:'De côté face à un mur, bras tendu posé à plat sur le mur à hauteur d\'épaule. Tourner le corps en s\'éloignant du mur jusqu\'à sentir l\'étirement de la face antérieure de l\'épaule. Tenir.',muscles:['Capsule antérieure gléno-humérale','Grand pectoral','Deltoïde antérieur','Biceps (longue portion)']},
+  // ── HANCHES ───────────────────────────────────────────────────────────────
+  {id:'mb-hip1',cat:'hanche',sub:'rotateurs',emoji:'🔄',name:'CARS de hanche debout',duree:'5 rép/côté',series:'3',intensite:1,objectif:'Maintenir et explorer l\'amplitude articulaire active coxo-fémorale dans tous les plans',desc:'Debout sur une jambe (appui si besoin). Lever le genou à 90°, puis tracer un grand cercle lent et contrôlé : abduction → extension → adduction → flexion. Activer tous les muscles de hanche en résistant au mouvement.',muscles:['Fessiers (3 chefs)','Psoas-iliaque','Adducteurs','Rotateurs de hanche (6 muscles profonds)']},
+  {id:'mb-hip2',cat:'hanche',sub:'rotateurs',emoji:'🧘',name:'90/90 Hip Stretch',duree:'90 sec/côté',series:'2',intensite:2,objectif:'Étirer simultanément les rotateurs internes et externes de hanche, libérer la capsule coxo-fémorale',desc:'Au sol, jambe avant à 90° devant (rotation externe), jambe arrière à 90° derrière (rotation interne). Se pencher vers l\'avant sur la jambe avant, buste droit. Progresser en s\'appuyant sur les avant-bras.',muscles:['Piriforme','Fessier grand et moyen','Psoas','Rotateurs ext. de hanche (pelvi-trochantériens)']},
+  {id:'mb-hip3',cat:'hanche',sub:'rotateurs',emoji:'🕊️',name:'Pigeon Pose progressif',duree:'2 min/côté',series:'2',intensite:2,objectif:'Déblocage profond du piriforme et des rotateurs externes, libération de la chaîne glutéale',desc:'Jambe avant fléchie (perpendiculairement ou plus fermée si besoin), jambe arrière tendue. Descendre progressivement sur les avant-bras puis le front. Respiration profonde pour relâcher la tension musculaire.',muscles:['Piriforme','Obturateur externe','Fessier grand et moyen','Carré fémoral']},
+  {id:'mb-hip4',cat:'hanche',sub:'rotateurs',emoji:'✈️',name:'Hip Airplane (avion unilatéral)',duree:'10 rép/côté',series:'3',intensite:2,objectif:'Contrôle actif des rotateurs de hanche en charge, proprioception et stabilité pelvi-fémorale',desc:'Debout sur une jambe, hip hinge vers l\'avant. Tourner le bassin vers la jambe portante (rotation interne) puis sens inverse (rotation externe). Fessier de la jambe d\'appui contrôle le mouvement.',muscles:['Fessier moyen','Rotateurs de hanche (tous)','Ischio-jambiers','Core (anti-rotation)']},
+  {id:'mb-hip5',cat:'hanche',sub:'flechisseurs',emoji:'🛋️',name:'Couch Stretch (psoas profond)',duree:'2 min/côté',series:'2',intensite:2,objectif:'Étirer profondément le psoas-iliaque et le droit fémoral, réduire l\'antéversion pelvienne',desc:'Genou arrière contre un mur ou canapé, jambe avant en fente. Buste droit, hanches au carré. Pousser la hanche vers l\'avant et le bas. Progresser en redressant lentement le torse jusqu\'à la verticale.',muscles:['Psoas-iliaque','Droit fémoral','Quadriceps','Iliaque']},
+  {id:'mb-hip6',cat:'hanche',sub:'flechisseurs',emoji:'🐉',name:'Dragon Pose (fléchisseur profond)',duree:'3 min/côté',series:'1',intensite:3,objectif:'Étirement intense des tissus conjonctifs profonds du psoas, travail yin ciblant la capsule antérieure',desc:'Fente basse, genou avant au-dessus de la cheville, genou arrière au sol. Bassin poussé en avant et vers le bas. Descendre progressivement sur les avant-bras. Rester passif, laisser la gravité travailler.',muscles:['Psoas profond','Iliaque','Droit fémoral','Capsule coxo-fémorale antérieure']},
+  {id:'mb-hip7',cat:'hanche',sub:'flechisseurs',emoji:'🌪️',name:'Lunge + Rotation thoracique',duree:'8 rép/côté',series:'3',intensite:2,objectif:'Ouvrir fléchisseurs de hanche et cage thoracique simultanément, mobilité globale de la chaîne antérieure',desc:'En fente, genou arrière au sol. Main du côté avant derrière la tête. Rotation du coude vers le plafond en ouvrant la poitrine. Revenir et répéter. L\'autre main peut s\'appuyer au sol pour la stabilité.',muscles:['Psoas','Fléchisseurs de hanche','Colonne thoracique','Obliques']},
+  {id:'mb-hip8',cat:'hanche',sub:'adducteurs',emoji:'🦩',name:'Cossack Squat (squat latéral profond)',duree:'10 rép/côté',series:'3',intensite:2,objectif:'Développer la mobilité des adducteurs en excentrique, renforcer en amplitude l\'abduction de hanche',desc:'Pieds très écartés (>1,5× épaules). Descendre d\'un côté (genou fléchi) en gardant l\'autre jambe tendue, talon au sol. Bassin bas, dos droit. Alterner les côtés avec contrôle.',muscles:['Adducteurs (longs et courts)','Fessier moyen','Quadriceps médial','Ischio-jambiers']},
+  {id:'mb-hip9',cat:'hanche',sub:'adducteurs',emoji:'🦋',name:'Butterfly + propulsion progressive',duree:'3 min',series:'1',intensite:1,objectif:'Étirer les adducteurs et le plancher pelvien, améliorer l\'abduction de hanche en position neutre',desc:'Assis, plantes des pieds en contact, genoux qui s\'abaissent vers le sol. Dos droit. Propulser doucement les genoux vers le bas avec les coudes. Respiration abdominale lente et profonde.',muscles:['Adducteurs courts et longs','Gracilis','Pectiné','Plancher pelvien']},
+  {id:'mb-hip10',cat:'hanche',sub:'adducteurs',emoji:'🐸',name:'Frog Stretch (grenouille)',duree:'2 min',series:'2',intensite:2,objectif:'Étirement profond des adducteurs et rotateurs en position fermée, libération de l\'aine et de l\'ischion',desc:'À 4 pattes, écarter progressivement les genoux (hanches vers l\'extérieur), pieds parallèles aux genoux. Pousser le bassin vers l\'arrière et le bas. Respirer profondément pour relâcher progressivement.',muscles:['Adducteurs (longs et courts)','Pectiné','Gracilis','Rotateurs de hanche']}
+];
+
 const GROUP_LABELS = {
   global:'🌐 Global',upper:'💪 Haut du corps',lower:'🦵 Bas du corps',cardio:'❤️ Cardio',
   articulaire:'🦴 Articulaire',dos:'🔙 Dos',hanche:'🏃 Hanches',respiration:'🌬️ Respiration',
@@ -7120,6 +7181,93 @@ function renderCooldown() {
   }
 }
 
+
+// ── MOBILITÉ ─────────────────────────────────────────────────────────────
+const MOB_CATEGORIES = {
+  cage:   {label:'🫁 Cage thoracique', subs:{all:'Tous',vertebral:'🌀 Vertébral thoracique',intercostal:'🫁 Intercostal / Côtes',postural:'🏛️ Postural'}},
+  epaule: {label:'🦾 Épaule',          subs:{all:'Tous',glenohumeral:'⚽ Gléno-huméral',coiffe:'🔄 Coiffe des rotateurs',capsule:'🎯 Capsule articulaire'}},
+  hanche: {label:'🏃 Hanches',         subs:{all:'Tous',rotateurs:'🔄 Rotateurs',flechisseurs:'➡️ Fléchisseurs',adducteurs:'🦵 Adducteurs'}}
+};
+
+let _mobCategory = 'cage';
+let _mobSub = 'all';
+
+function setMobilityCategory(cat) {
+  _mobCategory = cat;
+  _mobSub = 'all';
+  document.querySelectorAll('.mob-cat-tab').forEach(b=>b.classList.toggle('active',b.dataset.cat===cat));
+  renderMobilitySubRow();
+  renderMobility();
+}
+
+function setMobilitySub(sub) {
+  _mobSub = sub;
+  document.querySelectorAll('.mob-sub-btn').forEach(b=>b.classList.toggle('active',b.dataset.sub===sub));
+  renderMobility();
+}
+
+function renderMobilitySubRow() {
+  const row = document.getElementById('mob-sub-row');
+  if(!row) return;
+  const cat = MOB_CATEGORIES[_mobCategory];
+  if(!cat) return;
+  row.innerHTML = Object.entries(cat.subs).map(([key,label])=>
+    `<button class="sess-btn mob-sub-btn${key===_mobSub?' active':''}" data-sub="${key}" onclick="setMobilitySub('${key}')">${label}</button>`
+  ).join('');
+}
+
+function mobilityCard(ex) {
+  const isAdded = builderSessionExercises.some(s=>s.exId===ex.id);
+  const dots = [1,2,3].map(i=>`<div class="prep-dot ${i<=ex.intensite?'on':'off'}"></div>`).join('');
+  const muscles = ex.muscles.map(m=>`<span class="prep-muscle-tag">${m}</span>`).join('');
+  const catConfig = MOB_CATEGORIES[ex.cat];
+  const subLabel = catConfig?.subs[ex.sub] || ex.sub;
+  const series = ex.series ? `<span class="prep-card-series">· ${ex.series} séries</span>` : '';
+  return `<div class="prep-card">
+    <div class="prep-card-head">
+      <div class="prep-card-emoji">${ex.emoji}</div>
+      <div class="prep-card-info">
+        <div class="prep-card-name">${ex.name}</div>
+        <div class="prep-card-meta">
+          <span class="prep-tag prep-tag-type">${subLabel}</span>
+          <span class="prep-tag prep-tag-dur">⏱ ${ex.duree}</span>
+          ${series}
+        </div>
+      </div>
+      <div class="prep-intensite">${dots}</div>
+    </div>
+    <div class="prep-card-objectif">🎯 ${ex.objectif}</div>
+    <div class="prep-card-desc">${ex.desc}</div>
+    <div class="prep-muscles">${muscles}</div>
+    <button class="mob-add-btn${isAdded?' added':''}" onclick="addMobilityToBuilder('${ex.id}')">
+      ${isAdded?'✓ Ajouté à la séance':'+ Ajouter à la séance'}
+    </button>
+  </div>`;
+}
+
+function addMobilityToBuilder(id) {
+  const ex = MOBILITY_DATA.find(e=>e.id===id);
+  if(!ex) return;
+  if(!EXERCISES.find(e=>e.id===id)) {
+    EXERCISES.push({
+      id:ex.id, cat:'mobilite', sub:'Mobilité', name:ex.name, icon:ex.emoji,
+      tags:['mobilite'], muscles:ex.muscles.map(m=>({n:m,pct:50,primary:true})),
+      fibers:{type1:50,type2:50,curve:'central',note:''}, tips:[]
+    });
+  }
+  toggleBuilderEx(id);
+  renderMobility();
+}
+
+function renderMobility() {
+  const grid = document.getElementById('mobility-grid');
+  if(!grid) return;
+  let data = MOBILITY_DATA.filter(e=>e.cat===_mobCategory);
+  if(_mobSub!=='all') data = data.filter(e=>e.sub===_mobSub);
+  grid.innerHTML = data.length
+    ? data.map(e=>mobilityCard(e)).join('')
+    : '<div style="padding:40px;text-align:center;color:var(--muted);">Aucun exercice dans cette catégorie</div>';
+}
 
 // ── Aperçu plan assigné depuis page Nutrition ─────────────────────────────
 function previewAssignedPlan(){
