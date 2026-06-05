@@ -3789,6 +3789,10 @@ async function doAssign(){
   document.getElementById('assign-date-inp').value='';
   toast(`Séance assignée à ${a?.name} ✓`);
   renderDashboard();
+  if(currentAthleteId && currentAthleteId===athleteId){
+    showPage('athlete-detail');
+    renderAthleteDetail(currentAthleteId);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -4429,7 +4433,7 @@ function renderAthAssigns(athleteId, assigns, sessionLogs, prs){
   }
   el.innerHTML = assigns.map(asgn=>{
     const s = getCoachSessions().find(x=>x.id===asgn.sessionId);
-    if(!s) return '';
+    if(!s) return `<div style="padding:10px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;font-size:12px;color:var(--muted);">⚠️ Séance supprimée <button class="btn btn-secondary btn-sm" style="margin-left:8px;" onclick="deleteAssign('${asgn.id}')">Retirer</button></div>`;
     const done   = asgn.status==='done';
     // Trouver la dernière séance faite pour cette session
     const prevLog = sessionLogs.filter(l=>l.sessionId===asgn.sessionId).sort((a,b)=>b.date-a.date)[0];
@@ -4445,7 +4449,7 @@ function renderAthAssigns(athleteId, assigns, sessionLogs, prs){
           </div>
         </div>
         <div class="sac-actions">
-          ${!done?`<button class="btn-start" onclick="startSession('${asgn.id}','${asgn.sessionId}','${id}')">▶ Démarrer</button>`:''}
+          ${!done?`<button class="btn-start" onclick="startSession('${asgn.id}','${asgn.sessionId}','${athleteId}')">▶ Démarrer</button>`:''}
           <button class="btn btn-secondary btn-sm" onclick="deleteAssign('${asgn.id}')">✕</button>
         </div>
       </div>
