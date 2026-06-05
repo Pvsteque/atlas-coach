@@ -647,6 +647,9 @@ select.input{cursor:pointer;}
 .ex-row-info{flex:1;}
 .ex-row-name{font-size:13px;font-weight:600;}
 .ex-row-params{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:2px;}
+.ex-row-desc{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.55;padding-top:5px;border-top:1px solid rgba(255,255,255,.06);opacity:.85;}
+.ex-row-tips{font-size:10px;color:var(--muted);margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,.06);}
+.ex-row-tips li{margin-left:14px;line-height:1.55;opacity:.85;}
 .prev-data{font-size:10px;color:var(--accent2);background:rgba(255,159,69,.08);border:1px solid rgba(255,159,69,.2);border-radius:6px;padding:2px 7px;flex-shrink:0;}
 .pr-badge{font-size:10px;color:var(--accent);background:rgba(255,122,0,.12);border:1px solid rgba(255,122,0,.3);border-radius:6px;padding:2px 7px;flex-shrink:0;}
 
@@ -4234,29 +4237,33 @@ function generateProgram() {
       if(ex.isMobility){
         const muscles = ex.muscles.slice(0,2).map(m=>m.n).join(', ');
         return `<tr>
-          <td class="ex-icon">${ex.icon}</td>
+          <td class="ex-icon" style="vertical-align:top;padding-top:11px;">${ex.icon}</td>
           <td>
             <div class="ex-name">${ex.name}</div>
             <div class="ex-sub">Mobilité${muscles?' · '+muscles:''}</div>
+            ${ex.objectif?`<div class="ex-objectif">🎯 ${ex.objectif}</div>`:''}
+            ${ex.desc?`<div class="ex-desc">${ex.desc}</div>`:''}
           </td>
-          <td class="ex-num" colspan="3" style="color:#ff7a00;font-weight:600;text-align:left;padding-left:8px;">⏱ ${ex.duree}${ex.series?' × '+ex.series:''}</td>
-          <td class="ex-num">—</td>
+          <td class="ex-num" colspan="3" style="color:#ff7a00;font-weight:600;text-align:left;padding-left:8px;vertical-align:top;padding-top:11px;">⏱ ${ex.duree}${ex.series?' × '+ex.series:''}</td>
+          <td class="ex-num" style="vertical-align:top;padding-top:11px;">—</td>
           <td class="notes-col"></td>
         </tr>`;
       }
       const method = e.method ? INTENSITY_METHODS.find(m => m.id === e.method) : null;
       const muscles = ex.muscles.filter(m => m.primary).slice(0,2).map(m => m.n).join(', ');
+      const tips = ex.tips||[];
       return `<tr>
-        <td class="ex-icon">${ex.icon||'🏋️'}</td>
+        <td class="ex-icon" style="vertical-align:top;padding-top:11px;">${ex.icon||'🏋️'}</td>
         <td>
           <div class="ex-name">${ex.name}</div>
           <div class="ex-sub">${ex.sub||''}${muscles?' · '+muscles:''}</div>
           ${method?`<div class="method-pill">${method.icon} ${method.name}</div>`:''}
+          ${tips.length?`<ul class="ex-tips">${tips.map(t=>`<li>${t}</li>`).join('')}</ul>`:''}
         </td>
-        <td class="ex-num">${e.sets}</td>
-        <td class="ex-num">${e.reps}</td>
-        <td class="ex-num">${e.kg>0?e.kg+' kg':'Corps'}</td>
-        <td class="ex-num">${e.rest}s</td>
+        <td class="ex-num" style="vertical-align:top;padding-top:11px;">${e.sets}</td>
+        <td class="ex-num" style="vertical-align:top;padding-top:11px;">${e.reps}</td>
+        <td class="ex-num" style="vertical-align:top;padding-top:11px;">${e.kg>0?e.kg+' kg':'Corps'}</td>
+        <td class="ex-num" style="vertical-align:top;padding-top:11px;">${e.rest}s</td>
         <td class="notes-col"></td>
       </tr>`;
     }).join('');
@@ -4312,7 +4319,11 @@ body{font-family:system-ui,sans-serif;background:#fff;color:#0a0a0f;font-size:12
 .ex-sub{font-size:10px;color:#888;margin-top:2px;}
 .method-pill{display:inline-block;margin-top:4px;font-size:10px;background:#fff4eb;color:#ff7a00;border:1px solid #ffd5aa;padding:1px 7px;border-radius:20px;font-weight:600;}
 .ex-num{text-align:center;font-weight:700;font-size:13px;white-space:nowrap;}
-.notes-col{min-width:120px;border-left:2px dashed #e5e5e5 !important;}
+.notes-col{min-width:100px;border-left:2px dashed #e5e5e5 !important;}
+.ex-tips{margin-top:6px;padding-top:5px;border-top:1px solid #f0f0f0;}
+.ex-tips li{font-size:9.5px;color:#444;line-height:1.55;margin-left:14px;margin-bottom:1px;}
+.ex-objectif{font-size:9.5px;color:#ff7a00;font-weight:600;margin-top:5px;padding-top:4px;border-top:1px solid #ffe5cc;}
+.ex-desc{font-size:9.5px;color:#555;margin-top:3px;line-height:1.55;}
 .doc-footer{border-top:1px solid #e5e5e5;padding-top:14px;margin-top:16px;display:flex;justify-content:space-between;font-size:10px;color:#aaa;}
 @media print{body{print-color-adjust:exact;-webkit-print-color-adjust:exact;}.page{padding:12px 16px;}.session-block{page-break-inside:avoid;}}
 </style></head><body>
@@ -4469,11 +4480,13 @@ function renderAthAssigns(athleteId, assigns, sessionLogs, prs){
       ${(s.exercises||[]).map(e=>{
         const ex = findExercise(e.exId);
         if(!ex) return '';
-        if(ex.isMobility) return `<div class="ex-row-detail">
-          <div class="ex-row-icon">${ex.icon}</div>
+        if(ex.isMobility) return `<div class="ex-row-detail" style="align-items:flex-start;">
+          <div class="ex-row-icon" style="margin-top:2px;">${ex.icon}</div>
           <div class="ex-row-info">
             <div class="ex-row-name">${ex.name}</div>
             <div class="ex-row-params" style="color:var(--accent);">⏱ ${ex.duree}${ex.series?' · '+ex.series+' séries':''}</div>
+            ${ex.objectif?`<div class="ex-row-desc" style="color:rgba(255,122,0,.7);">🎯 ${ex.objectif}</div>`:''}
+            ${ex.desc?`<div class="ex-row-desc">${ex.desc}</div>`:''}
           </div>
         </div>`;
         // Données séance précédente
@@ -4481,14 +4494,16 @@ function renderAthAssigns(athleteId, assigns, sessionLogs, prs){
         const bestPrevKg = prevSets.length ? Math.max(...prevSets.map(s=>s.kg||0)) : 0;
         const prevReps   = prevSets.length ? prevSets[prevSets.length-1].reps : 0;
         const pr = prs[e.exId];
-        return `<div class="ex-row-detail">
-          <div class="ex-row-icon">${ex.icon||'🏋️'}</div>
+        const tips = ex.tips||[];
+        return `<div class="ex-row-detail"${tips.length?' style="align-items:flex-start;"':''}>
+          <div class="ex-row-icon"${tips.length?' style="margin-top:2px;"':''}>${ex.icon||'🏋️'}</div>
           <div class="ex-row-info">
             <div class="ex-row-name">${ex.name}</div>
             <div class="ex-row-params">${e.sets}×${e.reps} · ${e.kg>0?e.kg+'kg':'Poids libre'} · repos ${e.rest}s</div>
+            ${tips.length?`<ul class="ex-row-tips">${tips.map(t=>`<li>${t}</li>`).join('')}</ul>`:''}
           </div>
-          ${bestPrevKg>0?`<div class="prev-data">↩ ${bestPrevKg}kg × ${prevReps}r</div>`:''}
-          ${pr?`<div class="pr-badge">🏆 ${pr.kg}kg</div>`:''}
+          ${bestPrevKg>0?`<div class="prev-data" style="align-self:flex-start;margin-top:2px;">↩ ${bestPrevKg}kg × ${prevReps}r</div>`:''}
+          ${pr?`<div class="pr-badge" style="align-self:flex-start;margin-top:2px;">🏆 ${pr.kg}kg</div>`:''}
         </div>`;
       }).join('')}
     </div>`;
@@ -7214,6 +7229,7 @@ function findExercise(id){
   if(!mob) return null;
   return {id:mob.id, name:mob.name, icon:mob.emoji, cat:'mobilite', sub:'Mobilité',
           isMobility:true, duree:mob.duree, series:mob.series||'',
+          desc:mob.desc||'', objectif:mob.objectif||'',
           muscles:mob.muscles.map(m=>({n:m,pct:50,primary:true})), fibers:{}, tips:[]};
 }
 
