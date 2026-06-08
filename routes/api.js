@@ -14,20 +14,20 @@ router.get('/athletes', (req, res) => {
 });
 
 router.post('/athletes', (req, res) => {
-  const { name, age, weight, height, bf, color, obj, level, sport, notes, email } = req.body;
+  const { name, age, weight, height, bf, color, obj, level, sport, notes, email, pathologies } = req.body;
   if (!name) return res.status(400).json({ error: 'Nom requis' });
   const id = randomUUID();
-  db.prepare('INSERT INTO athletes (id, coach_id, name, age, weight, height, bf, color, obj, level, sport, notes, email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .run(id, req.coach.id, name, age || null, weight || null, height || null, bf || null, color || '#ff7a00', obj || '', level || '', sport || '', notes || '', email ? email.toLowerCase().trim() : null);
+  db.prepare('INSERT INTO athletes (id, coach_id, name, age, weight, height, bf, color, obj, level, sport, notes, email, pathologies) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(id, req.coach.id, name, age || null, weight || null, height || null, bf || null, color || '#ff7a00', obj || '', level || '', sport || '', notes || '', email ? email.toLowerCase().trim() : null, pathologies || '');
   res.status(201).json(mapAthlete(db.prepare('SELECT * FROM athletes WHERE id = ?').get(id)));
 });
 
 router.put('/athletes/:id', (req, res) => {
   const a = db.prepare('SELECT id FROM athletes WHERE id = ? AND coach_id = ?').get(req.params.id, req.coach.id);
   if (!a) return res.status(404).json({ error: 'Athlète introuvable' });
-  const { name, age, weight, height, bf, color, obj, level, sport, notes } = req.body;
-  db.prepare('UPDATE athletes SET name=?, age=?, weight=?, height=?, bf=?, color=?, obj=?, level=?, sport=?, notes=? WHERE id=?')
-    .run(name, age || null, weight || null, height || null, bf || null, color, obj, level, sport, notes, req.params.id);
+  const { name, age, weight, height, bf, color, obj, level, sport, notes, pathologies } = req.body;
+  db.prepare('UPDATE athletes SET name=?, age=?, weight=?, height=?, bf=?, color=?, obj=?, level=?, sport=?, notes=?, pathologies=? WHERE id=?')
+    .run(name, age || null, weight || null, height || null, bf || null, color, obj, level, sport, notes, pathologies || '', req.params.id);
   res.json(mapAthlete(db.prepare('SELECT * FROM athletes WHERE id = ?').get(req.params.id)));
 });
 
@@ -57,7 +57,7 @@ router.put('/athletes/:id/access', async (req, res) => {
 });
 
 function mapAthlete(r) {
-  return { id: r.id, name: r.name, age: r.age, weight: r.weight, height: r.height, bf: r.bf, color: r.color, obj: r.obj, level: r.level, sport: r.sport, notes: r.notes, email: r.email, hasPortal: !!(r.email && r.password), createdAt: r.created_at * 1000 };
+  return { id: r.id, name: r.name, age: r.age, weight: r.weight, height: r.height, bf: r.bf, color: r.color, obj: r.obj, level: r.level, sport: r.sport, notes: r.notes, email: r.email, pathologies: r.pathologies, hasPortal: !!(r.email && r.password), createdAt: r.created_at * 1000 };
 }
 
 // ── SESSIONS ──────────────────────────────────────────────────────

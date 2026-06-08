@@ -1,6 +1,7 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
+const { randomUUID } = require('crypto');
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -103,7 +104,9 @@ function initDB() {
       });
       try { db.exec('ALTER TABLE logs ADD COLUMN sets_data TEXT'); } catch {}
       try { db.exec('ALTER TABLE logs ADD COLUMN photos TEXT'); } catch {}
+      try { db.exec('ALTER TABLE athletes ADD COLUMN pathologies TEXT'); } catch {}
       try { db.exec('ALTER TABLE coaches ADD COLUMN coach_code TEXT'); } catch {}
+      try { db.exec('ALTER TABLE coaches ADD COLUMN cal_token TEXT'); } catch {}
       // Génère un code pour les coaches qui n'en ont pas encore
       const charset = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
       const genCode = () => Array.from({ length: 6 }, () => charset[Math.floor(Math.random() * charset.length)]).join('');
@@ -112,6 +115,10 @@ function initDB() {
         let code;
         do { code = genCode(); } while (db.prepare('SELECT id FROM coaches WHERE coach_code = ?').get(code));
         db.prepare('UPDATE coaches SET coach_code = ? WHERE id = ?').run(code, c.id);
+      }
+      // Génère un cal_token pour les coaches qui n'en ont pas encore
+      for (const c of db.prepare('SELECT id FROM coaches WHERE cal_token IS NULL').all()) {
+        db.prepare('UPDATE coaches SET cal_token = ? WHERE id = ?').run(randomUUID(), c.id);
       }
       resolve();
     } catch (err) {

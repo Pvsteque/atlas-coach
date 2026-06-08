@@ -99,6 +99,14 @@ select.input{cursor:pointer;}
 .sports-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
 .sport-chip{padding:7px 14px;border-radius:20px;border:1px solid var(--border);font-size:13px;cursor:pointer;transition:all .15s;user-select:none;background:var(--bg2);color:var(--muted);}
 .sport-chip.selected{background:rgba(255,122,0,.12);border-color:var(--accent);color:var(--accent);font-weight:600;}
+.patho-chips-grid{display:flex;flex-wrap:wrap;gap:6px;}
+.patho-chip{padding:5px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;cursor:pointer;transition:all .15s;user-select:none;background:var(--bg2);color:var(--muted);}
+.patho-chip.selected{background:rgba(255,60,60,.12);border-color:#ff5555;color:#ff5555;font-weight:600;}
+.ex-pick-item.patho-locked{border-left:3px solid #ff5555;background:rgba(255,60,60,0.06);}
+.ex-pick-item.patho-caution{border-left:3px solid #ffb800;background:rgba(255,184,0,0.05);}
+.patho-ex-badge{font-size:10px;padding:2px 5px;border-radius:8px;font-weight:700;margin-left:4px;vertical-align:middle;white-space:nowrap;}
+.patho-ex-badge.locked{background:rgba(255,60,60,.2);color:#ff5555;}
+.patho-ex-badge.caution{background:rgba(255,184,0,.2);color:#ffb800;}
 .sport-level-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg2);border-radius:10px;margin-bottom:6px;font-size:13px;}
 .sport-level-label{flex:1;font-weight:500;}
 .sport-level-select{padding:5px 10px;font-size:12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;}
@@ -1339,6 +1347,7 @@ select.input{cursor:pointer;}
         <div class="coach-av" id="coach-av">C</div>
         <div><div class="coach-name" id="coach-name-display">Coach</div><div class="coach-role">Coach</div></div>
         <button onclick="downloadBackup()" title="Sauvegarder les données" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px 6px;border-radius:6px;transition:color .15s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">💾</button>
+        <button onclick="openCalModal()" title="Synchroniser avec Apple Calendar" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px 6px;border-radius:6px;transition:color .15s;" onmouseover="this.style.color='var(--accent2)'" onmouseout="this.style.color='var(--muted)'">📅</button>
         <button onclick="logout()" title="Déconnexion" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px 6px;border-radius:6px;transition:color .15s;" onmouseover="this.style.color='var(--accent3)'" onmouseout="this.style.color='var(--muted)'" >⏻</button>
       </div>
     </div>
@@ -1930,6 +1939,23 @@ select.input{cursor:pointer;}
       </div>
       <div id="na-sports-levels" style="margin-top:6px;"></div>
     </div>
+    <div class="input-group">
+      <label class="input-label">Pathologies / Contre-indications</label>
+      <div class="patho-chips-grid" id="na-patho-chips">
+        <div class="patho-chip" data-patho="hernie-lombaire" onclick="togglePathoChip(this)">🦴 Hernie lombaire</div>
+        <div class="patho-chip" data-patho="hernie-cervicale" onclick="togglePathoChip(this)">🦴 Hernie cervicale</div>
+        <div class="patho-chip" data-patho="lombalgie-chronique" onclick="togglePathoChip(this)">🔴 Lombalgie chronique</div>
+        <div class="patho-chip" data-patho="scoliose" onclick="togglePathoChip(this)">🦴 Scoliose</div>
+        <div class="patho-chip" data-patho="tendinite-epaule" onclick="togglePathoChip(this)">⚡ Tendinite épaule</div>
+        <div class="patho-chip" data-patho="tendinite-genou" onclick="togglePathoChip(this)">🦵 Tendinite rotulienne</div>
+        <div class="patho-chip" data-patho="essuie-glace" onclick="togglePathoChip(this)">🦵 Essuie-glace (TFL)</div>
+        <div class="patho-chip" data-patho="epicondylite" onclick="togglePathoChip(this)">💪 Épicondylite</div>
+        <div class="patho-chip" data-patho="canal-carpien" onclick="togglePathoChip(this)">🤚 Canal carpien</div>
+        <div class="patho-chip" data-patho="pubalgie" onclick="togglePathoChip(this)">⚠️ Pubalgie / Aine</div>
+        <div class="patho-chip" data-patho="arthrose-hanche" onclick="togglePathoChip(this)">🦴 Arthrose hanche</div>
+        <div class="patho-chip" data-patho="diastase" onclick="togglePathoChip(this)">⚠️ Diastase</div>
+      </div>
+    </div>
     <div class="input-group"><label class="input-label">Email (pour le portail adhérent)</label><input class="input" id="na-email" type="email" placeholder="prenom@email.com"></div>
     <div class="input-group"><label class="input-label">Notes</label><input class="input" id="na-notes" placeholder="Blessures, contraintes..."></div>
     <div class="modal-actions">
@@ -2041,6 +2067,30 @@ select.input{cursor:pointer;}
     <div class="modal-actions" style="margin-top:20px;">
       <button class="btn btn-accent" onclick="generateProgram()" style="flex:1;justify-content:center;">📄 Générer PDF</button>
       <button class="btn btn-secondary" onclick="closeModal('modal-export-program')" style="flex:1;justify-content:center;">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CALENDAR MODAL ── -->
+<div class="modal-overlay" id="modal-calendar">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-title">📅 Abonnement agenda</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6;">Colle cette URL dans Apple Calendar pour voir toutes tes séances planifiées. L'agenda se rafraîchit automatiquement toutes les heures.</p>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input id="cal-url-input" class="input" readonly style="flex:1;font-size:11px;font-family:monospace;cursor:pointer;" onclick="this.select()">
+      <button class="btn btn-accent" onclick="copyCalUrl()" id="cal-copy-btn" style="flex-shrink:0;white-space:nowrap;">Copier</button>
+    </div>
+    <div style="margin-top:20px;padding:14px;background:var(--bg3);border-radius:12px;border:1px solid var(--border);">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent2);margin-bottom:10px;">Instructions Apple Calendar</div>
+      <ol style="font-size:12px;color:var(--muted);line-height:2;padding-left:18px;">
+        <li>Ouvre <strong style="color:var(--text);">Calendrier</strong> sur Mac ou iPhone</li>
+        <li>Menu <strong style="color:var(--text);">Fichier → Nouvel abonnement de calendrier</strong></li>
+        <li>Colle l'URL et clique <strong style="color:var(--text);">S'abonner</strong></li>
+        <li>Dans les options, règle la fréquence sur <strong style="color:var(--text);">Toutes les heures</strong></li>
+      </ol>
+    </div>
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn btn-secondary" onclick="closeModal('modal-calendar')" style="flex:1;justify-content:center;">Fermer</button>
     </div>
   </div>
 </div>
@@ -3356,6 +3406,7 @@ let logRPE = null, logMood = null;
 // ═══════════════════════════════════════════════════════════════
 let _token = localStorage.getItem('atlas_token');
 let _coachName = 'Coach';
+let _calToken = null;
 const _cache = { athletes:[], sessions:[], assignments:[], logs:[], nutri:{} };
 let _chatMessages = {}; // { athleteId: [{id,sender,text,ts,read}] }
 let _chatUnread   = {}; // { athleteId: count }
@@ -3492,6 +3543,7 @@ async function downloadBackup(){
 async function startApp(coach){
   document.getElementById('auth-screen').classList.add('hidden');
   _coachName=coach?.name||'Coach';
+  _calToken=coach?.cal_token||null;
   const coachName=_coachName;
   document.getElementById('coach-name-display').textContent=coachName;
   document.getElementById('coach-av').textContent=coachName.charAt(0).toUpperCase();
@@ -3840,12 +3892,19 @@ function renderNutriMini(n){
 // ═══════════════════════════════════════════════════════════════
 let _editAthleteId = null;
 
+function togglePathoChip(chip){ chip.classList.toggle('selected'); }
+
+function getSelectedPathologies(){
+  return [...document.querySelectorAll('#na-patho-chips .patho-chip.selected')].map(c=>c.dataset.patho);
+}
+
 function _resetAthleteModal() {
   ['na-name','na-age','na-weight','na-height','na-bf','na-notes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('na-obj').value='maintain';
   document.getElementById('na-email').value='';
   document.querySelectorAll('#na-sports-chips .sport-chip').forEach(c=>c.classList.remove('selected'));
   document.getElementById('na-sports-levels').innerHTML='';
+  document.querySelectorAll('#na-patho-chips .patho-chip').forEach(c=>c.classList.remove('selected'));
 }
 
 function openNewAthleteModal(){
@@ -3878,6 +3937,13 @@ function openEditAthleteModal(id){
     const chip=document.querySelector(`#na-sports-chips [data-sport="${s.id}"]`);
     if(chip) chip.classList.add('selected');
   });
+  // Restore pathologies chips
+  let pathos=[];
+  try{pathos=JSON.parse(a.pathologies||'[]');}catch(e){}
+  pathos.forEach(pid=>{
+    const chip=document.querySelector(`#na-patho-chips [data-patho="${pid}"]`);
+    if(chip) chip.classList.add('selected');
+  });
   // Render level selectors then set saved levels
   if(sports.length){
     const levelsEl=document.getElementById('na-sports-levels');
@@ -3906,6 +3972,8 @@ async function saveAthleteForm(){
   if(!name){toast('Nom requis'); return;}
   const sports=getSelectedSports();
   const sportStr=sports.length?JSON.stringify(sports):'';
+  const pathoList=getSelectedPathologies();
+  const pathoStr=pathoList.length?JSON.stringify(pathoList):'';
   const body={
     name,
     age:+document.getElementById('na-age').value||null,
@@ -3915,6 +3983,7 @@ async function saveAthleteForm(){
     obj:document.getElementById('na-obj').value,
     notes:document.getElementById('na-notes').value||'',
     sport:sportStr,
+    pathologies:pathoStr,
   };
   if(_editAthleteId){
     const a=getAthletes().find(x=>x.id===_editAthleteId);
@@ -4017,6 +4086,31 @@ function setBuilderCat(cat,btn){
   renderBuilderList();
 }
 
+function getBuilderPathoStatus(exId){
+  if(!currentAthleteId) return null;
+  const a=getAthletes().find(x=>x.id===currentAthleteId);
+  if(!a||!a.pathologies) return null;
+  let pathos=[];
+  try{pathos=JSON.parse(a.pathologies);}catch{}
+  if(!pathos.length) return null;
+  let status=null,maxRisk=0,reasons=[];
+  pathos.forEach(pid=>{
+    const p=PATHOLOGIES.find(x=>x.id===pid);
+    if(!p) return;
+    if(p.locked.includes(exId)){
+      const rule=p.rules[exId];
+      const risk=rule?rule.risk:3;
+      if(!status||status!=='locked'||risk>maxRisk){status='locked';maxRisk=risk;}
+      if(rule) reasons.push({patho:p.name,why:rule.why,alt:rule.alt});
+    } else if(p.caution.includes(exId)&&status!=='locked'){
+      const rule=p.rules[exId];
+      if(!status||status==='preferred'){status='caution';maxRisk=Math.max(maxRisk,rule?rule.risk:2);}
+      if(rule) reasons.push({patho:p.name,why:rule.why,alt:rule.alt});
+    }
+  });
+  return status?{status,maxRisk,reasons}:null;
+}
+
 function renderBuilderList(){
   const q=(document.getElementById('builder-search')?.value||'').toLowerCase();
   const catColors={jambes:'#ff7a00',dos:'#ff9f45',pecs:'#ff6e9e',epaules:'#ffb86e',bras:'#a06eff',abdos:'#ffe66e',mollets:'#06b6d4',cardio:'#4ade80'};
@@ -4031,10 +4125,16 @@ function renderBuilderList(){
     const col=catColors[ex.cat]||'#888';
     const added=builderSessionExercises.some(s=>s.exId===ex.id);
     const top2=(ex.muscles||[]).slice(0,2);
-    return `<div class="ex-pick-item" onclick="openExModal(EXERCISES.find(e=>e.id==='${ex.id}'))">
+    const ps=getBuilderPathoStatus(ex.id);
+    const pathoClass=ps?(ps.status==='locked'?' patho-locked':' patho-caution'):'';
+    const pathoBadge=ps?(ps.status==='locked'
+      ?`<span class="patho-ex-badge locked">🔒 Interdit</span>`
+      :`<span class="patho-ex-badge caution">⚠️ Prudence</span>`):'';
+    const pathoTip=ps&&ps.reasons.length?` title="${ps.reasons[0].why}${ps.reasons[0].alt?' → '+ps.reasons[0].alt:''}"`:'' ;
+    return `<div class="ex-pick-item${pathoClass}"${pathoTip} onclick="openExModal(EXERCISES.find(e=>e.id==='${ex.id}'))">
       <div class="ex-pick-icon">${ex.icon||'🏋️'}</div>
       <div style="flex:1;min-width:0;">
-        <div class="ex-pick-name">${ex.name}</div>
+        <div class="ex-pick-name">${ex.name}${pathoBadge}</div>
         <div class="ex-pick-cat" style="color:${col}">${ex.sub||ex.cat}</div>
         <div class="ex-pick-muscle">${top2.map(m=>m.n).join(' · ')}</div>
         <div style="display:flex;gap:4px;margin-top:3px;">${top2.map(m=>`<div style="height:3px;width:${m.pct*0.6}px;max-width:60px;background:${m.primary?col:'rgba(255,255,255,0.15)'};border-radius:2px;"></div>`).join('')}</div>
