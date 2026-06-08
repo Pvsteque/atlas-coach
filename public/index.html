@@ -1413,6 +1413,7 @@ select.input{cursor:pointer;}
           <div class="header-actions">
             <input id="builder-session-name" class="input" placeholder="Nom de la séance..." style="width:220px;">
             <button class="btn btn-accent" onclick="saveBuilderSession()">💾 Sauvegarder</button>
+            <button class="btn btn-secondary" onclick="openBuilderAssignModal()" style="white-space:nowrap;">📤 Assigner directement</button>
           </div>
         </div>
         <div class="builder-layout" style="height:calc(100vh - 140px);">
@@ -1967,6 +1968,25 @@ select.input{cursor:pointer;}
     <div class="modal-actions">
       <button class="btn btn-accent" id="modal-athlete-save-btn" onclick="saveAthleteForm()" style="flex:1;justify-content:center;">Créer le compte ✓</button>
       <button class="btn btn-secondary" onclick="closeModal('modal-athlete')" style="flex:1;justify-content:center;">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── BUILDER ASSIGN MODAL ── -->
+<div class="modal-overlay" id="modal-builder-assign">
+  <div class="modal-box" style="max-width:400px;">
+    <div class="modal-title">Enregistrer & Assigner</div>
+    <div class="input-group">
+      <label class="input-label">Adhérent *</label>
+      <select class="input" id="bam-athlete" style="border-radius:12px;"></select>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Date prévue (optionnel)</label>
+      <input class="input" id="bam-date" type="date">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-accent" onclick="doBuilderAssign()" style="flex:1;justify-content:center;">📤 Assigner ✓</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-builder-assign')" style="flex:1;justify-content:center;">Annuler</button>
     </div>
   </div>
 </div>
@@ -3478,7 +3498,7 @@ async function init(){
   const g = h<12?'Bonjour':h<18?'Bon après-midi':'Bonsoir';
   document.getElementById('dashboard-greeting').textContent = g+' 👋';
   document.getElementById('dashboard-date').textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  ['modal-athlete','modal-nutri'].forEach(id=>{
+  ['modal-athlete','modal-nutri','modal-builder-assign'].forEach(id=>{
     document.getElementById(id)?.addEventListener('click',e=>{if(e.target.id===id)closeModal(id);});
   });
   document.getElementById('log-modal')?.addEventListener('click',e=>{if(e.target.id==='log-modal')closeLogModal();});
@@ -4237,6 +4257,46 @@ async function saveBuilderSession(){
   renderBuilderSession();
   toast(`"${name}" sauvegardée ✓`);
   showPage('sessions');
+}
+
+function openBuilderAssignModal(){
+  const name=document.getElementById('builder-session-name').value.trim();
+  if(!name){toast('Donnez un nom à la séance');return;}
+  if(!builderSessionExercises.length){toast('Ajoutez au moins un exercice');return;}
+  const sel=document.getElementById('bam-athlete');
+  sel.innerHTML=getAthletes().map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+  if(builderAthleteId) sel.value=builderAthleteId;
+  document.getElementById('bam-date').value='';
+  openModal('modal-builder-assign');
+}
+
+async function doBuilderAssign(){
+  const name=document.getElementById('builder-session-name').value.trim();
+  const athleteId=document.getElementById('bam-athlete').value;
+  const dateVal=document.getElementById('bam-date').value;
+  if(!athleteId){toast('Sélectionnez un adhérent');return;}
+  const a=getAthletes().find(x=>x.id===athleteId);
+  const btn=document.querySelector('#modal-builder-assign .btn-accent');
+  if(btn){btn.disabled=true;btn.textContent='En cours...';}
+  // 1. Sauvegarder la séance
+  const session=await api('POST','/sessions',{name,exercises:[...builderSessionExercises]});
+  if(!session){if(btn){btn.disabled=false;btn.textContent='📤 Assigner ✓';}toast('❌ Échec de la sauvegarde');return;}
+  _cache.sessions.push(session);
+  // 2. Créer l'assignation
+  const assign=await api('POST','/assignments',{athleteId,sessionId:session.id,sessionName:session.name,athleteName:a?.name||'?',scheduledFor:dateVal||null,status:'assigned'});
+  if(btn){btn.disabled=false;btn.textContent='📤 Assigner ✓';}
+  if(!assign){toast('❌ Échec de l\'assignation');return;}
+  _cache.assignments.push(assign);
+  closeModal('modal-builder-assign');
+  builderSessionExercises=[];
+  document.getElementById('builder-session-name').value='';
+  renderBuilderList();
+  renderBuilderSession();
+  toast(`"${name}" assignée à ${a?.name} ✓`);
+  if(currentAthleteId===athleteId){
+    showPage('athlete-detail');
+    renderAthleteDetail(currentAthleteId);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
