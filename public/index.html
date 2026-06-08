@@ -651,6 +651,14 @@ select.input{cursor:pointer;}
 .session-assign-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;transition:border-color .15s;}
 .session-assign-card:hover{border-color:var(--border2);}
 .sac-head{padding:12px 16px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.ath-accordion{background:var(--bg3);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px;transition:border-color .15s;}
+.ath-accordion.open{border-color:var(--border2);}
+.ath-accordion-head{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;user-select:none;transition:background .15s;}
+.ath-accordion-head:hover{background:rgba(255,255,255,.03);}
+.acc-chevron{font-size:11px;color:var(--muted);transition:transform .22s;flex-shrink:0;margin-left:4px;}
+.ath-accordion.open .acc-chevron{transform:rotate(180deg);}
+.ath-accordion-body{overflow:hidden;max-height:0;transition:max-height .28s cubic-bezier(0.4,0,0.2,1);}
+.ath-accordion.open .ath-accordion-body{max-height:2000px;}
 .sac-title{font-weight:700;font-size:15px;flex:1;}
 .sac-meta{font-size:11px;color:var(--muted);}
 .sac-actions{display:flex;gap:8px;flex-shrink:0;}
@@ -1286,8 +1294,7 @@ select.input{cursor:pointer;}
       <div class="nav-sep"></div>
       <div class="nav-label">Adhérents</div>
       <div class="nav-item" data-page="athletes" onclick="showPage('athletes')"><span class="nav-icon">👥</span>Mes adhérents</div>
-      <div class="nav-item" data-page="logs" onclick="showPage('logs')"><span class="nav-icon">📊</span>Retours séances <span class="nav-badge" id="badge-logs" style="display:none">0</span></div>
-      <div class="nav-item" data-page="checkins" onclick="showPage('checkins')"><span class="nav-icon">📸</span>Retours hebdo</div>
+      <span id="badge-logs" style="display:none">0</span>
       <div class="nav-item" data-page="chat" onclick="showPage('chat')"><span class="nav-icon">💬</span>Messages <span class="nav-badge" id="badge-chat" style="display:none;">0</span></div>
       <div class="nav-sep"></div>
       <div class="nav-label">Entraînement</div>
@@ -1449,12 +1456,6 @@ select.input{cursor:pointer;}
       </div>
 
       <!-- LOGS -->
-      <div class="page" id="page-logs">
-        <div class="page-header">
-          <div><div class="page-title">Retours de séances</div><div class="page-sub">Tous les retours de vos adhérents</div></div>
-        </div>
-        <div id="logs-content"></div>
-      </div>
 
 
       <div class="page" id="page-nutrition">
@@ -1717,29 +1718,6 @@ select.input{cursor:pointer;}
         </div>
       </div>
 
-      <!-- ═══════════════════════════════════════ RETOURS HEBDOMADAIRES -->
-      <div class="page" id="page-checkins">
-        <div class="page-header">
-          <div>
-            <div class="page-title">Retours hebdomadaires 📸</div>
-            <div class="page-sub">Suivi visuel & métriques · Progression semaine par semaine</div>
-          </div>
-          <div class="header-actions">
-            <select class="input" id="checkin-athlete-sel" onchange="loadCheckins(this.value)" style="width:210px;">
-              <option value="">— Sélectionnez un adhérent —</option>
-            </select>
-            <button class="btn btn-secondary" onclick="openCheckinConfig()" id="btn-checkin-config" style="display:none;">⚙️ Configurer poses</button>
-            <button class="btn btn-accent" onclick="openNewCheckinModal()" id="btn-new-checkin" style="display:none;">+ Nouveau retour</button>
-          </div>
-        </div>
-        <div style="padding:0;height:calc(100% - 84px);overflow-y:auto;" id="checkin-content">
-          <div class="checkin-empty">
-            <div class="checkin-empty-icon">📸</div>
-            <div class="checkin-empty-title">Sélectionnez un adhérent</div>
-            <div style="font-size:13px;">Le suivi hebdomadaire apparaîtra ici</div>
-          </div>
-        </div>
-      </div>
 
       <!-- ═══════════════════════════════════════════════════ CHAT -->
       <div class="page" id="page-chat">
@@ -3565,8 +3543,7 @@ function renderDashboard(){
   const unread   = logs.filter(l=>!l.seen).length;
   // Badge
   const badge = document.getElementById('badge-logs');
-  badge.style.display = unread>0?'inline':'none';
-  badge.textContent = unread;
+  if(badge){badge.style.display=unread>0?'inline':'none';badge.textContent=unread;}
   // Stats
   document.getElementById('dashboard-stats').innerHTML = [
     {v:athletes.length,     l:'Adhérents'},
@@ -3646,6 +3623,10 @@ function openAthleteDetail(id){
   renderAthleteDetail(id);
   markAthleteLogsAsSeen(id);
   markAthleteCheckinsAsRead(id);
+}
+
+function toggleAthAccordion(headEl) {
+  headEl.closest('.ath-accordion').classList.toggle('open');
 }
 
 function markAthleteLogsAsSeen(athleteId) {
@@ -3920,8 +3901,9 @@ function renderLogs(){
   const sessions=getCoachSessions();
   // Mark all as seen
   api('POST','/logs/mark-seen');
-  document.getElementById('badge-logs').style.display='none';
-  document.getElementById('logs-content').innerHTML = logs.length ?
+  const _bl=document.getElementById('badge-logs');if(_bl)_bl.style.display='none';
+  const _lc=document.getElementById('logs-content');if(!_lc)return;
+  _lc.innerHTML = logs.length ?
     logs.slice().reverse().map(l=>{
       const a=athletes.find(x=>x.id===l.athleteId);
       const s=sessions.find(x=>x.id===l.sessionId);
@@ -4589,53 +4571,57 @@ function renderAthAssigns(athleteId, assigns, sessionLogs, prs){
     const s = getCoachSessions().find(x=>x.id===asgn.sessionId);
     if(!s) return `<div style="padding:10px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;font-size:12px;color:var(--muted);">⚠️ Séance supprimée <button class="btn btn-secondary btn-sm" style="margin-left:8px;" onclick="deleteAssign('${asgn.id}')">Retirer</button></div>`;
     const done   = asgn.status==='done';
-    // Trouver la dernière séance faite pour cette session
     const prevLog = sessionLogs.filter(l=>l.sessionId===asgn.sessionId).sort((a,b)=>b.date-a.date)[0];
+    const exCount = (s.exercises||[]).length;
 
-    return `<div class="session-assign-card">
-      <div class="sac-head">
-        <div>
-          <div class="sac-title">${s.name}</div>
-          <div class="sac-meta">
+    const bodyHTML = (s.exercises||[]).map(e=>{
+      const ex = findExercise(e.exId);
+      if(!ex) return '';
+      if(ex.isMobility) return `<div class="ex-row-detail" style="align-items:flex-start;">
+        <div class="ex-row-icon" style="margin-top:2px;">${ex.icon}</div>
+        <div class="ex-row-info">
+          <div class="ex-row-name">${ex.name}</div>
+          <div class="ex-row-params" style="color:var(--accent);">⏱ ${ex.duree}${ex.series?' · '+ex.series+' séries':''}</div>
+          ${ex.objectif?`<div class="ex-row-desc" style="color:rgba(255,122,0,.7);">🎯 ${ex.objectif}</div>`:''}
+          ${ex.desc?`<div class="ex-row-desc">${ex.desc}</div>`:''}
+        </div>
+      </div>`;
+      const prevSets = prevLog ? (prevLog.sets||[]).filter(s=>s.exId===e.exId) : [];
+      const bestPrevKg = prevSets.length ? Math.max(...prevSets.map(s=>s.kg||0)) : 0;
+      const prevReps   = prevSets.length ? prevSets[prevSets.length-1].reps : 0;
+      const pr = prs[e.exId];
+      const tips = ex.tips||[];
+      return `<div class="ex-row-detail"${tips.length?' style="align-items:flex-start;"':''}>
+        <div class="ex-row-icon"${tips.length?' style="margin-top:2px;"':''}>${ex.icon||'🏋️'}</div>
+        <div class="ex-row-info">
+          <div class="ex-row-name">${ex.name}</div>
+          <div class="ex-row-params">${e.sets}×${e.reps} · ${e.kg>0?e.kg+'kg':'Poids libre'} · repos ${e.rest}s</div>
+          ${tips.length?`<ul class="ex-row-tips">${tips.map(t=>`<li>${t}</li>`).join('')}</ul>`:''}
+        </div>
+        ${bestPrevKg>0?`<div class="prev-data" style="align-self:flex-start;margin-top:2px;">↩ ${bestPrevKg}kg × ${prevReps}r</div>`:''}
+        ${pr?`<div class="pr-badge" style="align-self:flex-start;margin-top:2px;">🏆 ${pr.kg}kg</div>`:''}
+      </div>`;
+    }).join('');
+
+    return `<div class="ath-accordion">
+      <div class="ath-accordion-head" onclick="toggleAthAccordion(this)">
+        <div style="flex:1;min-width:0;">
+          <div class="sac-title">${s.name} <span style="font-size:11px;font-weight:400;color:var(--muted);">${exCount} exercice${exCount!==1?'s':''}</span></div>
+          <div class="sac-meta" style="margin-top:2px;">
             ${asgn.scheduledFor?'📅 '+new Date(asgn.scheduledFor).toLocaleDateString('fr-FR'):''}
-            ${done?'<span style="color:var(--accent);margin-left:8px;">✓ Terminée</span>':''}
-            ${prevLog?`<span style="color:var(--accent2);margin-left:8px;">↩ Déjà réalisée ${new Date(prevLog.date).toLocaleDateString('fr-FR')}</span>`:''}
+            ${done?'<span style="color:var(--accent);margin-left:6px;">✓ Terminée</span>':''}
+            ${prevLog?`<span style="color:var(--accent2);margin-left:6px;">↩ ${new Date(prevLog.date).toLocaleDateString('fr-FR')}</span>`:''}
           </div>
         </div>
-        <div class="sac-actions">
+        <div style="display:flex;align-items:center;gap:8px;" onclick="event.stopPropagation()">
           ${!done?`<button class="btn-start" onclick="startSession('${asgn.id}','${asgn.sessionId}','${athleteId}')">▶ Démarrer</button>`:''}
           <button class="btn btn-secondary btn-sm" onclick="deleteAssign('${asgn.id}')">✕</button>
         </div>
+        <span class="acc-chevron">▼</span>
       </div>
-      ${(s.exercises||[]).map(e=>{
-        const ex = findExercise(e.exId);
-        if(!ex) return '';
-        if(ex.isMobility) return `<div class="ex-row-detail" style="align-items:flex-start;">
-          <div class="ex-row-icon" style="margin-top:2px;">${ex.icon}</div>
-          <div class="ex-row-info">
-            <div class="ex-row-name">${ex.name}</div>
-            <div class="ex-row-params" style="color:var(--accent);">⏱ ${ex.duree}${ex.series?' · '+ex.series+' séries':''}</div>
-            ${ex.objectif?`<div class="ex-row-desc" style="color:rgba(255,122,0,.7);">🎯 ${ex.objectif}</div>`:''}
-            ${ex.desc?`<div class="ex-row-desc">${ex.desc}</div>`:''}
-          </div>
-        </div>`;
-        // Données séance précédente
-        const prevSets = prevLog ? (prevLog.sets||[]).filter(s=>s.exId===e.exId) : [];
-        const bestPrevKg = prevSets.length ? Math.max(...prevSets.map(s=>s.kg||0)) : 0;
-        const prevReps   = prevSets.length ? prevSets[prevSets.length-1].reps : 0;
-        const pr = prs[e.exId];
-        const tips = ex.tips||[];
-        return `<div class="ex-row-detail"${tips.length?' style="align-items:flex-start;"':''}>
-          <div class="ex-row-icon"${tips.length?' style="margin-top:2px;"':''}>${ex.icon||'🏋️'}</div>
-          <div class="ex-row-info">
-            <div class="ex-row-name">${ex.name}</div>
-            <div class="ex-row-params">${e.sets}×${e.reps} · ${e.kg>0?e.kg+'kg':'Poids libre'} · repos ${e.rest}s</div>
-            ${tips.length?`<ul class="ex-row-tips">${tips.map(t=>`<li>${t}</li>`).join('')}</ul>`:''}
-          </div>
-          ${bestPrevKg>0?`<div class="prev-data" style="align-self:flex-start;margin-top:2px;">↩ ${bestPrevKg}kg × ${prevReps}r</div>`:''}
-          ${pr?`<div class="pr-badge" style="align-self:flex-start;margin-top:2px;">🏆 ${pr.kg}kg</div>`:''}
-        </div>`;
-      }).join('')}
+      <div class="ath-accordion-body">
+        <div style="padding:4px 0 10px;">${bodyHTML||'<div style="padding:10px 16px;font-size:12px;color:var(--muted);">Aucun exercice</div>'}</div>
+      </div>
     </div>`;
   }).join('');
 }
@@ -4649,27 +4635,32 @@ function renderAthLogs(sessionLogs){
     const sets = l.sets||[];
     const totalVol = sets.reduce((a,s)=>a+(s.kg||0)*(s.reps||0),0);
     const prsInLog = (l.prs||[]).length;
-    return `<div class="log-card-full">
-      <div class="log-card-head">
-        <div>
+    return `<div class="ath-accordion">
+      <div class="ath-accordion-head" onclick="toggleAthAccordion(this)">
+        <div style="flex:1;min-width:0;">
           <div class="log-session-name">${s?.name||'Séance'}</div>
           <div class="log-date-small">${new Date(l.date).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div>
         </div>
-        <div class="log-metrics">
-          ${l.mood?`<span style="font-size:22px;">${l.mood}</span>`:''}
+        <div class="log-metrics" style="pointer-events:none;">
+          ${l.mood?`<span style="font-size:20px;">${l.mood}</span>`:''}
           ${l.rpe?`<div class="log-rpe-badge" style="color:${l.rpe>=8?'var(--accent3)':l.rpe>=6?'var(--accent4)':'var(--accent)'}">${l.rpe}</div>`:''}
         </div>
+        <span class="acc-chevron">▼</span>
       </div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:${l.notes||prsInLog?'10px':'0'};">
-        ${durationMin?`<span style="font-size:11px;color:var(--muted);">⏱ ${durationMin} min</span>`:''}
-        ${sets.length?`<span style="font-size:11px;color:var(--muted);">🔁 ${sets.length} séries</span>`:''}
-        ${totalVol?`<span style="font-size:11px;color:var(--muted);">📦 ${totalVol.toLocaleString('fr')} kg volume</span>`:''}
-        ${prsInLog?`<span style="font-size:11px;color:var(--accent);">🏆 ${prsInLog} record${prsInLog>1?'s':''}</span>`:''}
-      </div>
-      ${l.notes?`<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px 10px;background:var(--bg2);border-radius:8px;margin-bottom:8px;">"${l.notes}"</div>`:''}
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-secondary btn-sm" onclick="viewSessionLog('${l.id}')">📋 Détail</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteLog('${l.id}')">🗑 Supprimer</button>
+      <div class="ath-accordion-body">
+        <div style="padding:10px 16px 14px;">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:${l.notes||prsInLog?'10px':'4px'};">
+            ${durationMin?`<span style="font-size:11px;color:var(--muted);">⏱ ${durationMin} min</span>`:''}
+            ${sets.length?`<span style="font-size:11px;color:var(--muted);">🔁 ${sets.length} séries</span>`:''}
+            ${totalVol?`<span style="font-size:11px;color:var(--muted);">📦 ${totalVol.toLocaleString('fr')} kg volume</span>`:''}
+            ${prsInLog?`<span style="font-size:11px;color:var(--accent);">🏆 ${prsInLog} record${prsInLog>1?'s':''}</span>`:''}
+          </div>
+          ${l.notes?`<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px 10px;background:var(--bg2);border-radius:8px;margin-bottom:10px;">"${l.notes}"</div>`:''}
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-secondary btn-sm" onclick="viewSessionLog('${l.id}')">📋 Détail</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteLog('${l.id}')">🗑</button>
+          </div>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -4710,28 +4701,33 @@ function renderAthRetoursSeance(athleteId, logs) {
     const totalVol=sets.reduce((a,s)=>a+(s.kg||0)*(s.reps||0),0);
     const prsInLog=(l.prs||[]).length;
     const isNew=!l.seen;
-    return `<div class="log-card-full${isNew?' log-card-new':''}">
-      ${isNew?'<div class="log-new-badge">🔴 Nouveau</div>':''}
-      <div class="log-card-head">
-        <div>
+    return `<div class="ath-accordion${isNew?' open log-card-new':''}">
+      <div class="ath-accordion-head" onclick="toggleAthAccordion(this)" style="${isNew?'border-left:3px solid var(--accent);':''}">
+        <div style="flex:1;min-width:0;">
+          ${isNew?'<div class="log-new-badge" style="margin-bottom:4px;">🔴 Nouveau</div>':''}
           <div class="log-session-name">${s?.name||'Séance'}</div>
           <div class="log-date-small">${new Date(l.date).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div>
         </div>
-        <div class="log-metrics">
-          ${l.mood?`<span style="font-size:22px;">${l.mood}</span>`:''}
+        <div class="log-metrics" style="pointer-events:none;">
+          ${l.mood?`<span style="font-size:20px;">${l.mood}</span>`:''}
           ${l.rpe?`<div class="log-rpe-badge" style="color:${l.rpe>=8?'var(--accent3)':l.rpe>=6?'var(--accent4)':'var(--accent)'}">${l.rpe}</div>`:''}
         </div>
+        <span class="acc-chevron" style="${isNew?'transform:rotate(180deg);':''}">▼</span>
       </div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:${l.notes||prsInLog?'10px':'0'};">
-        ${durationMin?`<span style="font-size:11px;color:var(--muted);">⏱ ${durationMin} min</span>`:''}
-        ${sets.length?`<span style="font-size:11px;color:var(--muted);">🔁 ${sets.length} séries</span>`:''}
-        ${totalVol?`<span style="font-size:11px;color:var(--muted);">📦 ${totalVol.toLocaleString('fr')} kg volume</span>`:''}
-        ${prsInLog?`<span style="font-size:11px;color:var(--accent);">🏆 ${prsInLog} record${prsInLog>1?'s':''}</span>`:''}
-      </div>
-      ${l.notes?`<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px 10px;background:var(--bg2);border-radius:8px;margin-bottom:8px;">"${l.notes}"</div>`:''}
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-secondary btn-sm" onclick="viewSessionLog('${l.id}')">📋 Détail</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteLog('${l.id}')">🗑</button>
+      <div class="ath-accordion-body" style="${isNew?'max-height:2000px;':''}">
+        <div style="padding:10px 16px 14px;">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:${l.notes||prsInLog?'10px':'4px'};">
+            ${durationMin?`<span style="font-size:11px;color:var(--muted);">⏱ ${durationMin} min</span>`:''}
+            ${sets.length?`<span style="font-size:11px;color:var(--muted);">🔁 ${sets.length} séries</span>`:''}
+            ${totalVol?`<span style="font-size:11px;color:var(--muted);">📦 ${totalVol.toLocaleString('fr')} kg volume</span>`:''}
+            ${prsInLog?`<span style="font-size:11px;color:var(--accent);">🏆 ${prsInLog} record${prsInLog>1?'s':''}</span>`:''}
+          </div>
+          ${l.notes?`<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px 10px;background:var(--bg2);border-radius:8px;margin-bottom:10px;">"${l.notes}"</div>`:''}
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-secondary btn-sm" onclick="viewSessionLog('${l.id}')">📋 Détail</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteLog('${l.id}')">🗑</button>
+          </div>
+        </div>
       </div>
     </div>`;
   }).join('');
