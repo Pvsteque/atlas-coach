@@ -145,7 +145,12 @@ router.post('/logs', (req, res) => {
 });
 
 router.post('/logs/mark-seen', (req, res) => {
-  db.prepare('UPDATE logs SET seen=1 WHERE coach_id=? AND seen=0').run(req.coach.id);
+  const { athleteId } = req.body || {};
+  if (athleteId) {
+    db.prepare('UPDATE logs SET seen=1 WHERE coach_id=? AND athlete_id=? AND seen=0').run(req.coach.id, athleteId);
+  } else {
+    db.prepare('UPDATE logs SET seen=1 WHERE coach_id=? AND seen=0').run(req.coach.id);
+  }
   res.json({ ok: true });
 });
 

@@ -88,6 +88,17 @@ select.input{cursor:pointer;}
 .athlete-card{background:var(--bg3);border:1px solid var(--border);border-radius:18px;padding:20px;cursor:pointer;transition:all .25s var(--ease);}
 .athlete-card:hover{border-color:rgba(255,122,0,.3);transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.4);}
 .athlete-card-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.notif-dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.notif-dot-seance{background:#ff7a00;}
+.notif-dot-hebdo{background:#a06eff;}
+.ath-notif-badges{display:flex;align-items:center;gap:6px;margin-top:8px;}
+.notif-label{font-size:11px;display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-weight:600;pointer-events:none;}
+.notif-label-seance{background:rgba(255,122,0,0.12);color:#ff7a00;}
+.notif-label-hebdo{background:rgba(160,110,255,0.12);color:#a06eff;}
+.ath-av-notif{position:relative;flex-shrink:0;}
+.ath-av-pulse{position:absolute;top:-2px;right:-2px;width:12px;height:12px;border-radius:50%;border:2px solid var(--bg1);}
+.log-card-new{border-color:rgba(255,122,0,.3);background:rgba(255,122,0,.04);}
+.log-new-badge{display:inline-block;font-size:10px;font-weight:700;background:rgba(255,122,0,.12);color:var(--accent);padding:2px 8px;border-radius:20px;margin-bottom:6px;}
 .athlete-av-big{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#0a0a0f;flex-shrink:0;}
 .athlete-name{font-size:16px;font-weight:700;}
 .athlete-meta{font-size:12px;color:var(--muted);margin-top:2px;}
@@ -3594,9 +3605,15 @@ function renderAthletes(){
     athletes.map(a=>{
       const assigns=getAssignments().filter(x=>x.athleteId===a.id);
       const logs=getLogs().filter(l=>l.athleteId===a.id);
+      const unseenLogs=logs.filter(l=>!l.seen).length;
+      const unseenCheckins=getCheckins().filter(c=>c.athleteId===a.id&&!c.coachRead).length;
+      const pulseColor=unseenLogs>0?'#ff7a00':unseenCheckins>0?'#a06eff':null;
       return `<div class="athlete-card" onclick="openAthleteDetail('${a.id}')">
         <div class="athlete-card-top">
-          <div class="athlete-av-big" style="background:${a.color}">${a.name[0]}</div>
+          <div class="ath-av-notif">
+            <div class="athlete-av-big" style="background:${a.color}">${a.name[0]}</div>
+            ${pulseColor?`<div class="ath-av-pulse" style="background:${pulseColor};"></div>`:''}
+          </div>
           <div>
             <div class="athlete-name">${a.name}</div>
             <div class="athlete-meta">${a.age||'?'}ans · ${a.weight||'?'}kg · ${a.height||'?'}cm</div>
@@ -3607,6 +3624,10 @@ function renderAthletes(){
           <span class="tag tag-blue">${assigns.filter(x=>x.status==='assigned').length} séance${assigns.filter(x=>x.status==='assigned').length!==1?'s':''}</span>
           ${logs.filter(l=>l.rpe).length?`<span class="tag tag-orange">${logs.filter(l=>l.rpe).length} retour${logs.filter(l=>l.rpe).length!==1?'s':''}</span>`:''}
         </div>
+        ${unseenLogs>0||unseenCheckins>0?`<div class="ath-notif-badges">
+          ${unseenLogs>0?`<span class="notif-label notif-label-seance"><span class="notif-dot notif-dot-seance"></span>${unseenLogs} retour${unseenLogs>1?'s':''} séance</span>`:''}
+          ${unseenCheckins>0?`<span class="notif-label notif-label-hebdo"><span class="notif-dot notif-dot-hebdo"></span>${unseenCheckins} retour${unseenCheckins>1?'s':''} hebdo</span>`:''}
+        </div>`:''}
         ${a.notes?`<div style="font-size:11px;color:var(--muted);margin-top:8px;">${a.notes}</div>`:''}
       </div>`;
     }).join('')
@@ -3620,8 +3641,26 @@ function renderAthletes(){
 
 function openAthleteDetail(id){
   currentAthleteId = id;
+  _checkinAthleteId = id;
   showPage('athlete-detail');
   renderAthleteDetail(id);
+  markAthleteLogsAsSeen(id);
+  markAthleteCheckinsAsRead(id);
+}
+
+function markAthleteLogsAsSeen(athleteId) {
+  const unseen = _cache.logs.filter(l=>l.athleteId===athleteId&&!l.seen);
+  if(!unseen.length) return;
+  unseen.forEach(l=>l.seen=true);
+  api('POST','/logs/mark-seen',{athleteId});
+  renderDashboard();
+}
+
+function markAthleteCheckinsAsRead(athleteId) {
+  const checkins = getCheckins();
+  let changed = false;
+  checkins.filter(c=>c.athleteId===athleteId&&!c.coachRead).forEach(c=>{c.coachRead=true; changed=true;});
+  if(changed) setCheckins(checkins);
 }
 
 
@@ -4513,11 +4552,28 @@ function renderAthleteDetail(id){
         <div id="ath-prs-list"></div>
       </div>
     </div>
+
+    <!-- Retours de séance -->
+    <div style="margin-top:28px;">
+      <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;">Retours de séance 📊</div>
+      <div id="ath-retours-seance"></div>
+    </div>
+
+    <!-- Retours hebdomadaires -->
+    <div style="margin-top:28px;margin-bottom:30px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">Retours hebdomadaires 📸</div>
+        <button class="btn btn-secondary btn-sm" onclick="openNewCheckinModal()">+ Nouveau retour</button>
+      </div>
+      <div id="ath-retours-hebdo"></div>
+    </div>
   `;
 
   renderAthAssigns(id, assigns, sessionLogs, prs);
   renderAthLogs(sessionLogs);
   renderAthPRs(prs);
+  renderAthRetoursSeance(id, sessionLogs);
+  renderAthRetoursHebdo(id);
 }
 
 function renderAthAssigns(athleteId, assigns, sessionLogs, prs){
@@ -4635,6 +4691,62 @@ function renderAthPRs(prs){
       <span style="font-size:18px;">🏆</span>
     </div>`;
   }).join('');
+}
+
+function renderAthRetoursSeance(athleteId, logs) {
+  const el = document.getElementById('ath-retours-seance');
+  if(!el) return;
+  if(!logs.length) {
+    el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:16px;text-align:center;background:var(--bg3);border-radius:12px;">Aucun retour de séance pour cet adhérent</div>';
+    return;
+  }
+  const unseenLogs = logs.filter(l=>!l.seen).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const seenLogs   = logs.filter(l=>l.seen).sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0, Math.max(3, 5-unseenLogs.length));
+  const toShow     = [...unseenLogs, ...seenLogs];
+  el.innerHTML = toShow.map(l=>{
+    const s=getCoachSessions().find(x=>x.id===l.sessionId);
+    const sets=l.sets||[];
+    const durationMin=l.duration?Math.round(l.duration/60):null;
+    const totalVol=sets.reduce((a,s)=>a+(s.kg||0)*(s.reps||0),0);
+    const prsInLog=(l.prs||[]).length;
+    const isNew=!l.seen;
+    return `<div class="log-card-full${isNew?' log-card-new':''}">
+      ${isNew?'<div class="log-new-badge">🔴 Nouveau</div>':''}
+      <div class="log-card-head">
+        <div>
+          <div class="log-session-name">${s?.name||'Séance'}</div>
+          <div class="log-date-small">${new Date(l.date).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div>
+        </div>
+        <div class="log-metrics">
+          ${l.mood?`<span style="font-size:22px;">${l.mood}</span>`:''}
+          ${l.rpe?`<div class="log-rpe-badge" style="color:${l.rpe>=8?'var(--accent3)':l.rpe>=6?'var(--accent4)':'var(--accent)'}">${l.rpe}</div>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:${l.notes||prsInLog?'10px':'0'};">
+        ${durationMin?`<span style="font-size:11px;color:var(--muted);">⏱ ${durationMin} min</span>`:''}
+        ${sets.length?`<span style="font-size:11px;color:var(--muted);">🔁 ${sets.length} séries</span>`:''}
+        ${totalVol?`<span style="font-size:11px;color:var(--muted);">📦 ${totalVol.toLocaleString('fr')} kg volume</span>`:''}
+        ${prsInLog?`<span style="font-size:11px;color:var(--accent);">🏆 ${prsInLog} record${prsInLog>1?'s':''}</span>`:''}
+      </div>
+      ${l.notes?`<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px 10px;background:var(--bg2);border-radius:8px;margin-bottom:8px;">"${l.notes}"</div>`:''}
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary btn-sm" onclick="viewSessionLog('${l.id}')">📋 Détail</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteLog('${l.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAthRetoursHebdo(athleteId) {
+  const el = document.getElementById('ath-retours-hebdo');
+  if(!el) return;
+  const checkins = getCheckins().filter(c=>c.athleteId===athleteId).sort((a,b)=>b.date-a.date);
+  const config   = getAthleteCheckinConfig(athleteId);
+  if(!checkins.length) {
+    el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:16px;text-align:center;background:var(--bg3);border-radius:12px;">Aucun retour hebdomadaire<br><button class="btn btn-accent btn-sm" onclick="openNewCheckinModal()" style="margin-top:10px;">+ Saisir un retour</button></div>';
+    return;
+  }
+  el.innerHTML='<div class="checkin-list">'+checkins.map(c=>renderCheckinCard(c,config)).join('')+'</div>';
 }
 
 // ═══════════════════════════════════════════════════════════════
