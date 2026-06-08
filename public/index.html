@@ -1423,6 +1423,12 @@ select.input{cursor:pointer;}
               <input class="builder-search" id="builder-search" placeholder="Rechercher..." oninput="renderBuilderList()">
             </div>
             <div class="builder-col-body">
+              <div style="padding:8px 14px 4px;border-bottom:1px solid var(--border);">
+                <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">Pour qui ?</div>
+                <select id="builder-athlete-select" class="input" style="padding:7px 10px;font-size:12px;" onchange="setBuilderAthlete(this.value)">
+                  <option value="">— Séance générique (pas de filtre pathologies) —</option>
+                </select>
+              </div>
               <div class="cat-filters" id="builder-cat-filters">
                 <button class="cat-filter-btn active" onclick="setBuilderCat('all',this)" style="background:var(--accent);color:#0a0a0f;border-color:var(--accent)">Tous</button>
                 <button class="cat-filter-btn" onclick="setBuilderCat('jambes',this)">🦵 Jambes</button>
@@ -3396,6 +3402,7 @@ let progSelectedEx=[], activePathologies=[], bodyView='front', activeCurveMuscle
 
 let builderCat = 'all';
 let builderSessionExercises = [];
+let builderAthleteId = null;
 let currentExModal = null;
 let currentAthleteId = null;
 let currentLogAssignId = null;
@@ -3595,7 +3602,7 @@ function showPage(name){
     sessions:  renderSessions,
     assign:    renderAssign,
     logs:      renderLogs,
-    builder:   ()=>{ renderBuilderList(); renderBuilderSession(); },
+    builder:   ()=>{ renderBuilderAthleteSelect(); renderBuilderList(); renderBuilderSession(); },
     nutrition: ()=>{ setTimeout(()=>{
         renderNutriPage();
         setObjectif(nutriObjectif);
@@ -4078,6 +4085,21 @@ function quickAssign(sessionId){
 // ═══════════════════════════════════════════════════════════════
 // BUILDER
 // ═══════════════════════════════════════════════════════════════
+function renderBuilderAthleteSelect(){
+  const sel=document.getElementById('builder-athlete-select');
+  if(!sel) return;
+  const prev=sel.value;
+  sel.innerHTML='<option value="">— Séance générique (pas de filtre pathologies) —</option>'+
+    getAthletes().map(a=>`<option value="${a.id}">${a.name}${a.pathologies&&a.pathologies!=='[]'&&a.pathologies?' ⚠':'  '}</option>`).join('');
+  sel.value=prev||'';
+  builderAthleteId=sel.value||null;
+}
+
+function setBuilderAthlete(id){
+  builderAthleteId=id||null;
+  renderBuilderList();
+}
+
 function setBuilderCat(cat,btn){
   builderCat=cat;
   document.querySelectorAll('.cat-filter-btn').forEach(b=>{b.classList.remove('active');b.style.background='';b.style.color='';b.style.borderColor='';});
@@ -4087,8 +4109,8 @@ function setBuilderCat(cat,btn){
 }
 
 function getBuilderPathoStatus(exId){
-  if(!currentAthleteId) return null;
-  const a=getAthletes().find(x=>x.id===currentAthleteId);
+  if(!builderAthleteId) return null;
+  const a=getAthletes().find(x=>x.id===builderAthleteId);
   if(!a||!a.pathologies) return null;
   let pathos=[];
   try{pathos=JSON.parse(a.pathologies);}catch{}
