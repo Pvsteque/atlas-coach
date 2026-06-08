@@ -96,6 +96,22 @@ select.input{cursor:pointer;}
 .notif-label-seance{background:rgba(255,122,0,0.12);color:#ff7a00;}
 .notif-label-hebdo{background:rgba(160,110,255,0.12);color:#a06eff;}
 .ath-av-notif{position:relative;flex-shrink:0;}
+.sports-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+.sport-chip{padding:7px 14px;border-radius:20px;border:1px solid var(--border);font-size:13px;cursor:pointer;transition:all .15s;user-select:none;background:var(--bg2);color:var(--muted);}
+.sport-chip.selected{background:rgba(255,122,0,.12);border-color:var(--accent);color:var(--accent);font-weight:600;}
+.sport-level-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg2);border-radius:10px;margin-bottom:6px;font-size:13px;}
+.sport-level-label{flex:1;font-weight:500;}
+.sport-level-select{padding:5px 10px;font-size:12px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;}
+.sport-suggest-section{margin-top:22px;margin-bottom:28px;}
+.sport-suggest-card{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:12px;}
+.sport-suggest-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.sport-suggest-level-badge{font-size:11px;padding:2px 9px;border-radius:20px;font-weight:700;}
+.sport-ex-grid{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;}
+.sport-ex-pill{display:flex;align-items:center;gap:5px;padding:5px 11px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-size:11px;cursor:pointer;transition:background .15s;white-space:nowrap;}
+.sport-ex-pill:hover{background:rgba(255,122,0,.08);border-color:rgba(255,122,0,.3);color:var(--accent);}
+.sport-method-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.sport-method-pill{font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(160,110,255,.1);color:#a06eff;border:1px solid rgba(160,110,255,.25);font-weight:600;}
+.sport-tip{font-size:12px;color:var(--muted);font-style:italic;padding:9px 12px;background:var(--bg2);border-radius:8px;border-left:3px solid var(--accent);}
 .ath-av-pulse{position:absolute;top:-2px;right:-2px;width:12px;height:12px;border-radius:50%;border:2px solid var(--bg1);}
 .log-card-new{border-color:rgba(255,122,0,.3);background:rgba(255,122,0,.04);}
 .log-new-badge{display:inline-block;font-size:10px;font-weight:700;background:rgba(255,122,0,.12);color:var(--accent);padding:2px 8px;border-radius:20px;margin-bottom:6px;}
@@ -1904,6 +1920,16 @@ select.input{cursor:pointer;}
         <option value="sante">❤️ Santé / Rééducation</option>
       </select>
     </div>
+    <div class="input-group">
+      <label class="input-label">Sports pratiqués</label>
+      <div class="sports-grid" id="na-sports-chips">
+        <div class="sport-chip" data-sport="running" onclick="toggleSportChip(this)">🏃 Running</div>
+        <div class="sport-chip" data-sport="hyrox"   onclick="toggleSportChip(this)">🏋️ Hyrox</div>
+        <div class="sport-chip" data-sport="natation" onclick="toggleSportChip(this)">🏊 Natation</div>
+        <div class="sport-chip" data-sport="escalade" onclick="toggleSportChip(this)">🧗 Escalade</div>
+      </div>
+      <div id="na-sports-levels" style="margin-top:6px;"></div>
+    </div>
     <div class="input-group"><label class="input-label">Email (pour le portail adhérent)</label><input class="input" id="na-email" type="email" placeholder="prenom@email.com"></div>
     <div class="input-group"><label class="input-label">Notes</label><input class="input" id="na-notes" placeholder="Blessures, contraintes..."></div>
     <div class="modal-actions">
@@ -3644,7 +3670,159 @@ function markAthleteCheckinsAsRead(athleteId) {
   if(changed) setCheckins(checkins);
 }
 
+// ═══════════════════════════════════════════════════════════════
+// SPORTS CONFIG
+// ═══════════════════════════════════════════════════════════════
+const SPORTS_META = {
+  running: { label:'Running', icon:'🏃', color:'#ff7a00' },
+  hyrox:   { label:'Hyrox',   icon:'🏋️', color:'#ff9f45' },
+  natation:{ label:'Natation',icon:'🏊', color:'#4fa8ff' },
+  escalade:{ label:'Escalade',icon:'🧗', color:'#a06eff' },
+};
+const LEVEL_LABELS = { debutant:'Débutant', intermediaire:'Intermédiaire', avance:'Avancé' };
+const LEVEL_COLORS = { debutant:'#4fa8ff', intermediaire:'#ff9f45', avance:'#ff7a00' };
 
+const SPORTS_CONFIG = {
+  running: {
+    debutant: {
+      exIds: ['squat-barre','fente-avant','rdl','leg-curl-bilateral','mollet-debout','planche','dead-bug','sprint-interval','corde-a-sauter'],
+      methods: ['tempo','isometrie','pyramidal'],
+      tip: 'Priorité à la force des jambes et la mobilité de cheville avant d\'augmenter le volume de course.'
+    },
+    intermediaire: {
+      exIds: ['squat-barre','fente-bulgare','rdl','nordic-curl','step-up','mollet-debout','mollet-assis','planche','mountain-climber','sprint-interval','box-jump','farmers-walk'],
+      methods: ['pyramidal','super-set','tempo','rest-pause'],
+      tip: 'Intégrer des séances de force spécifique 2×/semaine. Les Nordic curls préviennent les blessures aux ischios.'
+    },
+    avance: {
+      exIds: ['squat-basse','fente-bulgare','rdl','nordic-curl','glute-ham-raise','mollet-debout','mollet-assis','donkey-calf','planche','dragon-flag','sprint-interval','box-jump','jump-squat','sled-push','farmers-walk'],
+      methods: ['cluster','pyramidal','bi-set','myo-reps','tempo'],
+      tip: 'Séances de puissance (plyométrie) à distance des compétitions. Charges lourdes en début de cycle.'
+    }
+  },
+  hyrox: {
+    debutant: {
+      exIds: ['squat-barre','fente-avant','rdl','rowing-barre','tirage-large-pron','planche','mountain-climber','burpee','corde-a-sauter','farmers-walk'],
+      methods: ['super-set','tempo','pyramidal'],
+      tip: 'Maîtriser les fondamentaux : squat, soulevé de terre, rowing. La condition physique générale prime sur la spécialisation.'
+    },
+    intermediaire: {
+      exIds: ['squat-barre','fente-bulgare','rdl','deadlift','rowing-barre','tirage-large-pron','militaire','planche','mountain-climber','burpee','box-jump','sled-push','farmers-walk','battle-ropes','kettlebell-swing'],
+      methods: ['super-set','rest-pause','pyramidal','cluster'],
+      tip: 'Travail en circuit pour simuler les enchaînements HYROX. Ne jamais négliger la phase de tirage horizontal.'
+    },
+    avance: {
+      exIds: ['squat-basse','deadlift','fente-bulgare','rdl','nordic-curl','rowing-barre','tirage-large-pron','militaire','planche','dragon-flag','woodchop-cable','burpee','box-jump','jump-squat','sled-push','battle-ropes','farmers-walk','kettlebell-swing','sprint-interval'],
+      methods: ['cluster','myo-reps','super-set','bi-set','pyramidal','rest-pause'],
+      tip: 'Simulations complètes HYROX en entraînement. Travailler spécifiquement les transitions entre stations.'
+    }
+  },
+  natation: {
+    debutant: {
+      exIds: ['tirage-large-pron','tirage-sup','rowing-cable-assis','militaire','elevation-laterale-haltere','rotation-externe','traction','planche','planche-laterale'],
+      methods: ['tempo','super-set','isometrie'],
+      tip: 'Renforcer la coiffe des rotateurs et les rhomboïdes pour protéger les épaules. La mobilité thoracique est primordiale.'
+    },
+    intermediaire: {
+      exIds: ['traction','traction-sup','tirage-large-pron','rowing-haltere','rowing-cable-assis','pullover','militaire','elevation-laterale-haltere','oiseau-haltere','rotation-externe','dc-incline','planche','planche-laterale','releve-jambes','rotation-russe'],
+      methods: ['bi-set','negatif','tempo','super-set'],
+      tip: 'Travailler la force des dorsaux en tirage vertical + horizontal. Les pulls (pullover) imitent le mouvement de crawl.'
+    },
+    avance: {
+      exIds: ['traction','traction-sup','tirage-large-pron','t-bar-row','rowing-haltere','pullover','landmine-row','militaire','arnold-press','oiseau-haltere','oiseau-cable','rotation-externe','dc-incline','planche','dragon-flag','releve-jambes','l-sit','woodchop-cable','pallof-press'],
+      methods: ['rest-pause','negatif','super-pletnev','bi-set','cluster'],
+      tip: 'Charges lourdes sur les tirages composés. Travailler la force relative (ratio force/poids). Gainage anti-rotation pour le roulis.'
+    }
+  },
+  escalade: {
+    debutant: {
+      exIds: ['traction','tirage-large-pron','rowing-haltere','curl-marteau','curl-haltere','planche','planche-laterale','dead-bug','isometrie'],
+      methods: ['isometrie','super-set','tempo'],
+      tip: 'Construire la force de préhension et des fléchisseurs. Ne pas négliger les extenseurs des doigts pour prévenir les blessures de tendon.'
+    },
+    intermediaire: {
+      exIds: ['traction','traction-sup','tirage-large-pron','rowing-haltere','rowing-cable-large','curl-marteau','curl-haltere','preacher-curl','planche','planche-laterale','releve-jambes','l-sit','dead-bug','rotation-russe','wheel-rollout','zottman-curl'],
+      methods: ['isometrie','cluster','bi-set','rest-pause'],
+      tip: 'Deadhang et frenchies pour la préhension. Le L-sit développe la compression utile en dalle. Travailler aussi l\'opposition (épaules).'
+    },
+    avance: {
+      exIds: ['traction','traction-sup','tirage-large-pron','t-bar-row','rowing-haltere','curl-marteau','preacher-curl','zottman-curl','drag-curl','planche','dragon-flag','l-sit','releve-jambes','hanging-leg-oblique','wheel-rollout','pallof-press','woodchop-cable','rotation-externe'],
+      methods: ['isometrie','cluster','rest-pause','heavy-duty','bi-set'],
+      tip: 'Séries de tractions lestées + deadhang à une main assisté. Le gainage dynamique et la force de doigt sont les deux piliers du niveau avancé.'
+    }
+  }
+};
+
+function toggleSportChip(el) {
+  el.classList.toggle('selected');
+  const levelsEl = document.getElementById('na-sports-levels');
+  const chips = document.querySelectorAll('#na-sports-chips .sport-chip.selected');
+  levelsEl.innerHTML = [...chips].map(c => {
+    const sport = c.dataset.sport;
+    const meta = SPORTS_META[sport];
+    return `<div class="sport-level-row">
+      <span class="sport-level-label">${meta.icon} ${meta.label}</span>
+      <select class="sport-level-select" id="na-level-${sport}">
+        <option value="debutant">Débutant</option>
+        <option value="intermediaire" selected>Intermédiaire</option>
+        <option value="avance">Avancé</option>
+      </select>
+    </div>`;
+  }).join('');
+}
+
+function getSelectedSports() {
+  const chips = document.querySelectorAll('#na-sports-chips .sport-chip.selected');
+  return [...chips].map(c => {
+    const sport = c.dataset.sport;
+    const lvlEl = document.getElementById('na-level-'+sport);
+    return { id: sport, level: lvlEl ? lvlEl.value : 'intermediaire' };
+  });
+}
+
+function renderAthSportsProfile(athlete) {
+  const el = document.getElementById('ath-sports-profile');
+  if (!el) return;
+  let sports = [];
+  try { sports = JSON.parse(athlete.sport || '[]'); } catch(e) { sports = []; }
+  if (!Array.isArray(sports) || !sports.length) { el.innerHTML = ''; return; }
+
+  const EXERCISES_MAP = {};
+  if (typeof EXERCISES !== 'undefined') EXERCISES.forEach(e => EXERCISES_MAP[e.id] = e);
+  const METHODS_MAP = {};
+  if (typeof INTENSITY_METHODS !== 'undefined') INTENSITY_METHODS.forEach(m => METHODS_MAP[m.id] = m);
+
+  el.innerHTML = `
+    <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px;">Profil sportif & suggestions 🎯</div>
+    ${sports.map(s => {
+      const meta = SPORTS_META[s.id];
+      const cfg = (SPORTS_CONFIG[s.id]||{})[s.level];
+      if (!meta) return '';
+      const lvlColor = LEVEL_COLORS[s.level] || 'var(--accent)';
+      const lvlLabel = LEVEL_LABELS[s.level] || s.level;
+      const exPills = cfg ? cfg.exIds.map(eid => {
+        const ex = EXERCISES_MAP[eid];
+        if (!ex) return '';
+        return `<div class="sport-ex-pill" onclick="openExModal(EXERCISES.find(e=>e.id==='${eid}'))" title="${ex.name}">${ex.icon||'🏋️'} ${ex.name}</div>`;
+      }).join('') : '';
+      const methodPills = cfg ? cfg.methods.map(mid => {
+        const m = METHODS_MAP[mid];
+        if (!m) return '';
+        return `<span class="sport-method-pill">${m.icon||''} ${m.name}</span>`;
+      }).join('') : '';
+      return `<div class="sport-suggest-card">
+        <div class="sport-suggest-head">
+          <span style="font-size:22px;">${meta.icon}</span>
+          <span style="font-weight:700;font-size:15px;">${meta.label}</span>
+          <span class="sport-suggest-level-badge" style="background:${lvlColor}22;color:${lvlColor};border:1px solid ${lvlColor}44;">${lvlLabel}</span>
+        </div>
+        ${exPills ? `<div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;">EXERCICES SUGGÉRÉS</div><div class="sport-ex-grid">${exPills}</div>` : ''}
+        ${methodPills ? `<div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;">MÉTHODES D'INTENSITÉ</div><div class="sport-method-row">${methodPills}</div>` : ''}
+        ${cfg && cfg.tip ? `<div class="sport-tip">${cfg.tip}</div>` : ''}
+      </div>`;
+    }).join('')}
+  `;
+}
 
 function renderNutriMini(n){
   const P=n.prot||0,C=n.carb||0,F=n.fat||0,tot=P*4+C*4+F*9||1;
@@ -3662,12 +3840,15 @@ function renderNutriMini(n){
 // ═══════════════════════════════════════════════════════════════
 function openNewAthleteModal(){
   ['na-name','na-age','na-weight','na-height','na-bf','na-notes'].forEach(id=>document.getElementById(id).value='');
+  document.querySelectorAll('#na-sports-chips .sport-chip').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('na-sports-levels').innerHTML='';
   openModal('modal-athlete');
 }
 async function saveNewAthlete(){
   const name=document.getElementById('na-name').value.trim();
   if(!name){toast('Nom requis'); return;}
   const color=COLORS[getAthletes().length%COLORS.length];
+  const sports=getSelectedSports();
   const res=await api('POST','/athletes',{
     name,
     age:+document.getElementById('na-age').value||null,
@@ -3678,6 +3859,7 @@ async function saveNewAthlete(){
     notes:document.getElementById('na-notes').value||'',
     color,
     email:document.getElementById('na-email').value.trim()||null,
+    sport: sports.length ? JSON.stringify(sports) : '',
   });
   if(!res){toast('❌ Échec — reconnecte-toi');return;}
   _cache.athletes.push(res);
@@ -4516,6 +4698,9 @@ function renderAthleteDetail(id){
       </div>
     </div>
 
+    <!-- Sports profile -->
+    <div id="ath-sports-profile" class="sport-suggest-section"></div>
+
     <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;">
       <!-- LEFT: séances + historique -->
       <div>
@@ -4551,6 +4736,7 @@ function renderAthleteDetail(id){
     </div>
   `;
 
+  renderAthSportsProfile(a);
   renderAthAssigns(id, assigns, sessionLogs, prs);
   renderAthLogs(sessionLogs);
   renderAthPRs(prs);
