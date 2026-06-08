@@ -1903,7 +1903,7 @@ select.input{cursor:pointer;}
 
 <div class="modal-overlay" id="modal-athlete">
   <div class="modal-box">
-    <div class="modal-title">Nouvel adhérent</div>
+    <div class="modal-title" id="modal-athlete-title">Nouvel adhérent</div>
     <div class="input-group"><label class="input-label">Nom complet *</label><input class="input" id="na-name" placeholder="Prénom Nom"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
       <div class="input-group"><label class="input-label">Âge</label><input class="input" type="number" id="na-age" placeholder="25"></div>
@@ -1933,7 +1933,7 @@ select.input{cursor:pointer;}
     <div class="input-group"><label class="input-label">Email (pour le portail adhérent)</label><input class="input" id="na-email" type="email" placeholder="prenom@email.com"></div>
     <div class="input-group"><label class="input-label">Notes</label><input class="input" id="na-notes" placeholder="Blessures, contraintes..."></div>
     <div class="modal-actions">
-      <button class="btn btn-accent" onclick="saveNewAthlete()" style="flex:1;justify-content:center;">Créer le compte ✓</button>
+      <button class="btn btn-accent" id="modal-athlete-save-btn" onclick="saveAthleteForm()" style="flex:1;justify-content:center;">Créer le compte ✓</button>
       <button class="btn btn-secondary" onclick="closeModal('modal-athlete')" style="flex:1;justify-content:center;">Annuler</button>
     </div>
   </div>
@@ -3836,20 +3836,77 @@ function renderNutriMini(n){
 
 
 // ═══════════════════════════════════════════════════════════════
-// NEW ATHLETE MODAL
+// ATHLETE MODAL (CREATE + EDIT)
 // ═══════════════════════════════════════════════════════════════
-function openNewAthleteModal(){
+let _editAthleteId = null;
+
+function _resetAthleteModal() {
   ['na-name','na-age','na-weight','na-height','na-bf','na-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('na-obj').value='maintain';
+  document.getElementById('na-email').value='';
   document.querySelectorAll('#na-sports-chips .sport-chip').forEach(c=>c.classList.remove('selected'));
   document.getElementById('na-sports-levels').innerHTML='';
+}
+
+function openNewAthleteModal(){
+  _editAthleteId = null;
+  _resetAthleteModal();
+  document.getElementById('modal-athlete-title').textContent = 'Nouvel adhérent';
+  document.getElementById('modal-athlete-save-btn').textContent = 'Créer le compte ✓';
   openModal('modal-athlete');
 }
-async function saveNewAthlete(){
+
+function openEditAthleteModal(id){
+  const a = getAthletes().find(x=>x.id===id);
+  if(!a) return;
+  _editAthleteId = id;
+  _resetAthleteModal();
+  document.getElementById('modal-athlete-title').textContent = 'Modifier l\'adhérent';
+  document.getElementById('modal-athlete-save-btn').textContent = 'Enregistrer ✓';
+  document.getElementById('na-name').value = a.name||'';
+  document.getElementById('na-age').value  = a.age||'';
+  document.getElementById('na-weight').value= a.weight||'';
+  document.getElementById('na-height').value= a.height||'';
+  document.getElementById('na-bf').value   = a.bf||'';
+  document.getElementById('na-obj').value  = a.obj||'maintain';
+  document.getElementById('na-email').value= a.email||'';
+  document.getElementById('na-notes').value= a.notes||'';
+  // Restore sport chips
+  let sports=[];
+  try{sports=JSON.parse(a.sport||'[]');}catch(e){}
+  sports.forEach(s=>{
+    const chip=document.querySelector(`#na-sports-chips [data-sport="${s.id}"]`);
+    if(chip) chip.classList.add('selected');
+  });
+  // Render level selectors then set saved levels
+  if(sports.length){
+    const levelsEl=document.getElementById('na-sports-levels');
+    levelsEl.innerHTML=sports.map(s=>{
+      const meta=SPORTS_META[s.id];
+      if(!meta) return '';
+      return `<div class="sport-level-row">
+        <span class="sport-level-label">${meta.icon} ${meta.label}</span>
+        <select class="sport-level-select" id="na-level-${s.id}">
+          <option value="debutant">Débutant</option>
+          <option value="intermediaire">Intermédiaire</option>
+          <option value="avance">Avancé</option>
+        </select>
+      </div>`;
+    }).join('');
+    sports.forEach(s=>{
+      const sel=document.getElementById('na-level-'+s.id);
+      if(sel) sel.value=s.level||'intermediaire';
+    });
+  }
+  openModal('modal-athlete');
+}
+
+async function saveAthleteForm(){
   const name=document.getElementById('na-name').value.trim();
   if(!name){toast('Nom requis'); return;}
-  const color=COLORS[getAthletes().length%COLORS.length];
   const sports=getSelectedSports();
-  const res=await api('POST','/athletes',{
+  const sportStr=sports.length?JSON.stringify(sports):'';
+  const body={
     name,
     age:+document.getElementById('na-age').value||null,
     weight:+document.getElementById('na-weight').value||null,
@@ -3857,18 +3914,37 @@ async function saveNewAthlete(){
     bf:+document.getElementById('na-bf').value||null,
     obj:document.getElementById('na-obj').value,
     notes:document.getElementById('na-notes').value||'',
-    color,
-    email:document.getElementById('na-email').value.trim()||null,
-    sport: sports.length ? JSON.stringify(sports) : '',
-  });
-  if(!res){toast('❌ Échec — reconnecte-toi');return;}
-  _cache.athletes.push(res);
-  await loadAllData();
-  closeModal('modal-athlete');
-  toast(`${name} ajouté(e) ✓`);
-  renderAthletes();
-  renderDashboard();
+    sport:sportStr,
+  };
+  if(_editAthleteId){
+    const a=getAthletes().find(x=>x.id===_editAthleteId);
+    body.color=a?a.color:COLORS[0];
+    const res=await api('PUT','/athletes/'+_editAthleteId,body);
+    if(!res){toast('❌ Échec — reconnecte-toi');return;}
+    const idx=_cache.athletes.findIndex(x=>x.id===_editAthleteId);
+    if(idx>=0) _cache.athletes[idx]=res;
+    closeModal('modal-athlete');
+    toast(`${name} modifié(e) ✓`);
+    renderAthletes();
+    renderDashboard();
+    if(document.getElementById('athlete-detail-content')) renderAthleteDetail(_editAthleteId);
+  } else {
+    const color=COLORS[getAthletes().length%COLORS.length];
+    body.color=color;
+    body.email=document.getElementById('na-email').value.trim()||null;
+    const res=await api('POST','/athletes',body);
+    if(!res){toast('❌ Échec — reconnecte-toi');return;}
+    _cache.athletes.push(res);
+    await loadAllData();
+    closeModal('modal-athlete');
+    toast(`${name} ajouté(e) ✓`);
+    renderAthletes();
+    renderDashboard();
+  }
 }
+
+// Keep old name as alias so any residual callers don't break
+function saveNewAthlete(){ saveAthleteForm(); }
 
 // ═══════════════════════════════════════════════════════════════
 // SESSIONS PAGE
@@ -4692,7 +4768,8 @@ function renderAthleteDetail(id){
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;">
         <button class="btn btn-accent btn-sm" onclick="showPage('assign')">📤 Assigner</button>
-        <button class="btn btn-secondary btn-sm" onclick="openNutriModal()">🥗 Plan nutrition</button>
+        <button class="btn btn-secondary btn-sm" onclick="openEditAthleteModal('${id}')">✏️ Modifier</button>
+        <button class="btn btn-secondary btn-sm" onclick="openNutriModal()">🥗 Nutrition</button>
         <button class="btn btn-secondary btn-sm" onclick="openExportProgramModal('${id}')">📄 Exporter</button>
         <button class="btn btn-danger btn-sm" onclick="deleteAthlete('${id}')">🗑 Retirer</button>
       </div>
