@@ -191,17 +191,16 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .live-ex-name{font-size:24px;font-weight:900;margin-bottom:4px;line-height:1.2;}
 .live-ex-meta{font-size:13px;color:var(--muted);margin-bottom:20px;}
 
-/* Muscle anatomical schema */
-.muscle-schema-wrap{margin-bottom:20px;}
-.muscle-schema-diagrams{display:flex;gap:10px;justify-content:center;}
-.muscle-schema-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
-.muscle-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
-.muscle-schema-col svg{width:110px;height:264px;}
-.muscle{fill:rgba(255,255,255,.07);stroke:rgba(255,255,255,.12);stroke-width:.4;transition:fill .25s;}
-.muscle.active{fill:var(--accent);animation:musclePulse 2s ease-in-out infinite;}
-@keyframes musclePulse{0%,100%{opacity:.85}50%{opacity:.4}}
-.body-outline{fill:none;stroke:rgba(255,255,255,.14);stroke-width:1.2;}
-.body-fill{fill:rgba(255,255,255,.03);}
+/* Exercise cinematic scene */
+.exercise-scene-wrap{position:relative;width:100%;margin-bottom:16px;border-radius:16px;overflow:hidden;background:#07070e;}
+.exercise-scene-wrap svg{width:100%;height:auto;display:block;}
+.scene-zone{opacity:.07;transition:opacity .45s,filter .45s;}
+.scene-zone.lit{opacity:.9;filter:drop-shadow(0 0 7px rgba(255,10,10,.95)) drop-shadow(0 0 20px rgba(255,10,10,.55));animation:scPulse 2.2s ease-in-out infinite;}
+@keyframes scPulse{0%,100%{opacity:.9}50%{opacity:.46}}
+.scene-tip-bar{position:absolute;bottom:0;left:0;right:0;padding:10px 14px 12px;background:linear-gradient(to top,rgba(0,0,0,.88) 60%,rgba(0,0,0,0));}
+.scene-tip-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin-bottom:4px;}
+.scene-tip-text{font-size:12px;color:rgba(255,255,255,.82);line-height:1.55;font-style:italic;}
+.scene-tip-loading{display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.4);font-style:italic;}
 .coach-chat-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-top:20px;}
 .coach-chat-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:10px;}
 .coach-chat-msgs{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;max-height:220px;overflow-y:auto;}
@@ -213,10 +212,6 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .coach-chat-input:focus{border-color:var(--accent);}
 .coach-chat-send{width:36px;height:36px;border-radius:50%;background:var(--accent);border:none;color:#000;font-size:18px;font-weight:900;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 
-/* Tip box */
-.live-tip-box{background:rgba(255,122,0,.08);border:1px solid rgba(255,122,0,.22);border-radius:14px;padding:14px 16px;margin-bottom:20px;}
-.live-tip-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:6px;}
-.live-tip-text{font-size:13px;color:var(--text);line-height:1.65;}
 
 /* Previous perf */
 .live-prev{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:20px;}
@@ -269,7 +264,6 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .photo-input{display:none;}
 
 /* AI tip loading */
-.live-tip-loading{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);}
 .tip-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:tipdot 1s ease-in-out infinite;}
 .tip-dot:nth-child(2){animation-delay:.2s;}
 .tip-dot:nth-child(3){animation-delay:.4s;}
@@ -522,91 +516,225 @@ let _restRemaining = 0;
 const REST_CIRC = 2 * Math.PI * 68; // ~427
 const _aiTipCache = {};
 
-// ── MUSCLE SVG ────────────────────────────────────────────────────────────────
-const SVG_FRONT = `<svg viewBox="0 0 100 240" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="50" cy="13" r="11" class="body-fill body-outline"/>
-  <rect x="46" y="23" width="8" height="7" rx="2" class="body-fill body-outline"/>
-  <path d="M29,32 Q19,50 18,98 L26,101 L26,142 L74,142 L74,101 L82,98 Q81,50 71,32 Q60,28 50,28 Q40,28 29,32 Z" class="body-fill body-outline"/>
-  <path d="M20,33 Q11,52 9,92 L18,93 Q20,64 26,35 Z" class="body-fill body-outline"/>
-  <path d="M80,33 Q89,52 91,92 L82,93 Q80,64 74,35 Z" class="body-fill body-outline"/>
-  <path d="M26,142 L21,203 L37,203 L43,142 Z" class="body-fill body-outline"/>
-  <path d="M74,142 L79,203 L63,203 L57,142 Z" class="body-fill body-outline"/>
-  <path d="M21,203 L19,236 L37,236 L37,203 Z" class="body-fill body-outline"/>
-  <path d="M79,203 L81,236 L63,236 L63,203 Z" class="body-fill body-outline"/>
-  <path data-muscle="traps" d="M47,29 L53,29 L63,35 Q57,32 50,31 Q43,32 37,35 Z" class="muscle"/>
-  <path data-muscle="shoulders" d="M21,34 Q12,43 11,56 Q17,58 24,53 Q26,45 22,34 Z" class="muscle"/>
-  <path data-muscle="shoulders" d="M79,34 Q88,43 89,56 Q83,58 76,53 Q74,45 78,34 Z" class="muscle"/>
-  <path data-muscle="chest" d="M34,35 Q27,52 30,66 L48,69 L48,35 Z" class="muscle"/>
-  <path data-muscle="chest" d="M66,35 Q73,52 70,66 L52,69 L52,35 Z" class="muscle"/>
-  <path data-muscle="biceps" d="M11,57 Q7,67 8,83 L17,83 Q18,67 18,56 Z" class="muscle"/>
-  <path data-muscle="biceps" d="M89,57 Q93,67 92,83 L83,83 Q82,67 82,56 Z" class="muscle"/>
-  <path data-muscle="triceps" d="M9,59 Q6,68 7,82 L11,82 Q10,68 11,58 Z" class="muscle"/>
-  <path data-muscle="triceps" d="M91,59 Q94,68 93,82 L89,82 Q90,68 89,58 Z" class="muscle"/>
-  <path data-muscle="forearms" d="M8,85 Q6,95 8,105 L16,104 Q16,94 17,84 Z" class="muscle"/>
-  <path data-muscle="forearms" d="M92,85 Q94,95 92,105 L84,104 Q84,94 83,84 Z" class="muscle"/>
-  <path data-muscle="abs" d="M26,70 Q23,87 26,115 L34,113 Q31,88 30,69 Z" class="muscle"/>
-  <path data-muscle="abs" d="M74,70 Q77,87 74,115 L66,113 Q69,88 70,69 Z" class="muscle"/>
-  <rect data-muscle="abs" x="41" y="70" width="8" height="7" rx="2" class="muscle"/>
-  <rect data-muscle="abs" x="51" y="70" width="8" height="7" rx="2" class="muscle"/>
-  <rect data-muscle="abs" x="41" y="80" width="8" height="7" rx="2" class="muscle"/>
-  <rect data-muscle="abs" x="51" y="80" width="8" height="7" rx="2" class="muscle"/>
-  <rect data-muscle="abs" x="41" y="90" width="8" height="7" rx="2" class="muscle"/>
-  <rect data-muscle="abs" x="51" y="90" width="8" height="7" rx="2" class="muscle"/>
-  <path data-muscle="hip" d="M33,116 Q29,124 32,134 L38,132 Q36,123 35,115 Z" class="muscle"/>
-  <path data-muscle="hip" d="M67,116 Q71,124 68,134 L62,132 Q64,123 65,115 Z" class="muscle"/>
-  <path data-muscle="quads" d="M26,145 Q21,168 23,200 L32,200 Q28,172 29,143 Z" class="muscle"/>
-  <path data-muscle="quads" d="M74,145 Q79,168 77,200 L68,200 Q72,172 71,143 Z" class="muscle"/>
-  <path data-muscle="quads" d="M31,143 Q28,168 30,200 L43,200 L41,142 Z" class="muscle"/>
-  <path data-muscle="quads" d="M69,143 Q72,168 70,200 L57,200 L59,142 Z" class="muscle"/>
-  <path data-muscle="quads" d="M31,184 Q28,196 35,202 L43,201 Q41,193 38,183 Z" class="muscle"/>
-  <path data-muscle="quads" d="M69,184 Q72,196 65,202 L57,201 Q59,193 62,183 Z" class="muscle"/>
-  <path data-muscle="quads" d="M39,144 Q36,168 38,200 L43,200 L43,143 Z" class="muscle"/>
-  <path data-muscle="quads" d="M61,144 Q64,168 62,200 L57,200 L57,143 Z" class="muscle"/>
-  <path data-muscle="calves" d="M22,204 Q20,218 22,233 L27,233 Q26,218 25,203 Z" class="muscle"/>
-  <path data-muscle="calves" d="M78,204 Q80,218 78,233 L73,233 Q74,218 75,203 Z" class="muscle"/>
-  <path data-muscle="calves" d="M26,204 Q22,220 24,233 L35,233 Q33,220 30,203 Z" class="muscle"/>
-  <path data-muscle="calves" d="M74,204 Q78,220 76,233 L65,233 Q67,220 70,203 Z" class="muscle"/>
-</svg>`;
+// ── EXERCISE SCENES ─────────────────────────────────────────────────────────
+const _SD=`<defs>
+  <radialGradient id="sc_sp" cx="50%" cy="0%" r="80%">
+    <stop offset="0%" stop-color="rgba(255,210,140,.13)"/>
+    <stop offset="75%" stop-color="rgba(0,0,0,0)"/>
+  </radialGradient>
+  <radialGradient id="sc_vg" cx="50%" cy="50%" r="70%">
+    <stop offset="52%" stop-color="rgba(0,0,0,0)"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,.9)"/>
+  </radialGradient>
+</defs>`;
+const _BG=`<rect width="360" height="210" fill="#07070e"/>
+  <rect width="360" height="210" fill="url(#sc_sp)"/>
+  <rect y="180" width="360" height="30" fill="#0a0a16"/>
+  <line x1="0" y1="180" x2="360" y2="180" stroke="#15152a" stroke-width="1.5"/>
+  <line x1="180" y1="180" x2="0" y2="210" stroke="#101020" stroke-width=".8"/>
+  <line x1="180" y1="180" x2="360" y2="210" stroke="#101020" stroke-width=".8"/>`;
+const _VG=`<rect width="360" height="210" fill="url(#sc_vg)"/>`;
+const _C='#1c1c2e',_CO='#252540';
+const _sc=c=>`<svg viewBox="0 0 360 210" fill="none" xmlns="http://www.w3.org/2000/svg">${_SD}${_BG}${c}${_VG}</svg>`;
+const _h=(cx,cy,r)=>`<circle cx="${cx}" cy="${cy}" r="${r||12}" fill="${_C}" stroke="${_CO}" stroke-width=".8"/>`;
+const _s=(x1,y1,x2,y2,w)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${_C}" stroke-width="${w}" stroke-linecap="round"/>`;
+const _z=(cls,x,y,rx,ry)=>`<ellipse class="scene-zone ${cls}" cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="rgba(255,22,22,1)"/>`;
+const _zp=(cls,d)=>`<path class="scene-zone ${cls}" d="${d}" fill="rgba(255,22,22,1)"/>`;
+const _rack=(x,y,h)=>`<rect x="${x}" y="${y}" width="7" height="${h}" rx="2" fill="#111120"/>
+  <rect x="${x+18}" y="${y}" width="7" height="${h}" rx="2" fill="#111120"/>
+  <rect x="${x}" y="${y}" width="25" height="5" rx="1" fill="#111120"/>`;
+const _bar=(x,y,w)=>`<rect x="${x}" y="${y}" width="${w}" height="7" rx="3" fill="#181830" stroke="#22223a" stroke-width=".8"/>`;
+const _pl=(x,y)=>`<rect x="${x}" y="${y-8}" width="13" height="23" rx="3" fill="#141428" stroke="#20203a" stroke-width=".8"/>
+  <rect x="${x-11}" y="${y-10}" width="12" height="27" rx="3" fill="#121224" stroke="#1c1c34" stroke-width=".8"/>`;
 
-const SVG_BACK = `<svg viewBox="0 0 100 240" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="50" cy="13" r="11" class="body-fill body-outline"/>
-  <rect x="46" y="23" width="8" height="7" rx="2" class="body-fill body-outline"/>
-  <path d="M29,32 Q19,50 18,98 L26,101 L26,142 L74,142 L74,101 L82,98 Q81,50 71,32 Q60,28 50,28 Q40,28 29,32 Z" class="body-fill body-outline"/>
-  <path d="M20,33 Q11,52 9,92 L18,93 Q20,64 26,35 Z" class="body-fill body-outline"/>
-  <path d="M80,33 Q89,52 91,92 L82,93 Q80,64 74,35 Z" class="body-fill body-outline"/>
-  <path d="M26,142 L21,203 L37,203 L43,142 Z" class="body-fill body-outline"/>
-  <path d="M74,142 L79,203 L63,203 L57,142 Z" class="body-fill body-outline"/>
-  <path d="M21,203 L19,236 L37,236 L37,203 Z" class="body-fill body-outline"/>
-  <path d="M79,203 L81,236 L63,236 L63,203 Z" class="body-fill body-outline"/>
-  <path data-muscle="traps" d="M50,30 Q63,33 72,38 Q69,56 50,64 Q31,56 28,38 Q37,33 50,30 Z" class="muscle"/>
-  <path data-muscle="shoulders" d="M20,35 Q11,44 10,57 Q16,59 22,53 Q25,45 20,35 Z" class="muscle"/>
-  <path data-muscle="shoulders" d="M80,35 Q89,44 90,57 Q84,59 78,53 Q75,45 80,35 Z" class="muscle"/>
-  <path data-muscle="back" d="M29,40 Q26,54 28,64 L40,62 Q38,52 32,39 Z" class="muscle"/>
-  <path data-muscle="back" d="M71,40 Q74,54 72,64 L60,62 Q62,52 68,39 Z" class="muscle"/>
-  <path data-muscle="back" d="M40,42 L50,39 L60,42 L58,62 L50,64 L42,62 Z" class="muscle"/>
-  <path data-muscle="back" d="M26,65 Q17,82 20,112 L34,109 Q30,85 30,64 Z" class="muscle"/>
-  <path data-muscle="back" d="M74,65 Q83,82 80,112 L66,109 Q70,85 70,64 Z" class="muscle"/>
-  <path data-muscle="lower-back" d="M43,68 Q41,90 43,118 L48,118 Q46,90 46,67 Z" class="muscle"/>
-  <path data-muscle="lower-back" d="M57,68 Q59,90 57,118 L52,118 Q54,90 54,67 Z" class="muscle"/>
-  <path data-muscle="lower-back" d="M38,112 Q35,122 38,132 L62,132 Q65,122 62,112 Z" class="muscle"/>
-  <path data-muscle="triceps" d="M10,57 Q7,68 9,84 L18,84 Q17,68 18,56 Z" class="muscle"/>
-  <path data-muscle="triceps" d="M90,57 Q93,68 91,84 L82,84 Q83,68 82,56 Z" class="muscle"/>
-  <path data-muscle="forearms" d="M9,86 Q7,96 9,106 L17,105 Q16,95 17,85 Z" class="muscle"/>
-  <path data-muscle="forearms" d="M91,86 Q93,96 91,106 L83,105 Q84,95 83,85 Z" class="muscle"/>
-  <path data-muscle="glutes" d="M25,120 Q20,132 24,142 L38,142 Q36,130 30,119 Z" class="muscle"/>
-  <path data-muscle="glutes" d="M75,120 Q80,132 76,142 L62,142 Q64,130 70,119 Z" class="muscle"/>
-  <path data-muscle="glutes" d="M26,143 Q21,158 25,168 L44,168 Q43,155 42,142 Z" class="muscle"/>
-  <path data-muscle="glutes" d="M74,143 Q79,158 75,168 L56,168 Q57,155 58,142 Z" class="muscle"/>
-  <path data-muscle="hamstrings" d="M22,170 Q19,185 21,202 L30,202 Q27,186 26,169 Z" class="muscle"/>
-  <path data-muscle="hamstrings" d="M78,170 Q81,185 79,202 L70,202 Q73,186 74,169 Z" class="muscle"/>
-  <path data-muscle="hamstrings" d="M30,170 Q27,186 29,202 L38,202 Q35,186 34,169 Z" class="muscle"/>
-  <path data-muscle="hamstrings" d="M70,170 Q73,186 71,202 L62,202 Q65,186 66,169 Z" class="muscle"/>
-  <path data-muscle="calves" d="M22,204 Q19,220 22,234 L30,234 Q28,220 29,203 Z" class="muscle"/>
-  <path data-muscle="calves" d="M30,204 Q27,221 29,234 L37,234 Q35,220 33,203 Z" class="muscle"/>
-  <path data-muscle="calves" d="M78,204 Q81,220 78,234 L70,234 Q72,220 71,203 Z" class="muscle"/>
-  <path data-muscle="calves" d="M70,204 Q73,221 71,234 L63,234 Q65,220 67,203 Z" class="muscle"/>
-</svg>`;
-
+function _scBench() {
+  return _sc(_rack(12,28,158)+' <rect x="14" y="70" width="22" height="7" rx="1" fill="#14142a"/>'+
+    '<rect x="58" y="148" width="220" height="20" rx="6" fill="#12122a" stroke="#1e1e38" stroke-width="1"/>'+
+    '<rect x="76" y="167" width="10" height="15" rx="2" fill="#0e0e1e"/>'+
+    '<rect x="164" y="167" width="10" height="15" rx="2" fill="#0e0e1e"/>'+
+    '<rect x="229" y="167" width="10" height="15" rx="2" fill="#0e0e1e"/>'+
+    _s(82,147,234,139,16)+_h(248,139,13)+
+    _s(89,152,74,179,12)+_s(74,179,70,183,10)+
+    _s(104,151,91,179,12)+_s(91,179,87,183,10)+
+    _s(116,140,116,89,10)+_s(185,139,185,89,10)+
+    _s(116,89,112,82,8)+_s(185,89,189,82,8)+
+    _bar(30,79,300)+_pl(48,85)+
+    '<rect x="306" y="77" width="13" height="23" rx="3" fill="#141428" stroke="#20203a" stroke-width=".8"/>'+
+    '<rect x="318" y="75" width="12" height="27" rx="3" fill="#121224" stroke="#1c1c34" stroke-width=".8"/>'+
+    _z('zone-chest',124,136,28,9)+_z('zone-chest',166,136,23,9)+
+    _z('zone-triceps',116,111,7,13)+_z('zone-triceps',185,111,7,13)+
+    _z('zone-shoulders',106,137,9,7)+_z('zone-shoulders',195,137,9,7));
+}
+function _scSquat() {
+  return _sc(_rack(16,14,170)+
+    '<rect x="16" y="78" width="22" height="7" rx="1" fill="#14142a"/>'+
+    '<rect x="16" y="130" width="22" height="4" rx="1" fill="#141430"/>'+
+    _bar(34,73,292)+_pl(44,79)+
+    '<rect x="304" y="71" width="13" height="22" rx="3" fill="#141428" stroke="#20203a" stroke-width=".8"/>'+
+    '<rect x="316" y="69" width="12" height="26" rx="3" fill="#121224" stroke="#1c1c34" stroke-width=".8"/>'+
+    _h(196,48,13)+_s(196,60,196,74,9)+_s(196,74,188,127,24)+
+    _s(202,77,230,76,9)+_s(190,77,162,76,9)+
+    _s(192,126,228,157,18)+_s(228,157,214,181,14)+_s(214,181,223,183,11)+
+    _s(188,126,159,153,17)+_s(159,153,163,181,13)+_s(163,181,153,183,11)+
+    _z('zone-quads',225,141,14,15)+_z('zone-quads',163,139,12,14)+
+    _z('zone-glutes',187,120,18,11)+
+    _z('zone-hamstrings',219,154,12,13)+_z('zone-hamstrings',158,152,10,12)+
+    _zp('zone-lower-back','M182,93 Q178,110 180,121 L196,121 Q196,110 192,93 Z'));
+}
+function _scDeadlift() {
+  return _sc(_bar(50,173,260)+
+    '<circle cx="74" cy="160" r="20" fill="#131328" stroke="#1e1e38" stroke-width="1.5"/>'+
+    '<circle cx="74" cy="160" r="11" fill="#0f0f20" stroke="#181830" stroke-width="1"/>'+
+    '<circle cx="286" cy="160" r="20" fill="#131328" stroke="#1e1e38" stroke-width="1.5"/>'+
+    '<circle cx="286" cy="160" r="11" fill="#0f0f20" stroke="#181830" stroke-width="1"/>'+
+    '<rect x="55" y="180" width="250" height="4" fill="#0d0d1c" rx="1"/>'+
+    _h(222,55,13)+_s(222,67,183,123,25)+
+    _s(188,81,167,172,9)+_s(177,81,155,172,9)+
+    _s(183,122,176,181,18)+_s(169,122,162,181,17)+
+    _s(176,181,186,183,12)+_s(162,181,151,183,12)+
+    _z('zone-hamstrings',173,153,14,18)+_z('zone-glutes',183,119,20,13)+
+    _zp('zone-lower-back','M174,89 Q170,106 172,118 L192,118 Q190,106 186,89 Z')+
+    _z('zone-quads',173,161,12,13));
+}
+function _scRow() {
+  return _sc('<rect x="272" y="35" width="7" height="148" rx="2" fill="#111120" opacity=".7"/>'+
+    '<rect x="290" y="35" width="7" height="148" rx="2" fill="#111120" opacity=".7"/>'+
+    _bar(98,155,164)+_pl(104,161)+
+    '<rect x="250" y="147" width="12" height="22" rx="3" fill="#141428" stroke="#20203a" stroke-width=".8"/>'+
+    '<rect x="261" y="145" width="11" height="26" rx="3" fill="#121224" stroke="#1c1c34" stroke-width=".8"/>'+
+    _h(220,57,13)+_s(220,69,178,127,26)+
+    _s(191,82,170,153,9)+_s(181,81,159,153,9)+
+    _s(181,126,177,181,19)+_s(165,126,161,181,18)+
+    _s(177,181,189,183,12)+_s(161,181,149,183,12)+
+    _zp('zone-back','M174,85 Q164,103 167,117 L186,117 Q182,103 178,85 Z')+
+    _z('zone-back',174,109,14,10)+
+    _z('zone-biceps',172,117,8,12)+_z('zone-biceps',160,117,7,11)+
+    _z('zone-traps',196,79,18,8));
+}
+function _scPullup() {
+  return _sc('<rect x="55" y="0" width="250" height="14" rx="3" fill="#101020"/>'+
+    '<rect x="76" y="14" width="208" height="7" rx="3" fill="#181830" stroke="#22223a" stroke-width=".8"/>'+
+    '<rect x="55" y="14" width="9" height="20" rx="3" fill="#141428"/>'+
+    '<rect x="296" y="14" width="9" height="20" rx="3" fill="#141428"/>'+
+    _h(180,56,13)+_s(180,20,154,54,9)+_s(180,20,206,54,9)+
+    _s(154,54,149,69,8)+_s(206,54,211,69,8)+
+    _s(150,67,168,136,26)+
+    _s(168,136,172,181,16)+_s(172,181,166,190,12)+
+    _s(168,136,172,181,16)+_s(192,181,198,190,12)+
+    _zp('zone-back','M150,72 Q137,99 141,127 L163,125 Q157,99 160,75 Z')+
+    _zp('zone-back','M210,72 Q223,99 219,127 L197,125 Q203,99 200,75 Z')+
+    _z('zone-biceps',150,61,9,10)+_z('zone-biceps',210,61,9,10)+
+    _z('zone-shoulders',157,69,10,8)+_z('zone-shoulders',203,69,10,8));
+}
+function _scOhp() {
+  return _sc(_bar(43,40,274)+_pl(50,46)+
+    '<rect x="297" y="32" width="13" height="23" rx="3" fill="#141428" stroke="#20203a" stroke-width=".8"/>'+
+    '<rect x="309" y="30" width="12" height="27" rx="3" fill="#121224" stroke="#1c1c34" stroke-width=".8"/>'+
+    _h(180,71,13)+
+    _s(174,59,159,43,9)+_s(186,59,201,43,9)+
+    _s(174,67,161,83,10)+_s(186,67,199,83,10)+
+    _s(180,83,180,147,26)+
+    _s(175,146,170,181,18)+_s(185,146,190,181,18)+
+    _s(170,181,158,183,12)+_s(190,181,202,183,12)+
+    _z('zone-shoulders',163,75,13,9)+_z('zone-shoulders',197,75,13,9)+
+    _z('zone-triceps',161,59,7,12)+_z('zone-triceps',199,59,7,12)+
+    _z('zone-traps',180,83,15,7));
+}
+function _scCurl() {
+  return _sc('<rect x="288" y="74" width="62" height="108" rx="3" fill="#0d0d1e" opacity=".7"/>'+
+    '<rect x="288" y="74" width="62" height="7" rx="2" fill="#131328" opacity=".7"/>'+
+    '<rect x="288" y="115" width="62" height="6" rx="2" fill="#131328" opacity=".7"/>'+
+    '<rect x="288" y="152" width="62" height="6" rx="2" fill="#131328" opacity=".7"/>'+
+    _h(180,59,13)+_s(180,71,180,147,26)+
+    _s(172,79,154,108,10)+_s(154,108,144,138,9)+
+    _s(188,79,206,108,10)+_s(206,108,216,138,9)+
+    '<rect x="132" y="135" width="18" height="7" rx="3" fill="#141428" stroke="#1e1e38" stroke-width=".8"/>'+
+    '<circle cx="129" cy="138" r="5" fill="#101022" stroke="#181832" stroke-width="1"/>'+
+    '<circle cx="154" cy="138" r="5" fill="#101022" stroke="#181832" stroke-width="1"/>'+
+    '<rect x="208" y="135" width="18" height="7" rx="3" fill="#141428" stroke="#1e1e38" stroke-width=".8"/>'+
+    '<circle cx="205" cy="138" r="5" fill="#101022" stroke="#181832" stroke-width="1"/>'+
+    '<circle cx="230" cy="138" r="5" fill="#101022" stroke="#181832" stroke-width="1"/>'+
+    _s(175,146,170,181,18)+_s(185,146,190,181,18)+
+    _s(170,181,158,183,12)+_s(190,181,202,183,12)+
+    _z('zone-biceps',152,105,9,14)+_z('zone-biceps',208,105,9,14)+
+    _z('zone-forearms',146,129,7,11)+_z('zone-forearms',214,129,7,11));
+}
+function _scHipthrust() {
+  return _sc('<rect x="58" y="116" width="208" height="20" rx="5" fill="#12122a" stroke="#1e1e38" stroke-width="1"/>'+
+    '<rect x="76" y="135" width="10" height="16" rx="2" fill="#0e0e1e"/>'+
+    '<rect x="213" y="135" width="10" height="16" rx="2" fill="#0e0e1e"/>'+
+    _bar(78,112,204)+_pl(85,118)+
+    '<rect x="268" y="104" width="12" height="22" rx="3" fill="#141428" stroke="#20203a" stroke-width=".8"/>'+
+    '<rect x="279" y="102" width="11" height="26" rx="3" fill="#121224" stroke="#1c1c34" stroke-width=".8"/>'+
+    _h(233,105,13)+_s(233,117,177,122,22)+
+    _s(177,119,157,163,20)+_s(157,163,155,181,15)+_s(155,181,165,183,11)+
+    _s(164,119,137,159,20)+_s(137,159,135,181,15)+_s(135,181,145,183,11)+
+    _s(224,120,243,147,9)+_s(220,120,202,147,9)+
+    _z('zone-glutes',167,116,27,11)+_z('zone-hamstrings',154,146,12,15)+
+    _z('zone-hamstrings',137,146,11,13)+_z('zone-quads',154,152,10,13));
+}
+function _scLunge() {
+  return _sc(_bar(113,69,134)+
+    _h(196,49,13)+_s(196,61,191,118,24)+
+    _s(189,70,170,69,8)+_s(203,70,222,69,8)+
+    _s(191,117,180,164,19)+_s(180,164,178,181,15)+_s(178,181,190,183,11)+
+    _s(189,117,219,161,18)+_s(219,161,225,181,14)+_s(225,181,215,183,11)+
+    _z('zone-quads',179,142,14,18)+_z('zone-glutes',191,110,17,11)+
+    _z('zone-quads',221,142,12,16)+_z('zone-hamstrings',220,154,11,13));
+}
+function _scCore() {
+  return _sc('<rect x="28" y="168" width="304" height="12" rx="3" fill="#0d0d1e" stroke="#14142a" stroke-width="1"/>'+
+    _h(283,119,13)+_s(283,131,178,151,24)+
+    _s(271,133,269,167,9)+_s(269,167,255,167,8)+
+    _s(199,147,197,167,9)+_s(197,167,183,167,8)+
+    _s(177,149,118,167,18)+_s(118,167,116,175,14)+_s(116,175,106,176,11)+
+    _z('zone-abs',228,146,25,8)+_z('zone-abs',213,148,17,7)+
+    _zp('zone-lower-back','M194,146 Q190,152 192,156 L202,156 Q204,152 200,146 Z'));
+}
+function _scGeneric(m) {
+  return _sc('<rect x="18" y="40" width="324" height="4" fill="#111120" opacity=".4"/>'+
+    '<rect x="22" y="44" width="6" height="136" rx="2" fill="#111120" opacity=".45"/>'+
+    '<rect x="332" y="44" width="6" height="136" rx="2" fill="#111120" opacity=".45"/>'+
+    _h(180,58,13)+_s(180,70,180,145,26)+
+    _s(174,78,154,118,9)+_s(186,78,206,118,9)+
+    _s(154,118,148,148,8)+_s(206,118,212,148,8)+
+    _s(175,144,170,181,18)+_s(185,144,190,181,18)+
+    _s(170,181,158,183,12)+_s(190,181,202,183,12)+
+    _z('zone-chest',170,86,17,10)+_z('zone-chest',190,86,17,10)+
+    _z('zone-shoulders',159,75,11,8)+_z('zone-shoulders',201,75,11,8)+
+    _z('zone-biceps',151,113,8,12)+_z('zone-biceps',209,113,8,12)+
+    _z('zone-triceps',148,116,7,11)+_z('zone-triceps',212,116,7,11)+
+    _z('zone-forearms',147,137,7,10)+_z('zone-forearms',213,137,7,10)+
+    _zp('zone-abs','M174,97 Q171,114 173,129 L187,129 Q185,114 186,97 Z')+
+    _zp('zone-back','M175,89 Q170,109 172,129 L188,129 Q186,109 185,89 Z')+
+    _z('zone-traps',180,79,14,7)+
+    _zp('zone-lower-back','M175,127 Q172,138 174,144 L186,144 Q184,138 185,127 Z')+
+    _z('zone-quads',172,160,12,18)+_z('zone-quads',188,160,12,18)+
+    _z('zone-hamstrings',172,161,11,16)+_z('zone-hamstrings',188,161,11,16)+
+    _z('zone-glutes',175,142,14,10)+_z('zone-glutes',185,142,14,10)+
+    _z('zone-calves',172,175,8,6)+_z('zone-calves',188,175,8,6)+
+    _z('zone-hip',174,147,9,6)+_z('zone-hip',186,147,9,6));
+}
+function getExerciseCategory(n) {
+  n=(n||'').toLowerCase();
+  if (/bench|développé.couché|pec|push.?up|fly|écarté|cable.?cross/.test(n)) return 'bench';
+  if (/squat|goblet/.test(n)) return 'squat';
+  if (/fente|lunge|step.?up/.test(n)) return 'lunge';
+  if (/deadlift|soulevé|rdl|roumain|stiff|good.morning/.test(n)) return 'deadlift';
+  if (/hip.thrust|glute.bridge/.test(n)) return 'hipthrust';
+  if (/pull.?up|traction|pulldown|lat/.test(n)) return 'pullup';
+  if (/row|rowing|tirage/.test(n)) return 'row';
+  if (/overhead|ohp|military|développé.épaule|shoulder.press/.test(n)) return 'ohp';
+  if (/curl|bicep/.test(n)) return 'curl';
+  if (/plank|gainage|crunch|sit.?up|leg.raise|abdos/.test(n)) return 'core';
+  return 'generic';
+}
+function renderExerciseScene(exName) {
+  const fns={bench:_scBench,squat:_scSquat,deadlift:_scDeadlift,row:_scRow,
+    pullup:_scPullup,ohp:_scOhp,curl:_scCurl,hipthrust:_scHipthrust,
+    lunge:_scLunge,core:_scCore,generic:_scGeneric};
+  return (fns[getExerciseCategory(exName)]||_scGeneric)();
+}
 // ── API ──────────────────────────────────────────────────────────────────────
 async function aApi(method, path, body) {
   const opts = { method, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _tok } };
@@ -1007,8 +1135,8 @@ function getMusclesForExercise(name) {
 }
 
 function highlightMuscles(muscles) {
-  document.querySelectorAll('[data-muscle]').forEach(el => el.classList.remove('active'));
-  muscles.forEach(m => document.querySelectorAll(`[data-muscle="${m}"]`).forEach(el => el.classList.add('active')));
+  document.querySelectorAll('.scene-zone').forEach(el => el.classList.remove('lit'));
+  muscles.forEach(m => document.querySelectorAll(`.zone-${m}`).forEach(el => el.classList.add('lit')));
 }
 
 function getTipForExercise(name) {
@@ -1128,21 +1256,18 @@ function renderLiveExercise() {
 
   const displayTip = cached ? cached.tip : staticTip;
   const tipHtml = cached === undefined
-    ? `<div class="live-tip-loading"><div class="tip-dot"></div><div class="tip-dot"></div><div class="tip-dot"></div><span style="margin-left:4px;">IA en cours…</span></div>`
-    : `<div class="live-tip-text" id="live-tip-text">${displayTip}</div>`;
+    ? `<div class="scene-tip-loading"><div class="tip-dot"></div><div class="tip-dot"></div><div class="tip-dot"></div><span style="margin-left:4px;">IA en cours…</span></div>`
+    : `<div class="scene-tip-text">${displayTip}</div>`;
 
   document.getElementById('live-body').innerHTML = `
     <div class="live-ex-name">${ex.name || 'Exercice'}</div>
     <div class="live-ex-meta">${metaParts.join(' · ')}</div>
-    <div class="muscle-schema-wrap">
-      <div class="muscle-schema-diagrams">
-        <div class="muscle-schema-col"><div class="muscle-label">Face</div>${SVG_FRONT}</div>
-        <div class="muscle-schema-col"><div class="muscle-label">Dos</div>${SVG_BACK}</div>
+    <div class="exercise-scene-wrap" id="ex-scene">
+      ${renderExerciseScene(ex.name)}
+      <div class="scene-tip-bar" id="live-tip-box">
+        <div class="scene-tip-label">✨ Conseil technique</div>
+        ${tipHtml}
       </div>
-    </div>
-    <div class="live-tip-box" id="live-tip-box">
-      <div class="live-tip-label">✨ Conseil technique</div>
-      ${tipHtml}
     </div>
     ${prevHtml}
     <div class="section-title">Suivi des séries</div>
@@ -1178,7 +1303,7 @@ async function fetchAiTip(exerciseName, forExIndex) {
   const box = document.getElementById('live-tip-box');
   if (box) {
     const label = res ? '✨ Conseil IA' : '💡 Conseil technique';
-    box.innerHTML = `<div class="live-tip-label">${label}</div><div class="live-tip-text">${tip}</div>`;
+    box.innerHTML = `<div class="scene-tip-label">${label}</div><div class="scene-tip-text">${tip}</div>`;
   }
   highlightMuscles(muscles);
 }
