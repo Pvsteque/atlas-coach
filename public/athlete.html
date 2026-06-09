@@ -191,15 +191,25 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .live-ex-name{font-size:24px;font-weight:900;margin-bottom:4px;line-height:1.2;}
 .live-ex-meta{font-size:13px;color:var(--muted);margin-bottom:20px;}
 
-/* Muscle diagram */
-.muscle-diagram-wrap{display:flex;gap:12px;justify-content:center;margin-bottom:20px;}
-.muscle-diagram-col{display:flex;flex-direction:column;align-items:center;gap:5px;}
-.muscle-diagram-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
-.muscle-diagram-col svg{width:88px;height:215px;}
-.muscle{fill:rgba(255,255,255,.06);transition:fill .35s ease;}
-.muscle.active{fill:var(--accent);opacity:.88;}
-.body-outline{fill:none;stroke:rgba(255,255,255,.13);stroke-width:1.5;}
+/* Muscle anatomical schema */
+.muscle-schema-wrap{margin-bottom:20px;}
+.muscle-schema-diagrams{display:flex;gap:10px;justify-content:center;margin-bottom:10px;}
+.muscle-schema-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.muscle-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.muscle-schema-col svg{width:110px;height:264px;}
+.muscle{fill:rgba(255,255,255,.07);stroke:rgba(255,255,255,.12);stroke-width:.4;transition:fill .25s;cursor:pointer;}
+.muscle:active{fill:rgba(255,255,255,.25);}
+.muscle.active{fill:var(--accent);animation:musclePulse 2s ease-in-out infinite;}
+.muscle.tapped{animation:none!important;fill:rgba(255,255,255,.45)!important;}
+@keyframes musclePulse{0%,100%{opacity:.85}50%{opacity:.4}}
+.body-outline{fill:none;stroke:rgba(255,255,255,.14);stroke-width:1.2;}
 .body-fill{fill:rgba(255,255,255,.03);}
+.muscle-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;min-height:68px;}
+.muscle-panel-empty{font-size:12px;color:var(--muted);text-align:center;padding:8px 0;}
+.muscle-panel-name{font-size:17px;font-weight:900;color:var(--text);}
+.muscle-panel-role{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:6px;white-space:nowrap;}
+.muscle-panel-desc{font-size:11px;color:var(--muted);margin:2px 0 6px;}
+.muscle-panel-tip{font-size:13px;color:var(--text);line-height:1.55;}
 
 /* Tip box */
 .live-tip-box{background:rgba(255,122,0,.08);border:1px solid rgba(255,122,0,.22);border-radius:14px;padding:14px 16px;margin-bottom:20px;}
@@ -511,67 +521,158 @@ const REST_CIRC = 2 * Math.PI * 68; // ~427
 const _aiTipCache = {};
 
 // ── MUSCLE SVG ────────────────────────────────────────────────────────────────
-const SVG_FRONT = `<svg viewBox="0 0 100 240" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="50" cy="16" r="12" class="body-outline"/>
-  <rect x="45" y="27" width="10" height="8" rx="3" class="body-fill body-outline"/>
-  <path d="M28,34 Q18,52 20,95 L27,98 L27,138 L73,138 L73,98 L80,95 Q82,52 72,34 Z" class="body-fill body-outline"/>
-  <path d="M20,35 Q10,52 8,92 L18,92 Q22,62 28,35 Z" class="body-fill body-outline"/>
-  <path d="M80,35 Q90,52 92,92 L82,92 Q78,62 72,35 Z" class="body-fill body-outline"/>
-  <path d="M27,138 L22,202 L38,202 L44,138 Z" class="body-fill body-outline"/>
-  <path d="M73,138 L78,202 L62,202 L56,138 Z" class="body-fill body-outline"/>
-  <path d="M22,202 L20,236 L38,236 L38,202 Z" class="body-fill body-outline"/>
-  <path d="M78,202 L80,236 L62,236 L62,202 Z" class="body-fill body-outline"/>
-  <ellipse data-muscle="shoulders" cx="22" cy="46" rx="11" ry="8" class="muscle"/>
-  <ellipse data-muscle="shoulders" cx="78" cy="46" rx="11" ry="8" class="muscle"/>
-  <ellipse data-muscle="chest" cx="40" cy="59" rx="12" ry="10" class="muscle"/>
-  <ellipse data-muscle="chest" cx="60" cy="59" rx="12" ry="10" class="muscle"/>
-  <ellipse data-muscle="biceps" cx="13" cy="67" rx="7" ry="13" class="muscle"/>
-  <ellipse data-muscle="biceps" cx="87" cy="67" rx="7" ry="13" class="muscle"/>
-  <ellipse data-muscle="triceps" cx="10" cy="70" rx="4" ry="10" class="muscle"/>
-  <ellipse data-muscle="triceps" cx="90" cy="70" rx="4" ry="10" class="muscle"/>
-  <ellipse data-muscle="forearms" cx="10" cy="85" rx="6" ry="11" class="muscle"/>
-  <ellipse data-muscle="forearms" cx="90" cy="85" rx="6" ry="11" class="muscle"/>
-  <rect data-muscle="abs" x="42" y="71" width="7" height="7" rx="2" class="muscle"/>
-  <rect data-muscle="abs" x="51" y="71" width="7" height="7" rx="2" class="muscle"/>
-  <rect data-muscle="abs" x="42" y="80" width="7" height="7" rx="2" class="muscle"/>
-  <rect data-muscle="abs" x="51" y="80" width="7" height="7" rx="2" class="muscle"/>
-  <rect data-muscle="abs" x="42" y="89" width="7" height="7" rx="2" class="muscle"/>
-  <rect data-muscle="abs" x="51" y="89" width="7" height="7" rx="2" class="muscle"/>
-  <ellipse data-muscle="hip" cx="39" cy="104" rx="9" ry="5" class="muscle"/>
-  <ellipse data-muscle="hip" cx="61" cy="104" rx="9" ry="5" class="muscle"/>
-  <ellipse data-muscle="quads" cx="34" cy="160" rx="13" ry="23" class="muscle"/>
-  <ellipse data-muscle="quads" cx="66" cy="160" rx="13" ry="23" class="muscle"/>
-  <ellipse data-muscle="calves" cx="31" cy="217" rx="9" ry="17" class="muscle"/>
-  <ellipse data-muscle="calves" cx="69" cy="217" rx="9" ry="17" class="muscle"/>
+const SVG_FRONT = `<svg viewBox="0 0 100 240" xmlns="http://www.w3.org/2000/svg" onclick="handleMuscleTap(event)">
+  <circle cx="50" cy="13" r="11" class="body-fill body-outline"/>
+  <rect x="46" y="23" width="8" height="7" rx="2" class="body-fill body-outline"/>
+  <path d="M29,32 Q19,50 18,98 L26,101 L26,142 L74,142 L74,101 L82,98 Q81,50 71,32 Q60,28 50,28 Q40,28 29,32 Z" class="body-fill body-outline"/>
+  <path d="M20,33 Q11,52 9,92 L18,93 Q20,64 26,35 Z" class="body-fill body-outline"/>
+  <path d="M80,33 Q89,52 91,92 L82,93 Q80,64 74,35 Z" class="body-fill body-outline"/>
+  <path d="M26,142 L21,203 L37,203 L43,142 Z" class="body-fill body-outline"/>
+  <path d="M74,142 L79,203 L63,203 L57,142 Z" class="body-fill body-outline"/>
+  <path d="M21,203 L19,236 L37,236 L37,203 Z" class="body-fill body-outline"/>
+  <path d="M79,203 L81,236 L63,236 L63,203 Z" class="body-fill body-outline"/>
+  <path data-muscle="traps" d="M47,29 L53,29 L63,35 Q57,32 50,31 Q43,32 37,35 Z" class="muscle"/>
+  <path data-muscle="shoulders" d="M21,34 Q12,43 11,56 Q17,58 24,53 Q26,45 22,34 Z" class="muscle"/>
+  <path data-muscle="shoulders" d="M79,34 Q88,43 89,56 Q83,58 76,53 Q74,45 78,34 Z" class="muscle"/>
+  <path data-muscle="chest" d="M34,35 Q27,52 30,66 L48,69 L48,35 Z" class="muscle"/>
+  <path data-muscle="chest" d="M66,35 Q73,52 70,66 L52,69 L52,35 Z" class="muscle"/>
+  <path data-muscle="biceps" d="M11,57 Q7,67 8,83 L17,83 Q18,67 18,56 Z" class="muscle"/>
+  <path data-muscle="biceps" d="M89,57 Q93,67 92,83 L83,83 Q82,67 82,56 Z" class="muscle"/>
+  <path data-muscle="triceps" d="M9,59 Q6,68 7,82 L11,82 Q10,68 11,58 Z" class="muscle"/>
+  <path data-muscle="triceps" d="M91,59 Q94,68 93,82 L89,82 Q90,68 89,58 Z" class="muscle"/>
+  <path data-muscle="forearms" d="M8,85 Q6,95 8,105 L16,104 Q16,94 17,84 Z" class="muscle"/>
+  <path data-muscle="forearms" d="M92,85 Q94,95 92,105 L84,104 Q84,94 83,84 Z" class="muscle"/>
+  <path data-muscle="abs" d="M26,70 Q23,87 26,115 L34,113 Q31,88 30,69 Z" class="muscle"/>
+  <path data-muscle="abs" d="M74,70 Q77,87 74,115 L66,113 Q69,88 70,69 Z" class="muscle"/>
+  <rect data-muscle="abs" x="41" y="70" width="8" height="7" rx="2" class="muscle"/>
+  <rect data-muscle="abs" x="51" y="70" width="8" height="7" rx="2" class="muscle"/>
+  <rect data-muscle="abs" x="41" y="80" width="8" height="7" rx="2" class="muscle"/>
+  <rect data-muscle="abs" x="51" y="80" width="8" height="7" rx="2" class="muscle"/>
+  <rect data-muscle="abs" x="41" y="90" width="8" height="7" rx="2" class="muscle"/>
+  <rect data-muscle="abs" x="51" y="90" width="8" height="7" rx="2" class="muscle"/>
+  <path data-muscle="hip" d="M33,116 Q29,124 32,134 L38,132 Q36,123 35,115 Z" class="muscle"/>
+  <path data-muscle="hip" d="M67,116 Q71,124 68,134 L62,132 Q64,123 65,115 Z" class="muscle"/>
+  <path data-muscle="quads" d="M26,145 Q21,168 23,200 L32,200 Q28,172 29,143 Z" class="muscle"/>
+  <path data-muscle="quads" d="M74,145 Q79,168 77,200 L68,200 Q72,172 71,143 Z" class="muscle"/>
+  <path data-muscle="quads" d="M31,143 Q28,168 30,200 L43,200 L41,142 Z" class="muscle"/>
+  <path data-muscle="quads" d="M69,143 Q72,168 70,200 L57,200 L59,142 Z" class="muscle"/>
+  <path data-muscle="quads" d="M31,184 Q28,196 35,202 L43,201 Q41,193 38,183 Z" class="muscle"/>
+  <path data-muscle="quads" d="M69,184 Q72,196 65,202 L57,201 Q59,193 62,183 Z" class="muscle"/>
+  <path data-muscle="quads" d="M39,144 Q36,168 38,200 L43,200 L43,143 Z" class="muscle"/>
+  <path data-muscle="quads" d="M61,144 Q64,168 62,200 L57,200 L57,143 Z" class="muscle"/>
+  <path data-muscle="calves" d="M22,204 Q20,218 22,233 L27,233 Q26,218 25,203 Z" class="muscle"/>
+  <path data-muscle="calves" d="M78,204 Q80,218 78,233 L73,233 Q74,218 75,203 Z" class="muscle"/>
+  <path data-muscle="calves" d="M26,204 Q22,220 24,233 L35,233 Q33,220 30,203 Z" class="muscle"/>
+  <path data-muscle="calves" d="M74,204 Q78,220 76,233 L65,233 Q67,220 70,203 Z" class="muscle"/>
 </svg>`;
 
-const SVG_BACK = `<svg viewBox="0 0 100 240" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="50" cy="16" r="12" class="body-outline"/>
-  <rect x="45" y="27" width="10" height="8" rx="3" class="body-fill body-outline"/>
-  <path d="M28,34 Q18,52 20,95 L27,98 L27,138 L73,138 L73,98 L80,95 Q82,52 72,34 Z" class="body-fill body-outline"/>
-  <path d="M20,35 Q10,52 8,92 L18,92 Q22,62 28,35 Z" class="body-fill body-outline"/>
-  <path d="M80,35 Q90,52 92,92 L82,92 Q78,62 72,35 Z" class="body-fill body-outline"/>
-  <path d="M27,138 L22,202 L38,202 L44,138 Z" class="body-fill body-outline"/>
-  <path d="M73,138 L78,202 L62,202 L56,138 Z" class="body-fill body-outline"/>
-  <path d="M22,202 L20,236 L38,236 L38,202 Z" class="body-fill body-outline"/>
-  <path d="M78,202 L80,236 L62,236 L62,202 Z" class="body-fill body-outline"/>
-  <ellipse data-muscle="traps" cx="50" cy="44" rx="22" ry="12" class="muscle"/>
-  <ellipse data-muscle="shoulders" cx="22" cy="46" rx="10" ry="7" class="muscle"/>
-  <ellipse data-muscle="shoulders" cx="78" cy="46" rx="10" ry="7" class="muscle"/>
-  <ellipse data-muscle="back" cx="35" cy="79" rx="12" ry="23" class="muscle"/>
-  <ellipse data-muscle="back" cx="65" cy="79" rx="12" ry="23" class="muscle"/>
-  <ellipse data-muscle="triceps" cx="13" cy="68" rx="7" ry="13" class="muscle"/>
-  <ellipse data-muscle="triceps" cx="87" cy="68" rx="7" ry="13" class="muscle"/>
-  <ellipse data-muscle="forearms" cx="10" cy="85" rx="6" ry="11" class="muscle"/>
-  <ellipse data-muscle="forearms" cx="90" cy="85" rx="6" ry="11" class="muscle"/>
-  <ellipse data-muscle="lower-back" cx="50" cy="113" rx="14" ry="10" class="muscle"/>
-  <ellipse data-muscle="glutes" cx="37" cy="130" rx="16" ry="17" class="muscle"/>
-  <ellipse data-muscle="glutes" cx="63" cy="130" rx="16" ry="17" class="muscle"/>
-  <ellipse data-muscle="hamstrings" cx="35" cy="164" rx="12" ry="22" class="muscle"/>
-  <ellipse data-muscle="hamstrings" cx="65" cy="164" rx="12" ry="22" class="muscle"/>
-  <ellipse data-muscle="calves" cx="33" cy="217" rx="9" ry="17" class="muscle"/>
-  <ellipse data-muscle="calves" cx="67" cy="217" rx="9" ry="17" class="muscle"/>
+const SVG_BACK = `<svg viewBox="0 0 100 240" xmlns="http://www.w3.org/2000/svg" onclick="handleMuscleTap(event)">
+  <circle cx="50" cy="13" r="11" class="body-fill body-outline"/>
+  <rect x="46" y="23" width="8" height="7" rx="2" class="body-fill body-outline"/>
+  <path d="M29,32 Q19,50 18,98 L26,101 L26,142 L74,142 L74,101 L82,98 Q81,50 71,32 Q60,28 50,28 Q40,28 29,32 Z" class="body-fill body-outline"/>
+  <path d="M20,33 Q11,52 9,92 L18,93 Q20,64 26,35 Z" class="body-fill body-outline"/>
+  <path d="M80,33 Q89,52 91,92 L82,93 Q80,64 74,35 Z" class="body-fill body-outline"/>
+  <path d="M26,142 L21,203 L37,203 L43,142 Z" class="body-fill body-outline"/>
+  <path d="M74,142 L79,203 L63,203 L57,142 Z" class="body-fill body-outline"/>
+  <path d="M21,203 L19,236 L37,236 L37,203 Z" class="body-fill body-outline"/>
+  <path d="M79,203 L81,236 L63,236 L63,203 Z" class="body-fill body-outline"/>
+  <path data-muscle="traps" d="M50,30 Q63,33 72,38 Q69,56 50,64 Q31,56 28,38 Q37,33 50,30 Z" class="muscle"/>
+  <path data-muscle="shoulders" d="M20,35 Q11,44 10,57 Q16,59 22,53 Q25,45 20,35 Z" class="muscle"/>
+  <path data-muscle="shoulders" d="M80,35 Q89,44 90,57 Q84,59 78,53 Q75,45 80,35 Z" class="muscle"/>
+  <path data-muscle="back" d="M29,40 Q26,54 28,64 L40,62 Q38,52 32,39 Z" class="muscle"/>
+  <path data-muscle="back" d="M71,40 Q74,54 72,64 L60,62 Q62,52 68,39 Z" class="muscle"/>
+  <path data-muscle="back" d="M40,42 L50,39 L60,42 L58,62 L50,64 L42,62 Z" class="muscle"/>
+  <path data-muscle="back" d="M26,65 Q17,82 20,112 L34,109 Q30,85 30,64 Z" class="muscle"/>
+  <path data-muscle="back" d="M74,65 Q83,82 80,112 L66,109 Q70,85 70,64 Z" class="muscle"/>
+  <path data-muscle="lower-back" d="M43,68 Q41,90 43,118 L48,118 Q46,90 46,67 Z" class="muscle"/>
+  <path data-muscle="lower-back" d="M57,68 Q59,90 57,118 L52,118 Q54,90 54,67 Z" class="muscle"/>
+  <path data-muscle="lower-back" d="M38,112 Q35,122 38,132 L62,132 Q65,122 62,112 Z" class="muscle"/>
+  <path data-muscle="triceps" d="M10,57 Q7,68 9,84 L18,84 Q17,68 18,56 Z" class="muscle"/>
+  <path data-muscle="triceps" d="M90,57 Q93,68 91,84 L82,84 Q83,68 82,56 Z" class="muscle"/>
+  <path data-muscle="forearms" d="M9,86 Q7,96 9,106 L17,105 Q16,95 17,85 Z" class="muscle"/>
+  <path data-muscle="forearms" d="M91,86 Q93,96 91,106 L83,105 Q84,95 83,85 Z" class="muscle"/>
+  <path data-muscle="glutes" d="M25,120 Q20,132 24,142 L38,142 Q36,130 30,119 Z" class="muscle"/>
+  <path data-muscle="glutes" d="M75,120 Q80,132 76,142 L62,142 Q64,130 70,119 Z" class="muscle"/>
+  <path data-muscle="glutes" d="M26,143 Q21,158 25,168 L44,168 Q43,155 42,142 Z" class="muscle"/>
+  <path data-muscle="glutes" d="M74,143 Q79,158 75,168 L56,168 Q57,155 58,142 Z" class="muscle"/>
+  <path data-muscle="hamstrings" d="M22,170 Q19,185 21,202 L30,202 Q27,186 26,169 Z" class="muscle"/>
+  <path data-muscle="hamstrings" d="M78,170 Q81,185 79,202 L70,202 Q73,186 74,169 Z" class="muscle"/>
+  <path data-muscle="hamstrings" d="M30,170 Q27,186 29,202 L38,202 Q35,186 34,169 Z" class="muscle"/>
+  <path data-muscle="hamstrings" d="M70,170 Q73,186 71,202 L62,202 Q65,186 66,169 Z" class="muscle"/>
+  <path data-muscle="calves" d="M22,204 Q19,220 22,234 L30,234 Q28,220 29,203 Z" class="muscle"/>
+  <path data-muscle="calves" d="M30,204 Q27,221 29,234 L37,234 Q35,220 33,203 Z" class="muscle"/>
+  <path data-muscle="calves" d="M78,204 Q81,220 78,234 L70,234 Q72,220 71,203 Z" class="muscle"/>
+  <path data-muscle="calves" d="M70,204 Q73,221 71,234 L63,234 Q65,220 67,203 Z" class="muscle"/>
 </svg>`;
+
+// ── MUSCLE INFO ──────────────────────────────────────────────────────────────
+const MUSCLE_INFO = {
+  chest:      { fr:'Pectoraux',          desc:'Grand pectoral + petit pectoral',                          tip:'Serrez les pecs en fin de mouvement — imaginez écraser une boîte entre vos coudes. Rétractez les omoplates sur le banc.' },
+  shoulders:  { fr:'Deltoïdes',          desc:'Deltoïde antérieur, médial et postérieur',                 tip:'Ne haussez pas les épaules vers les oreilles. Gardez les omoplates rétractées et le core serré pendant tout le mouvement.' },
+  biceps:     { fr:'Biceps',             desc:'Biceps brachii — 2 chefs (long + court)',                  tip:'Supinez légèrement le poignet en montant pour un recrutement maximal. Coudes collés aux côtes, seuls les avant-bras bougent.' },
+  triceps:    { fr:'Triceps',            desc:'Triceps brachii — 3 chefs (long, latéral, médial)',        tip:'Verrouillez le coude complètement en fin d\'extension — sentez la contraction maximale. Évitez de basculer le buste.' },
+  forearms:   { fr:'Avant-bras',         desc:'Brachioradial, fléchisseurs et extenseurs du poignet',     tip:'Maintenez un poignet neutre sauf exercice spécifique. Un grip solide protège les poignets et améliore la transmission de force.' },
+  abs:        { fr:'Abdominaux',         desc:'Rectus abdominis + obliques externes et internes',          tip:'Expirez fort à chaque contraction. Ne tirez pas sur la nuque — c\'est le core qui travaille. Gainez en permanence pendant les mouvements lourds.' },
+  back:       { fr:'Dorsaux',            desc:'Grand dorsal, rhomboïdes, trapèze moyen, infra-épineux',   tip:'Tirez les coudes vers les hanches — pas vers les épaules. Rétractez l\'omoplate en fin de mouvement. Contrôlez la descente sur 2-3s.' },
+  traps:      { fr:'Trapèzes',           desc:'Trapèze supérieur, moyen et inférieur',                    tip:'Pour le trapèze supérieur : haussement strict. Pour le moyen : rétraction des omoplates. Évitez de sur-solliciter le trapèze dans les tirages.' },
+  'lower-back':{ fr:'Lombaires',         desc:'Érecteurs du rachis + carré des lombes',                   tip:'Conservez la lordose naturelle à tout moment — gainage constant. Ne creusez pas excessivement le dos, ne l\'arrondissez pas non plus.' },
+  quads:      { fr:'Quadriceps',         desc:'Rectus femoris, vastus lateralis, medialis, intermedialis', tip:'Poussez le sol sous vos pieds, genou dans l\'axe des orteils. Descente contrôlée en 2-3s. Le vastus medialis s\'allume surtout en fin d\'extension.' },
+  hamstrings: { fr:'Ischio-jambiers',    desc:'Biceps femoris, semi-tendineux, semi-membraneux',          tip:'Sentez l\'étirement profond en position basse. Contractez les fessiers et les ischios ensemble en remontant. Gardez le dos plat.' },
+  glutes:     { fr:'Fessiers',           desc:'Grand, moyen et petit fessier',                            tip:'Contractez fort en haut du mouvement — tenez 1 seconde. Évitez de sur-arquer le bas du dos. Pensez à "pousser les hanches vers le plafond".' },
+  calves:     { fr:'Mollets',            desc:'Gastrocnémien (2 chefs) + soléaire',                       tip:'Montez sur la pointe des pieds au maximum, tenez 1 seconde. Descendez lentement en-dessous de la plateforme pour étirer pleinement le mollet.' },
+  hip:        { fr:'Fléchisseurs de hanche', desc:'Iliopsoas + tenseur du fascia lata',                  tip:'Stabilisateur clé dans les squats et fentes. Étirez-les après les séances jambes — quadrupédie ou fente basse statique 30s.' },
+};
+
+function getMuscleRoleInExercise(muscle, exName) {
+  const n = (exName || '').toLowerCase();
+  const ROLES = {
+    chest:       () => /bench|développé couché|pec|push.?up|pompe|fly|écarté|cable.?cross|crossover/.test(n) ? 'Moteur principal' : /dips/.test(n) ? 'Synergiste' : 'Synergiste',
+    shoulders:   () => /overhead|ohp|military|développé.épaule|press.épaule/.test(n) ? 'Moteur principal' : /lateral.raise|élévation.latérale|front.raise|arnold/.test(n) ? 'Moteur principal' : /bench|développé/.test(n) ? 'Stabilisateur actif' : 'Synergiste',
+    biceps:      () => /curl|bicep/.test(n) ? 'Moteur principal' : /chin.up|traction.supination/.test(n) ? 'Synergiste fort' : /row|rowing|tirage|pull/.test(n) ? 'Synergiste' : 'Stabilisateur',
+    triceps:     () => /tricep|extension|skull|pushdown|close.grip|barre.au.front/.test(n) ? 'Moteur principal' : /bench|développé|overhead|ohp|dips/.test(n) ? 'Synergiste' : 'Stabilisateur',
+    forearms:    () => /farmer|pince|wrist/.test(n) ? 'Moteur principal' : /curl|hammer/.test(n) ? 'Synergiste' : 'Grip / prise en main',
+    abs:         () => /crunch|sit.up|leg.raise|russian.twist|mountain.climber|oblique/.test(n) ? 'Moteur principal' : /plank|gainage/.test(n) ? 'Moteur principal (statique)' : /squat|deadlift|overhead|ohp/.test(n) ? 'Stabilisateur clé' : 'Stabilisateur',
+    back:        () => /row|rowing|tirage|pull.up|traction|pulldown|deadlift|soulevé/.test(n) ? 'Moteur principal' : 'Stabilisateur',
+    traps:       () => /shrug|haussement/.test(n) ? 'Moteur principal' : /row|rowing|tirage/.test(n) ? 'Synergiste' : 'Stabilisateur',
+    'lower-back':() => /deadlift|soulevé|rdl|good.morning|hyperextension|back.extension/.test(n) ? 'Moteur principal' : 'Stabilisateur clé',
+    quads:       () => /squat|fente|lunge|leg.press|leg.extension|hack.squat|step.up/.test(n) ? 'Moteur principal' : 'Synergiste',
+    hamstrings:  () => /rdl|roumain|stiff|leg.curl|good.morning/.test(n) ? 'Moteur principal' : /deadlift|soulevé/.test(n) ? 'Moteur principal' : /squat|fente|lunge/.test(n) ? 'Stabilisateur actif' : /hip.thrust/.test(n) ? 'Synergiste' : 'Stabilisateur',
+    glutes:      () => /hip.thrust|glute|fessier/.test(n) ? 'Moteur principal' : /rdl|deadlift|soulevé/.test(n) ? 'Moteur principal' : /squat|fente|lunge/.test(n) ? 'Moteur principal (co-actif)' : 'Synergiste',
+    calves:      () => /calf|mollet|donkey/.test(n) ? 'Moteur principal' : /squat|fente/.test(n) ? 'Stabilisateur' : 'Stabilisateur',
+    hip:         () => /fente|lunge|step.up/.test(n) ? 'Synergiste actif' : 'Fléchisseur / Stabilisateur',
+  };
+  return ROLES[muscle] ? ROLES[muscle]() : 'Muscle sollicité';
+}
+
+function handleMuscleTap(e) {
+  const el = e.target.closest('[data-muscle]');
+  if (!el) return;
+  e.stopPropagation();
+  const muscle = el.getAttribute('data-muscle');
+  const exName = _live ? (_live.session.exercises[_live.exIndex]?.name || '') : '';
+  showMusclePanel(muscle, exName);
+}
+
+function showMusclePanel(muscle, exName) {
+  const info = MUSCLE_INFO[muscle];
+  const panel = document.getElementById('muscle-panel');
+  if (!panel || !info) return;
+  const role = getMuscleRoleInExercise(muscle, exName);
+  let roleStyle = 'color:#888;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)';
+  if (role.startsWith('Moteur')) roleStyle = 'color:var(--accent);background:rgba(255,122,0,.14);border:1px solid rgba(255,122,0,.28)';
+  else if (role.startsWith('Synergiste')) roleStyle = 'color:#7ac0ff;background:rgba(122,192,255,.13);border:1px solid rgba(122,192,255,.28)';
+  else if (role.startsWith('Stabilisateur') || role.startsWith('Grip')) roleStyle = 'color:#a8ff78;background:rgba(168,255,120,.1);border:1px solid rgba(168,255,120,.24)';
+  panel.innerHTML = `
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+      <div class="muscle-panel-name">${info.fr}</div>
+      <span class="muscle-panel-role" style="${roleStyle}">${role}</span>
+    </div>
+    <div class="muscle-panel-desc">${info.desc}</div>
+    <div class="muscle-panel-tip">${info.tip}</div>`;
+  document.querySelectorAll('[data-muscle]').forEach(el => el.classList.remove('tapped'));
+  document.querySelectorAll(`[data-muscle="${muscle}"]`).forEach(el => el.classList.add('tapped'));
+  setTimeout(() => document.querySelectorAll('.tapped').forEach(el => el.classList.remove('tapped')), 700);
+}
 
 // ── API ──────────────────────────────────────────────────────────────────────
 async function aApi(method, path, body) {
@@ -1100,9 +1201,12 @@ function renderLiveExercise() {
   document.getElementById('live-body').innerHTML = `
     <div class="live-ex-name">${ex.name || 'Exercice'}</div>
     <div class="live-ex-meta">${metaParts.join(' · ')}</div>
-    <div class="muscle-diagram-wrap">
-      <div class="muscle-diagram-col"><div class="muscle-diagram-label">Face</div>${SVG_FRONT}</div>
-      <div class="muscle-diagram-col"><div class="muscle-diagram-label">Dos</div>${SVG_BACK}</div>
+    <div class="muscle-schema-wrap">
+      <div class="muscle-schema-diagrams">
+        <div class="muscle-schema-col"><div class="muscle-label">Face</div>${SVG_FRONT}</div>
+        <div class="muscle-schema-col"><div class="muscle-label">Dos</div>${SVG_BACK}</div>
+      </div>
+      <div class="muscle-panel" id="muscle-panel"><div class="muscle-panel-empty">Touche un muscle pour en savoir plus</div></div>
     </div>
     <div class="live-tip-box" id="live-tip-box">
       <div class="live-tip-label">✨ Conseil IA</div>
