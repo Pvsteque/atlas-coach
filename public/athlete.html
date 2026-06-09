@@ -11,7 +11,7 @@
   --text:#f0f0f0;--muted:#888;
   --accent:#ff7a00;--accent2:#ff9f45;
   --ease:cubic-bezier(.25,.46,.45,.94);
-  --nav-h:64px;
+  --nav-h:0px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;overflow-x:hidden;}
@@ -36,7 +36,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 #app{display:none;flex-direction:column;min-height:100vh;}
 #app.show{display:flex;}
 .app-header{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;background:rgba(13,13,13,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);}
-.app-logo{font-weight:900;font-size:18px;letter-spacing:-.5px;}
+.app-logo{font-weight:900;font-size:18px;letter-spacing:-.5px;flex:1;text-align:center;}
 .app-logo span{color:var(--accent);}
 .app-av{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#000;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
 
@@ -46,11 +46,29 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .page.active{display:block;animation:fadein .22s var(--ease);}
 @keyframes fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
-/* BOTTOM NAV */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:var(--bg2);border-top:1px solid var(--border);display:flex;z-index:10;}
-.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--muted);font-size:10px;font-weight:600;transition:color .15s;-webkit-tap-highlight-color:transparent;}
-.bnav-item.active{color:var(--accent);}
-.bnav-icon{font-size:22px;line-height:1;}
+/* DRAWER */
+.ham-btn{width:38px;height:38px;border-radius:10px;background:transparent;border:none;color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;padding:0;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+.drawer-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0);pointer-events:none;transition:background .25s;}
+.drawer-overlay.open{background:rgba(0,0,0,.65);pointer-events:auto;}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:282px;z-index:301;background:var(--bg2);border-right:1px solid var(--border);transform:translateX(-100%);transition:transform .28s var(--ease);display:flex;flex-direction:column;overflow:hidden;}
+.drawer.open{transform:translateX(0);}
+.drawer-header{padding:20px 20px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.drawer-logo{font-size:22px;font-weight:900;letter-spacing:-.5px;margin-bottom:18px;}
+.drawer-logo span{color:var(--accent);}
+.drawer-user{display:flex;align-items:center;gap:12px;}
+.drawer-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#000;flex-shrink:0;}
+.drawer-user-name{font-size:14px;font-weight:700;margin-bottom:2px;}
+.drawer-user-sub{font-size:11px;color:var(--muted);}
+.drawer-nav{flex:1;padding:8px 0;overflow-y:auto;}
+.dnav-item{display:flex;align-items:center;gap:14px;padding:15px 20px;cursor:pointer;color:var(--muted);font-size:14px;font-weight:600;transition:background .12s,color .12s;-webkit-tap-highlight-color:transparent;}
+.dnav-item:active{background:rgba(255,122,0,.07);}
+.dnav-item.active{color:var(--text);}
+.dnav-item.active .dnav-icon{color:var(--accent);}
+.dnav-icon{font-size:20px;width:26px;text-align:center;flex-shrink:0;line-height:1;}
+.dnav-label{flex:1;}
+.dnav-badge{background:var(--accent);color:#000;font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px;min-width:20px;text-align:center;}
+.drawer-sep{height:1px;background:var(--border);margin:8px 20px;}
+.drawer-footer{flex-shrink:0;border-top:1px solid var(--border);padding:8px 0;}
 
 /* SECTION TITLE */
 .section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:12px;}
@@ -352,7 +370,59 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 
 <!-- APP -->
 <div id="app">
+
+  <!-- DRAWER OVERLAY -->
+  <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+
+  <!-- LEFT DRAWER -->
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <div class="drawer-logo">Atlas<span>.</span></div>
+      <div class="drawer-user">
+        <div class="drawer-av" id="drawer-av" style="background:var(--accent);">?</div>
+        <div>
+          <div class="drawer-user-name" id="drawer-name">—</div>
+          <div class="drawer-user-sub" id="drawer-sub">Adhérent</div>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-nav">
+      <div class="dnav-item active" id="dnav-dash" onclick="navTo('dash')">
+        <span class="dnav-icon">🏠</span>
+        <span class="dnav-label">Tableau de bord</span>
+      </div>
+      <div class="dnav-item" id="dnav-sessions" onclick="navTo('sessions')">
+        <span class="dnav-icon">📅</span>
+        <span class="dnav-label">Mes séances</span>
+      </div>
+      <div class="dnav-item" id="dnav-journal" onclick="navTo('journal')">
+        <span class="dnav-icon">📊</span>
+        <span class="dnav-label">Journal</span>
+      </div>
+      <div class="dnav-item" id="dnav-nutri" onclick="navTo('nutri')">
+        <span class="dnav-icon">🥗</span>
+        <span class="dnav-label">Nutrition</span>
+      </div>
+      <div class="dnav-item" id="dnav-messages" onclick="navTo('messages')">
+        <span class="dnav-icon">💬</span>
+        <span class="dnav-label">Messages</span>
+        <span class="dnav-badge" id="msg-badge" style="display:none;">0</span>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <div class="dnav-item" onclick="openProfile();closeDrawer()">
+        <span class="dnav-icon">👤</span>
+        <span class="dnav-label">Mon profil</span>
+      </div>
+      <div class="dnav-item" onclick="doAthleteLogout()">
+        <span class="dnav-icon">🚪</span>
+        <span class="dnav-label">Se déconnecter</span>
+      </div>
+    </div>
+  </div>
+
   <header class="app-header">
+    <button class="ham-btn" onclick="openDrawer()">☰</button>
     <div class="app-logo">Atlas<span>.</span></div>
     <div id="app-av" class="app-av" onclick="openProfile()">?</div>
   </header>
@@ -394,24 +464,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
     </div>
   </div>
 
-  <nav class="bottom-nav">
-    <div class="bnav-item active" id="bnav-dash" onclick="showAPage('dash')">
-      <span class="bnav-icon">🏠</span>Accueil
-    </div>
-    <div class="bnav-item" id="bnav-sessions" onclick="showAPage('sessions')">
-      <span class="bnav-icon">📅</span>Séances
-    </div>
-    <div class="bnav-item" id="bnav-journal" onclick="showAPage('journal')">
-      <span class="bnav-icon">📊</span>Journal
-    </div>
-    <div class="bnav-item" id="bnav-nutri" onclick="showAPage('nutri')">
-      <span class="bnav-icon">🥗</span>Nutrition
-    </div>
-    <div class="bnav-item" id="bnav-messages" onclick="showAPage('messages')" style="position:relative;">
-      <span class="bnav-icon">💬</span>Messages
-      <span class="bnav-dot" id="msg-dot"></span>
-    </div>
-  </nav>
+
 </div>
 
 <!-- SESSION PREVIEW PANEL -->
@@ -914,17 +967,38 @@ async function startAthleteApp() {
 
 function updateHeader() {
   if (!_athlete) return;
+  const initial = _athlete.name.charAt(0).toUpperCase();
+  const color = _athlete.color || 'var(--accent)';
   const av = document.getElementById('app-av');
-  av.textContent = _athlete.name.charAt(0).toUpperCase();
-  av.style.background = _athlete.color || 'var(--accent)';
+  av.textContent = initial;
+  av.style.background = color;
+  const dav = document.getElementById('drawer-av');
+  if (dav) { dav.textContent = initial; dav.style.background = color; }
+  const dn = document.getElementById('drawer-name');
+  if (dn) dn.textContent = _athlete.name;
+  const ds = document.getElementById('drawer-sub');
+  if (ds) ds.textContent = _athlete.sport ? _athlete.sport + ' · Adhérent' : 'Adhérent';
 }
 
 // ── NAVIGATION ───────────────────────────────────────────────────────────────
+function openDrawer() {
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+}
+function navTo(name) {
+  closeDrawer();
+  showAPage(name);
+}
+
 function showAPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.dnav-item').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name)?.classList.add('active');
-  document.getElementById('bnav-' + name)?.classList.add('active');
+  document.getElementById('dnav-' + name)?.classList.add('active');
   if (name === 'sessions') renderSessions();
   if (name === 'journal') renderJournal();
   if (name === 'nutri') renderNutri();
@@ -1757,8 +1831,11 @@ function fmtDaySep(ts) {
 
 function updateMsgDot() {
   const unread = _messages.filter(m => m.sender === 'coach' && !m.read).length;
-  const dot = document.getElementById('msg-dot');
-  if (dot) dot.style.display = unread ? 'block' : 'none';
+  const badge = document.getElementById('msg-badge');
+  if (badge) {
+    badge.style.display = unread ? '' : 'none';
+    badge.textContent = unread > 9 ? '9+' : String(unread);
+  }
 }
 
 async function renderMessages() {
