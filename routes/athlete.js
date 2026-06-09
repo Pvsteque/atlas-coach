@@ -184,6 +184,47 @@ Réponds UNIQUEMENT avec du JSON valide (pas de texte avant/après):
   }
 });
 
+// POST /api/athlete/ai/coach — Interactive coach chat during live session
+router.post('/ai/coach', requireAthlete, async (req, res) => {
+  const { question, exerciseName, sets } = req.body;
+  if (!question) return res.status(400).json({ error: 'question requise' });
+
+  if (!anthropic) {
+    return res.json({ answer: 'Le coach IA est hors ligne. Configure l\'ANTHROPIC_API_KEY sur Railway pour l\'activer.' });
+  }
+
+  const athlete = db.prepare('SELECT name, level, sport, obj FROM athletes WHERE id = ?').get(req.athleteId);
+  const profileCtx = athlete
+    ? `Athlète: ${athlete.name}, Niveau: ${athlete.level || 'non spécifié'}, Sport: ${athlete.sport || 'non spécifié'}, Objectif: ${athlete.obj || 'non spécifié'}`
+    : '';
+  const setsCtx = sets?.length
+    ? `Séries déjà réalisées: ${sets.map((s, i) => `Set ${i+1}: ${s.kg||'?'}kg × ${s.reps||'?'} reps`).join(', ')}`
+    : '';
+
+  try {
+    const msg = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 280,
+      messages: [{
+        role: 'user',
+        content: `Tu es un coach sportif expert, direct et bienveillant. Tu réponds en français en 2-3 phrases maximum, sans markdown ni bullet points.
+
+Contexte: L'athlète est en train de faire "${exerciseName || 'un exercice'}".
+${setsCtx}
+${profileCtx}
+
+Question: "${question}"
+
+Réponds de façon concrète, technique et encourageante.`,
+      }],
+    });
+    res.json({ answer: msg.content[0].text.trim() });
+  } catch (err) {
+    console.error('AI coach error:', err.message);
+    res.json({ answer: 'Erreur du coach IA. Réessaie dans un moment.' });
+  }
+});
+
 // ── MESSAGES ─────────────────────────────────────────────────────────────────
 router.get('/messages/unread', requireAthlete, (req, res) => {
   const a = db.prepare('SELECT coach_id FROM athletes WHERE id=?').get(req.athleteId);

@@ -193,23 +193,25 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 
 /* Muscle anatomical schema */
 .muscle-schema-wrap{margin-bottom:20px;}
-.muscle-schema-diagrams{display:flex;gap:10px;justify-content:center;margin-bottom:10px;}
+.muscle-schema-diagrams{display:flex;gap:10px;justify-content:center;}
 .muscle-schema-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
 .muscle-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
 .muscle-schema-col svg{width:110px;height:264px;}
-.muscle{fill:rgba(255,255,255,.07);stroke:rgba(255,255,255,.12);stroke-width:.4;transition:fill .25s;cursor:pointer;}
-.muscle:active{fill:rgba(255,255,255,.25);}
+.muscle{fill:rgba(255,255,255,.07);stroke:rgba(255,255,255,.12);stroke-width:.4;transition:fill .25s;}
 .muscle.active{fill:var(--accent);animation:musclePulse 2s ease-in-out infinite;}
-.muscle.tapped{animation:none!important;fill:rgba(255,255,255,.45)!important;}
 @keyframes musclePulse{0%,100%{opacity:.85}50%{opacity:.4}}
 .body-outline{fill:none;stroke:rgba(255,255,255,.14);stroke-width:1.2;}
 .body-fill{fill:rgba(255,255,255,.03);}
-.muscle-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;min-height:68px;}
-.muscle-panel-empty{font-size:12px;color:var(--muted);text-align:center;padding:8px 0;}
-.muscle-panel-name{font-size:17px;font-weight:900;color:var(--text);}
-.muscle-panel-role{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:6px;white-space:nowrap;}
-.muscle-panel-desc{font-size:11px;color:var(--muted);margin:2px 0 6px;}
-.muscle-panel-tip{font-size:13px;color:var(--text);line-height:1.55;}
+.coach-chat-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-top:20px;}
+.coach-chat-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:10px;}
+.coach-chat-msgs{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;max-height:220px;overflow-y:auto;}
+.cchat-msg{font-size:13px;line-height:1.55;padding:8px 12px;border-radius:12px;max-width:90%;word-break:break-word;}
+.cchat-user{background:var(--accent);color:#000;font-weight:600;align-self:flex-end;border-bottom-right-radius:3px;}
+.cchat-coach{background:var(--bg3);color:var(--text);align-self:flex-start;border-bottom-left-radius:3px;}
+.coach-chat-bar{display:flex;gap:8px;align-items:center;}
+.coach-chat-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:13px;padding:9px 12px;outline:none;}
+.coach-chat-input:focus{border-color:var(--accent);}
+.coach-chat-send{width:36px;height:36px;border-radius:50%;background:var(--accent);border:none;color:#000;font-size:18px;font-weight:900;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 
 /* Tip box */
 .live-tip-box{background:rgba(255,122,0,.08);border:1px solid rgba(255,122,0,.22);border-radius:14px;padding:14px 16px;margin-bottom:20px;}
@@ -521,7 +523,7 @@ const REST_CIRC = 2 * Math.PI * 68; // ~427
 const _aiTipCache = {};
 
 // ── MUSCLE SVG ────────────────────────────────────────────────────────────────
-const SVG_FRONT = `<svg viewBox="0 0 100 240" xmlns="http://www.w3.org/2000/svg" onclick="handleMuscleTap(event)">
+const SVG_FRONT = `<svg viewBox="0 0 100 240" xmlns="http://www.w3.org/2000/svg">
   <circle cx="50" cy="13" r="11" class="body-fill body-outline"/>
   <rect x="46" y="23" width="8" height="7" rx="2" class="body-fill body-outline"/>
   <path d="M29,32 Q19,50 18,98 L26,101 L26,142 L74,142 L74,101 L82,98 Q81,50 71,32 Q60,28 50,28 Q40,28 29,32 Z" class="body-fill body-outline"/>
@@ -566,7 +568,7 @@ const SVG_FRONT = `<svg viewBox="0 0 100 240" xmlns="http://www.w3.org/2000/svg"
   <path data-muscle="calves" d="M74,204 Q78,220 76,233 L65,233 Q67,220 70,203 Z" class="muscle"/>
 </svg>`;
 
-const SVG_BACK = `<svg viewBox="0 0 100 240" xmlns="http://www.w3.org/2000/svg" onclick="handleMuscleTap(event)">
+const SVG_BACK = `<svg viewBox="0 0 100 240" xmlns="http://www.w3.org/2000/svg">
   <circle cx="50" cy="13" r="11" class="body-fill body-outline"/>
   <rect x="46" y="23" width="8" height="7" rx="2" class="body-fill body-outline"/>
   <path d="M29,32 Q19,50 18,98 L26,101 L26,142 L74,142 L74,101 L82,98 Q81,50 71,32 Q60,28 50,28 Q40,28 29,32 Z" class="body-fill body-outline"/>
@@ -604,75 +606,6 @@ const SVG_BACK = `<svg viewBox="0 0 100 240" xmlns="http://www.w3.org/2000/svg" 
   <path data-muscle="calves" d="M78,204 Q81,220 78,234 L70,234 Q72,220 71,203 Z" class="muscle"/>
   <path data-muscle="calves" d="M70,204 Q73,221 71,234 L63,234 Q65,220 67,203 Z" class="muscle"/>
 </svg>`;
-
-// ── MUSCLE INFO ──────────────────────────────────────────────────────────────
-const MUSCLE_INFO = {
-  chest:      { fr:'Pectoraux',          desc:'Grand pectoral + petit pectoral',                          tip:'Serrez les pecs en fin de mouvement — imaginez écraser une boîte entre vos coudes. Rétractez les omoplates sur le banc.' },
-  shoulders:  { fr:'Deltoïdes',          desc:'Deltoïde antérieur, médial et postérieur',                 tip:'Ne haussez pas les épaules vers les oreilles. Gardez les omoplates rétractées et le core serré pendant tout le mouvement.' },
-  biceps:     { fr:'Biceps',             desc:'Biceps brachii — 2 chefs (long + court)',                  tip:'Supinez légèrement le poignet en montant pour un recrutement maximal. Coudes collés aux côtes, seuls les avant-bras bougent.' },
-  triceps:    { fr:'Triceps',            desc:'Triceps brachii — 3 chefs (long, latéral, médial)',        tip:'Verrouillez le coude complètement en fin d\'extension — sentez la contraction maximale. Évitez de basculer le buste.' },
-  forearms:   { fr:'Avant-bras',         desc:'Brachioradial, fléchisseurs et extenseurs du poignet',     tip:'Maintenez un poignet neutre sauf exercice spécifique. Un grip solide protège les poignets et améliore la transmission de force.' },
-  abs:        { fr:'Abdominaux',         desc:'Rectus abdominis + obliques externes et internes',          tip:'Expirez fort à chaque contraction. Ne tirez pas sur la nuque — c\'est le core qui travaille. Gainez en permanence pendant les mouvements lourds.' },
-  back:       { fr:'Dorsaux',            desc:'Grand dorsal, rhomboïdes, trapèze moyen, infra-épineux',   tip:'Tirez les coudes vers les hanches — pas vers les épaules. Rétractez l\'omoplate en fin de mouvement. Contrôlez la descente sur 2-3s.' },
-  traps:      { fr:'Trapèzes',           desc:'Trapèze supérieur, moyen et inférieur',                    tip:'Pour le trapèze supérieur : haussement strict. Pour le moyen : rétraction des omoplates. Évitez de sur-solliciter le trapèze dans les tirages.' },
-  'lower-back':{ fr:'Lombaires',         desc:'Érecteurs du rachis + carré des lombes',                   tip:'Conservez la lordose naturelle à tout moment — gainage constant. Ne creusez pas excessivement le dos, ne l\'arrondissez pas non plus.' },
-  quads:      { fr:'Quadriceps',         desc:'Rectus femoris, vastus lateralis, medialis, intermedialis', tip:'Poussez le sol sous vos pieds, genou dans l\'axe des orteils. Descente contrôlée en 2-3s. Le vastus medialis s\'allume surtout en fin d\'extension.' },
-  hamstrings: { fr:'Ischio-jambiers',    desc:'Biceps femoris, semi-tendineux, semi-membraneux',          tip:'Sentez l\'étirement profond en position basse. Contractez les fessiers et les ischios ensemble en remontant. Gardez le dos plat.' },
-  glutes:     { fr:'Fessiers',           desc:'Grand, moyen et petit fessier',                            tip:'Contractez fort en haut du mouvement — tenez 1 seconde. Évitez de sur-arquer le bas du dos. Pensez à "pousser les hanches vers le plafond".' },
-  calves:     { fr:'Mollets',            desc:'Gastrocnémien (2 chefs) + soléaire',                       tip:'Montez sur la pointe des pieds au maximum, tenez 1 seconde. Descendez lentement en-dessous de la plateforme pour étirer pleinement le mollet.' },
-  hip:        { fr:'Fléchisseurs de hanche', desc:'Iliopsoas + tenseur du fascia lata',                  tip:'Stabilisateur clé dans les squats et fentes. Étirez-les après les séances jambes — quadrupédie ou fente basse statique 30s.' },
-};
-
-function getMuscleRoleInExercise(muscle, exName) {
-  const n = (exName || '').toLowerCase();
-  const ROLES = {
-    chest:       () => /bench|développé couché|pec|push.?up|pompe|fly|écarté|cable.?cross|crossover/.test(n) ? 'Moteur principal' : /dips/.test(n) ? 'Synergiste' : 'Synergiste',
-    shoulders:   () => /overhead|ohp|military|développé.épaule|press.épaule/.test(n) ? 'Moteur principal' : /lateral.raise|élévation.latérale|front.raise|arnold/.test(n) ? 'Moteur principal' : /bench|développé/.test(n) ? 'Stabilisateur actif' : 'Synergiste',
-    biceps:      () => /curl|bicep/.test(n) ? 'Moteur principal' : /chin.up|traction.supination/.test(n) ? 'Synergiste fort' : /row|rowing|tirage|pull/.test(n) ? 'Synergiste' : 'Stabilisateur',
-    triceps:     () => /tricep|extension|skull|pushdown|close.grip|barre.au.front/.test(n) ? 'Moteur principal' : /bench|développé|overhead|ohp|dips/.test(n) ? 'Synergiste' : 'Stabilisateur',
-    forearms:    () => /farmer|pince|wrist/.test(n) ? 'Moteur principal' : /curl|hammer/.test(n) ? 'Synergiste' : 'Grip / prise en main',
-    abs:         () => /crunch|sit.up|leg.raise|russian.twist|mountain.climber|oblique/.test(n) ? 'Moteur principal' : /plank|gainage/.test(n) ? 'Moteur principal (statique)' : /squat|deadlift|overhead|ohp/.test(n) ? 'Stabilisateur clé' : 'Stabilisateur',
-    back:        () => /row|rowing|tirage|pull.up|traction|pulldown|deadlift|soulevé/.test(n) ? 'Moteur principal' : 'Stabilisateur',
-    traps:       () => /shrug|haussement/.test(n) ? 'Moteur principal' : /row|rowing|tirage/.test(n) ? 'Synergiste' : 'Stabilisateur',
-    'lower-back':() => /deadlift|soulevé|rdl|good.morning|hyperextension|back.extension/.test(n) ? 'Moteur principal' : 'Stabilisateur clé',
-    quads:       () => /squat|fente|lunge|leg.press|leg.extension|hack.squat|step.up/.test(n) ? 'Moteur principal' : 'Synergiste',
-    hamstrings:  () => /rdl|roumain|stiff|leg.curl|good.morning/.test(n) ? 'Moteur principal' : /deadlift|soulevé/.test(n) ? 'Moteur principal' : /squat|fente|lunge/.test(n) ? 'Stabilisateur actif' : /hip.thrust/.test(n) ? 'Synergiste' : 'Stabilisateur',
-    glutes:      () => /hip.thrust|glute|fessier/.test(n) ? 'Moteur principal' : /rdl|deadlift|soulevé/.test(n) ? 'Moteur principal' : /squat|fente|lunge/.test(n) ? 'Moteur principal (co-actif)' : 'Synergiste',
-    calves:      () => /calf|mollet|donkey/.test(n) ? 'Moteur principal' : /squat|fente/.test(n) ? 'Stabilisateur' : 'Stabilisateur',
-    hip:         () => /fente|lunge|step.up/.test(n) ? 'Synergiste actif' : 'Fléchisseur / Stabilisateur',
-  };
-  return ROLES[muscle] ? ROLES[muscle]() : 'Muscle sollicité';
-}
-
-function handleMuscleTap(e) {
-  const el = e.target.closest('[data-muscle]');
-  if (!el) return;
-  e.stopPropagation();
-  const muscle = el.getAttribute('data-muscle');
-  const exName = _live ? (_live.session.exercises[_live.exIndex]?.name || '') : '';
-  showMusclePanel(muscle, exName);
-}
-
-function showMusclePanel(muscle, exName) {
-  const info = MUSCLE_INFO[muscle];
-  const panel = document.getElementById('muscle-panel');
-  if (!panel || !info) return;
-  const role = getMuscleRoleInExercise(muscle, exName);
-  let roleStyle = 'color:#888;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)';
-  if (role.startsWith('Moteur')) roleStyle = 'color:var(--accent);background:rgba(255,122,0,.14);border:1px solid rgba(255,122,0,.28)';
-  else if (role.startsWith('Synergiste')) roleStyle = 'color:#7ac0ff;background:rgba(122,192,255,.13);border:1px solid rgba(122,192,255,.28)';
-  else if (role.startsWith('Stabilisateur') || role.startsWith('Grip')) roleStyle = 'color:#a8ff78;background:rgba(168,255,120,.1);border:1px solid rgba(168,255,120,.24)';
-  panel.innerHTML = `
-    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
-      <div class="muscle-panel-name">${info.fr}</div>
-      <span class="muscle-panel-role" style="${roleStyle}">${role}</span>
-    </div>
-    <div class="muscle-panel-desc">${info.desc}</div>
-    <div class="muscle-panel-tip">${info.tip}</div>`;
-  document.querySelectorAll('[data-muscle]').forEach(el => el.classList.remove('tapped'));
-  document.querySelectorAll(`[data-muscle="${muscle}"]`).forEach(el => el.classList.add('tapped'));
-  setTimeout(() => document.querySelectorAll('.tapped').forEach(el => el.classList.remove('tapped')), 700);
-}
 
 // ── API ──────────────────────────────────────────────────────────────────────
 async function aApi(method, path, body) {
@@ -1206,10 +1139,9 @@ function renderLiveExercise() {
         <div class="muscle-schema-col"><div class="muscle-label">Face</div>${SVG_FRONT}</div>
         <div class="muscle-schema-col"><div class="muscle-label">Dos</div>${SVG_BACK}</div>
       </div>
-      <div class="muscle-panel" id="muscle-panel"><div class="muscle-panel-empty">Touche un muscle pour en savoir plus</div></div>
     </div>
     <div class="live-tip-box" id="live-tip-box">
-      <div class="live-tip-label">✨ Conseil IA</div>
+      <div class="live-tip-label">✨ Conseil technique</div>
       ${tipHtml}
     </div>
     ${prevHtml}
@@ -1218,6 +1150,14 @@ function renderLiveExercise() {
       <thead><tr><th>Set</th><th>Charge</th><th>Reps</th><th>Préc.</th><th></th></tr></thead>
       <tbody>${setsRows}</tbody>
     </table>
+    <div class="coach-chat-wrap">
+      <div class="coach-chat-title">💬 Coach IA — Pose ta question</div>
+      <div class="coach-chat-msgs" id="coach-chat-msgs"></div>
+      <div class="coach-chat-bar">
+        <input class="coach-chat-input" id="coach-chat-input" type="text" placeholder="Ex : ma posture est bonne ?" maxlength="200" onkeydown="if(event.key==='Enter')sendCoachMessage()">
+        <button class="coach-chat-send" onclick="sendCoachMessage()">↑</button>
+      </div>
+    </div>
   `;
 
   const muscles = cached ? (cached.muscles || staticMuscles) : staticMuscles;
@@ -1241,6 +1181,36 @@ async function fetchAiTip(exerciseName, forExIndex) {
     box.innerHTML = `<div class="live-tip-label">${label}</div><div class="live-tip-text">${tip}</div>`;
   }
   highlightMuscles(muscles);
+}
+
+async function sendCoachMessage() {
+  const input = document.getElementById('coach-chat-input');
+  const q = (input?.value || '').trim();
+  if (!q) return;
+  input.value = '';
+  const msgs = document.getElementById('coach-chat-msgs');
+  if (!msgs) return;
+  const userDiv = document.createElement('div');
+  userDiv.className = 'cchat-msg cchat-user';
+  userDiv.textContent = q;
+  msgs.appendChild(userDiv);
+  const typingId = 'cchat-typing-' + Date.now();
+  msgs.innerHTML += `<div class="cchat-msg cchat-coach" id="${typingId}"><span class="tip-dot"></span><span class="tip-dot"></span><span class="tip-dot"></span></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+  const ex = _live?.session?.exercises[_live?.exIndex];
+  const doneSets = (_live?.sets?.[_live?.exIndex] || []).filter(s => s.done);
+  const res = await aApi('POST', '/ai/coach', {
+    question: q,
+    exerciseName: ex?.name || '',
+    sets: doneSets,
+  });
+  const typing = document.getElementById(typingId);
+  if (typing) typing.remove();
+  const answerDiv = document.createElement('div');
+  answerDiv.className = 'cchat-msg cchat-coach';
+  answerDiv.textContent = res?.answer || 'Je n\'ai pas pu répondre. Réessaie.';
+  msgs.appendChild(answerDiv);
+  msgs.scrollTop = msgs.scrollHeight;
 }
 
 function toggleSet(i) {
