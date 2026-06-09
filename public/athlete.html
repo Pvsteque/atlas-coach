@@ -146,6 +146,10 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 /* PROFILE PANEL */
 #profile-panel{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.75);display:none;align-items:flex-end;}
 #profile-panel.open{display:flex;animation:fadein .2s ease;}
+
+/* SESSION PREVIEW PANEL */
+#session-preview-panel{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.75);display:none;align-items:flex-end;}
+#session-preview-panel.open{display:flex;animation:fadein .2s ease;}
 .profile-sheet{background:var(--bg2);border-radius:20px 20px 0 0;width:100%;padding:28px 20px;}
 .profile-handle{width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 24px;}
 .profile-av{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#000;margin:0 auto 12px;}
@@ -410,6 +414,20 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
   </nav>
 </div>
 
+<!-- SESSION PREVIEW PANEL -->
+<div id="session-preview-panel" onclick="if(event.target.id==='session-preview-panel')closeSessionPreview()">
+  <div class="log-sheet">
+    <div class="log-handle"></div>
+    <div class="log-title" id="sp-title">Séance</div>
+    <div class="log-sub" id="sp-sub"></div>
+    <div id="sp-exercises" style="margin-bottom:20px;"></div>
+    <button id="sp-start-btn" class="btn btn-accent btn-full" style="margin-bottom:8px;padding:14px;" onclick="startSessionFromPreview()">▶ Commencer la séance</button>
+    <button id="sp-redo-btn" class="btn btn-secondary btn-full" style="display:none;margin-bottom:8px;" onclick="redoSessionFromPreview()">↺ Refaire cette séance</button>
+    <button class="btn btn-secondary btn-full" style="margin-bottom:8px;" onclick="exportSessionPDF()">📄 Exporter en PDF</button>
+    <button class="btn btn-secondary btn-full" onclick="closeSessionPreview()">Fermer</button>
+  </div>
+</div>
+
 <!-- LOG PANEL (bottom sheet) -->
 <div id="log-panel" onclick="if(event.target.id==='log-panel')closeLogPanel()">
   <div class="log-sheet">
@@ -519,6 +537,10 @@ let _logAssignId = null;
 let _logSessionId = null;
 let _logRPE = null;
 let _logMood = null;
+
+let _previewAssignId = null;
+let _previewSessionId = null;
+let _previewIsDone = false;
 
 // Live session state
 let _live = null;
@@ -949,15 +971,9 @@ function sessionCard(a, isDone = false) {
     ? '<span class="badge badge-done">✓ Terminée</span>'
     : '<span class="badge badge-todo">À faire</span>';
   const btn = isDone
-    ? `<button class="btn btn-secondary btn-sm btn-full" style="margin-top:10px;"
-        onclick="event.stopPropagation();redoSession('${a.sessionId}',${JSON.stringify(a.sessionName||'Séance')})">
-        ↺ Refaire cette séance
-      </button>`
-    : `<button class="btn btn-accent btn-sm btn-full" style="margin-top:10px;"
-        onclick="event.stopPropagation();startLiveSession('${a.id}','${a.sessionId}')">
-        ▶ Commencer la séance
-      </button>`;
-  return `<div class="session-card clickable" onclick="openSessionDetail('${a.id}','${a.sessionId}')">
+    ? `<button class="btn btn-secondary btn-sm btn-full" style="margin-top:10px;">Voir · ↺ Refaire</button>`
+    : `<button class="btn btn-accent btn-sm btn-full" style="margin-top:10px;">▶ Commencer</button>`;
+  return `<div class="session-card clickable" onclick="openSessionPreview('${a.id}','${a.sessionId}',${isDone})">
     <div class="sc-top">
       <div style="flex:1;">
         <div class="sc-name">${a.sessionName || 'Séance'}</div>
@@ -1235,12 +1251,120 @@ function getTipForExercise(name) {
   return "Concentrez-vous sur la technique avant de charger. Contrôlez chaque répétition — descendez lentement (2-3s), poussez fort. Respirez régulièrement et gardez le core gainé.";
 }
 
+// ── SESSION PREVIEW ───────────────────────────────────────────────────────────
+async function openSessionPreview(assignId, sessionId, isDone) {
+  _previewAssignId = assignId;
+  _previewSessionId = sessionId;
+  _previewIsDone = isDone;
+
+  const titleEl = document.getElementById('sp-title');
+  const subEl = document.getElementById('sp-sub');
+  const exEl = document.getElementById('sp-exercises');
+  const startBtn = document.getElementById('sp-start-btn');
+  const redoBtn = document.getElementById('sp-redo-btn');
+
+  titleEl.textContent = 'Chargement…';
+  subEl.textContent = '';
+  exEl.innerHTML = '';
+  startBtn.style.display = isDone ? 'none' : '';
+  redoBtn.style.display = isDone ? '' : 'none';
+  document.getElementById('session-preview-panel').classList.add('open');
+
+  if (!_sessionCache[sessionId]) {
+    const data = await aApi('GET', '/sessions/' + sessionId);
+    if (!data || data.error || !Array.isArray(data.exercises)) {
+      titleEl.textContent = 'Séance introuvable';
+      subEl.textContent = 'Cette séance n\'est plus disponible.';
+      return;
+    }
+    _sessionCache[sessionId] = data;
+  }
+  const s = _sessionCache[sessionId];
+  const assign = _assignments.find(a => a.id === assignId);
+  titleEl.textContent = s.name || assign?.sessionName || 'Séance';
+  subEl.textContent = (s.exercises || []).length + ' exercice(s)';
+
+  exEl.innerHTML = (s.exercises || []).length
+    ? `<div class="ex-list">${(s.exercises || []).map((e, i) => `
+      <div class="ex-item">
+        <div class="ex-num">${i + 1}</div>
+        <div>
+          <div class="ex-name">${e.name || e.exId || '?'}</div>
+          <div class="ex-detail">${[
+            e.sets ? e.sets + ' séries' : '',
+            e.reps ? e.reps + ' reps' : '',
+            e.kg   ? e.kg + ' kg' : '',
+            e.rest ? 'Repos ' + e.rest + 's' : '',
+          ].filter(Boolean).join(' · ')}</div>
+        </div>
+      </div>`).join('')}</div>`
+    : '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">Aucun exercice défini</div>';
+}
+
+function closeSessionPreview() {
+  document.getElementById('session-preview-panel').classList.remove('open');
+}
+
+async function startSessionFromPreview() {
+  closeSessionPreview();
+  await startLiveSession(_previewAssignId, _previewSessionId);
+}
+
+async function redoSessionFromPreview() {
+  closeSessionPreview();
+  await redoSession(_previewSessionId);
+}
+
+function exportSessionPDF() {
+  const s = _sessionCache[_previewSessionId];
+  if (!s) { showToast('Chargement en cours…'); return; }
+  const rows = (s.exercises || []).map((e, i) => `
+    <tr>
+      <td class="num">${i + 1}</td>
+      <td>${e.name || '?'}</td>
+      <td>${e.sets || '—'}</td>
+      <td>${e.reps || '—'}</td>
+      <td>${e.kg ? e.kg + ' kg' : '—'}</td>
+      <td>${e.rest ? e.rest + 's' : '—'}</td>
+    </tr>`).join('');
+
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${s.name || 'Programme'}</title>
+<style>
+  body{font-family:Arial,sans-serif;padding:32px;color:#111;max-width:700px;margin:0 auto;}
+  h1{font-size:24px;margin:0 0 4px;}
+  .meta{color:#666;font-size:13px;margin-bottom:28px;}
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th{background:#f5f5f5;padding:10px 12px;text-align:left;border-bottom:2px solid #ddd;font-size:12px;text-transform:uppercase;letter-spacing:.04em;}
+  td{padding:10px 12px;border-bottom:1px solid #eee;}
+  .num{text-align:center;color:#999;width:32px;}
+  @media print{body{padding:16px;}@page{margin:16mm;}}
+</style></head><body>
+<h1>${s.name || 'Programme d\'entraînement'}</h1>
+<div class="meta">Atlas Coach · ${new Date().toLocaleDateString('fr-FR', {day:'numeric',month:'long',year:'numeric'})}</div>
+<table>
+  <thead><tr><th>#</th><th>Exercice</th><th>Séries</th><th>Reps</th><th>Charge</th><th>Repos</th></tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  if (!win) { showToast('Autorisez les popups pour exporter'); return; }
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => { win.focus(); win.print(); }, 400);
+}
+
 // ── LIVE SESSION ──────────────────────────────────────────────────────────────
 async function startLiveSession(assignId, sessionId) {
   let session = _sessionCache[sessionId];
   if (!session) {
     const data = await aApi('GET', '/sessions/' + sessionId);
-    if (!data) return;
+    if (!data || data.error || !Array.isArray(data.exercises)) {
+      showToast('Séance introuvable ❌');
+      return;
+    }
     _sessionCache[sessionId] = data;
     session = data;
   }
