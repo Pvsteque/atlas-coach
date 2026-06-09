@@ -197,6 +197,17 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .scene-zone{opacity:.07;transition:opacity .45s,filter .45s;}
 .scene-zone.lit{opacity:.9;filter:drop-shadow(0 0 7px rgba(255,10,10,.95)) drop-shadow(0 0 20px rgba(255,10,10,.55));animation:scPulse 2.2s ease-in-out infinite;}
 @keyframes scPulse{0%,100%{opacity:.9}50%{opacity:.46}}
+.fig-body,.fig-arms{transform-box:fill-box;transform-origin:50% 0;}
+@keyframes fig-down{0%,100%{transform:translateY(0)}46%{transform:translateY(14px)}}
+@keyframes fig-up{0%,100%{transform:translateY(0)}46%{transform:translateY(-14px)}}
+@keyframes fig-dn-sm{0%,100%{transform:translateY(0)}46%{transform:translateY(9px)}}
+.ex-squat .fig-body,.ex-lunge .fig-body{animation:fig-down 2.8s ease-in-out infinite;}
+.ex-deadlift .fig-body,.ex-hipthrust .fig-body{animation:fig-dn-sm 3s ease-in-out infinite;}
+.ex-bench .fig-arms,.ex-row .fig-arms{animation:fig-down 2.4s ease-in-out infinite;}
+.ex-ohp .fig-arms{animation:fig-up 2.5s ease-in-out infinite;}
+.ex-curl .fig-arms{animation:fig-up 2.3s ease-in-out infinite;}
+.ex-pullup .fig-body{animation:fig-up 3s ease-in-out infinite;}
+.ex-core .fig-body{animation:fig-dn-sm 4s ease-in-out infinite;}
 .scene-tip-bar{position:absolute;bottom:0;left:0;right:0;padding:10px 14px 12px;background:linear-gradient(to top,rgba(0,0,0,.88) 60%,rgba(0,0,0,0));}
 .scene-tip-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin-bottom:4px;}
 .scene-tip-text{font-size:12px;color:rgba(255,255,255,.82);line-height:1.55;font-style:italic;}
@@ -519,202 +530,247 @@ const _aiTipCache = {};
 // ── EXERCISE SCENES ─────────────────────────────────────────────────────────
 const _SD=`<defs>
   <radialGradient id="sc_sp" cx="50%" cy="0%" r="80%">
-    <stop offset="0%" stop-color="rgba(255,210,140,.13)"/>
+    <stop offset="0%" stop-color="rgba(255,210,140,.12)"/>
     <stop offset="75%" stop-color="rgba(0,0,0,0)"/>
   </radialGradient>
   <radialGradient id="sc_vg" cx="50%" cy="50%" r="70%">
     <stop offset="52%" stop-color="rgba(0,0,0,0)"/>
-    <stop offset="100%" stop-color="rgba(0,0,0,.9)"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,.85)"/>
   </radialGradient>
 </defs>`;
 const _BG=`<rect width="360" height="210" fill="#07070e"/>
   <rect width="360" height="210" fill="url(#sc_sp)"/>
-  <rect y="180" width="360" height="30" fill="#0a0a16"/>
-  <line x1="0" y1="180" x2="360" y2="180" stroke="#15152a" stroke-width="1.5"/>
-  <line x1="180" y1="180" x2="0" y2="210" stroke="#101020" stroke-width=".8"/>
-  <line x1="180" y1="180" x2="360" y2="210" stroke="#101020" stroke-width=".8"/>`;
+  <rect y="182" width="360" height="28" fill="#0a0a16"/>
+  <line x1="0" y1="182" x2="360" y2="182" stroke="#1a1a34" stroke-width="1.2"/>
+  <line x1="180" y1="182" x2="0" y2="210" stroke="#10101e" stroke-width=".7"/>
+  <line x1="180" y1="182" x2="360" y2="210" stroke="#10101e" stroke-width=".7"/>`;
 const _VG=`<rect width="360" height="210" fill="url(#sc_vg)"/>`;
-const _C='#1c1c2e',_CO='#252540';
-const _sc=c=>`<svg viewBox="0 0 360 210" fill="none" xmlns="http://www.w3.org/2000/svg">${_SD}${_BG}${c}${_VG}</svg>`;
-const _h=(cx,cy,r)=>`<circle cx="${cx}" cy="${cy}" r="${r||12}" fill="${_C}" stroke="${_CO}" stroke-width=".8"/>`;
+const _C='#5050a0';   // figure fill — visible vs #07070e (contrast ~3:1)
+const _CO='#7272c4';  // figure stroke highlight
+const _CE='#1e1e42';  // equipment fill
+const _CES='#2e2e60'; // equipment stroke
+const _sc=(cls,c)=>`<svg viewBox="0 0 360 210" class="ex-scene ex-${cls}" fill="none" xmlns="http://www.w3.org/2000/svg">${_SD}${_BG}${c}${_VG}</svg>`;
+const _h=(cx,cy,r)=>`<circle cx="${cx}" cy="${cy}" r="${r||13}" fill="${_C}" stroke="${_CO}" stroke-width="1.2"/>`;
 const _s=(x1,y1,x2,y2,w)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${_C}" stroke-width="${w}" stroke-linecap="round"/>`;
 const _z=(cls,x,y,rx,ry)=>`<ellipse class="scene-zone ${cls}" cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="rgba(255,22,22,1)"/>`;
 const _zp=(cls,d)=>`<path class="scene-zone ${cls}" d="${d}" fill="rgba(255,22,22,1)"/>`;
-const _rack=(x,y,h)=>`<rect x="${x}" y="${y}" width="7" height="${h}" rx="2" fill="#111120"/>
-  <rect x="${x+18}" y="${y}" width="7" height="${h}" rx="2" fill="#111120"/>
-  <rect x="${x}" y="${y}" width="25" height="5" rx="1" fill="#111120"/>`;
-const _bar=(x,y,w)=>`<rect x="${x}" y="${y}" width="${w}" height="7" rx="3" fill="#181830" stroke="#22223a" stroke-width=".8"/>`;
-const _pl=(x,y)=>`<rect x="${x}" y="${y-8}" width="13" height="23" rx="3" fill="#141428" stroke="#20203a" stroke-width=".8"/>
-  <rect x="${x-11}" y="${y-10}" width="12" height="27" rx="3" fill="#121224" stroke="#1c1c34" stroke-width=".8"/>`;
+const _rack=(x,y,ht)=>`<rect x="${x}" y="${y}" width="7" height="${ht}" rx="2" fill="${_CE}" stroke="${_CES}" stroke-width=".6"/>
+  <rect x="${x+18}" y="${y}" width="7" height="${ht}" rx="2" fill="${_CE}" stroke="${_CES}" stroke-width=".6"/>
+  <rect x="${x}" y="${y}" width="25" height="5" rx="1" fill="${_CES}"/>`;
+const _bar=(x,y,w)=>`<rect x="${x}" y="${y}" width="${w}" height="7" rx="3" fill="${_CE}" stroke="${_CES}" stroke-width=".9"/>`;
+const _pl=(x,y)=>`<rect x="${x}" y="${y-8}" width="13" height="24" rx="3" fill="${_CE}" stroke="${_CES}" stroke-width=".9"/>
+  <rect x="${x-11}" y="${y-10}" width="12" height="28" rx="3" fill="${_CE}" stroke="${_CES}" stroke-width=".9"/>`;
+const _wb=(cx,cy,r)=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${_CE}" stroke="${_CES}" stroke-width="1.2"/>
+  <circle cx="${cx}" cy="${cy}" r="${Math.round(r*.54)}" fill="${_CE}" stroke="${_CES}" stroke-width="1"/>`;
 
 function _scBench() {
-  return _sc(_rack(12,28,158)+' <rect x="14" y="70" width="22" height="7" rx="1" fill="#14142a"/>'+
-    '<rect x="58" y="148" width="220" height="20" rx="6" fill="#12122a" stroke="#1e1e38" stroke-width="1"/>'+
-    '<rect x="76" y="167" width="10" height="15" rx="2" fill="#0e0e1e"/>'+
-    '<rect x="164" y="167" width="10" height="15" rx="2" fill="#0e0e1e"/>'+
-    '<rect x="229" y="167" width="10" height="15" rx="2" fill="#0e0e1e"/>'+
-    _s(82,147,234,139,16)+_h(248,139,13)+
-    _s(89,152,74,179,12)+_s(74,179,70,183,10)+
-    _s(104,151,91,179,12)+_s(91,179,87,183,10)+
-    _s(116,140,116,89,10)+_s(185,139,185,89,10)+
-    _s(116,89,112,82,8)+_s(185,89,189,82,8)+
+  const equip=_rack(12,28,158)+`<rect x="14" y="70" width="22" height="7" rx="1" fill="${_CES}"/>`+
+    `<rect x="58" y="148" width="220" height="20" rx="6" fill="${_CE}" stroke="${_CES}" stroke-width="1"/>`+
+    `<rect x="76" y="167" width="10" height="15" rx="2" fill="${_CE}"/>`+
+    `<rect x="164" y="167" width="10" height="15" rx="2" fill="${_CE}"/>`+
+    `<rect x="229" y="167" width="10" height="15" rx="2" fill="${_CE}"/>`;
+  // body on bench (torso) - static
+  const body=_s(80,147,235,140,18)+_s(87,152,72,180,13)+_s(72,180,68,184,11)+_s(102,152,89,180,13)+_s(89,180,85,184,11);
+  // arms + head — animated
+  const arms=`<g class="fig-arms">`+
+    _h(250,140,13)+
+    _s(117,141,117,89,12)+_s(186,140,186,89,12)+
+    _s(117,89,112,82,10)+_s(186,89,191,82,10)+
     _bar(30,79,300)+_pl(48,85)+
-    '<rect x="306" y="77" width="13" height="23" rx="3" fill="#141428" stroke="#20203a" stroke-width=".8"/>'+
-    '<rect x="318" y="75" width="12" height="27" rx="3" fill="#121224" stroke="#1c1c34" stroke-width=".8"/>'+
-    _z('zone-chest',124,136,28,9)+_z('zone-chest',166,136,23,9)+
-    _z('zone-triceps',116,111,7,13)+_z('zone-triceps',185,111,7,13)+
-    _z('zone-shoulders',106,137,9,7)+_z('zone-shoulders',195,137,9,7));
+    `<rect x="306" y="77" width="13" height="24" rx="3" fill="${_CE}" stroke="${_CES}" stroke-width=".9"/>`+
+    `<rect x="318" y="75" width="12" height="28" rx="3" fill="${_CE}" stroke="${_CES}" stroke-width=".9"/>`+
+    `</g>`;
+  const zones=_z('zone-chest',124,136,28,9)+_z('zone-chest',168,136,22,9)+
+    _z('zone-triceps',117,112,7,13)+_z('zone-triceps',186,112,7,13)+
+    _z('zone-shoulders',107,138,9,7)+_z('zone-shoulders',196,138,9,7);
+  return _sc('bench', equip+body+arms+zones);
 }
+
 function _scSquat() {
-  return _sc(_rack(16,14,170)+
-    '<rect x="16" y="78" width="22" height="7" rx="1" fill="#14142a"/>'+
-    '<rect x="16" y="130" width="22" height="4" rx="1" fill="#141430"/>'+
-    _bar(34,73,292)+_pl(44,79)+
-    '<rect x="304" y="71" width="13" height="22" rx="3" fill="#141428" stroke="#20203a" stroke-width=".8"/>'+
-    '<rect x="316" y="69" width="12" height="26" rx="3" fill="#121224" stroke="#1c1c34" stroke-width=".8"/>'+
-    _h(196,48,13)+_s(196,60,196,74,9)+_s(196,74,188,127,24)+
-    _s(202,77,230,76,9)+_s(190,77,162,76,9)+
-    _s(192,126,228,157,18)+_s(228,157,214,181,14)+_s(214,181,223,183,11)+
-    _s(188,126,159,153,17)+_s(159,153,163,181,13)+_s(163,181,153,183,11)+
-    _z('zone-quads',225,141,14,15)+_z('zone-quads',163,139,12,14)+
-    _z('zone-glutes',187,120,18,11)+
-    _z('zone-hamstrings',219,154,12,13)+_z('zone-hamstrings',158,152,10,12)+
-    _zp('zone-lower-back','M182,93 Q178,110 180,121 L196,121 Q196,110 192,93 Z'));
+  const equip=_rack(16,14,172)+
+    `<rect x="16" y="80" width="22" height="7" rx="1" fill="${_CES}"/>`+
+    `<rect x="16" y="132" width="22" height="4" rx="1" fill="${_CES}"/>`;
+  const plates=`<rect x="304" y="71" width="13" height="23" rx="3" fill="${_CE}" stroke="${_CES}" stroke-width=".9"/>`+
+    `<rect x="316" y="69" width="12" height="27" rx="3" fill="${_CE}" stroke="${_CES}" stroke-width=".9"/>`;
+  const figure=`<g class="fig-body">`+
+    _h(196,47,13)+_s(196,60,196,75,11)+_s(196,75,188,128,26)+
+    _s(203,78,232,77,11)+_s(190,78,161,77,11)+
+    _bar(34,73,294)+_pl(44,79)+plates+
+    _s(192,127,228,158,21)+_s(228,158,214,182,16)+_s(214,182,224,184,12)+
+    _s(188,127,158,154,20)+_s(158,154,163,182,15)+_s(163,182,152,184,12)+
+    `</g>`;
+  const zones=_z('zone-quads',225,142,14,16)+_z('zone-quads',162,140,12,15)+
+    _z('zone-glutes',187,121,18,11)+
+    _z('zone-hamstrings',220,155,12,13)+_z('zone-hamstrings',157,152,10,12)+
+    _zp('zone-lower-back','M182,93 Q178,111 180,122 L196,122 Q196,111 192,93 Z');
+  return _sc('squat', equip+figure+zones);
 }
+
 function _scDeadlift() {
-  return _sc(_bar(50,173,260)+
-    '<circle cx="74" cy="160" r="20" fill="#131328" stroke="#1e1e38" stroke-width="1.5"/>'+
-    '<circle cx="74" cy="160" r="11" fill="#0f0f20" stroke="#181830" stroke-width="1"/>'+
-    '<circle cx="286" cy="160" r="20" fill="#131328" stroke="#1e1e38" stroke-width="1.5"/>'+
-    '<circle cx="286" cy="160" r="11" fill="#0f0f20" stroke="#181830" stroke-width="1"/>'+
-    '<rect x="55" y="180" width="250" height="4" fill="#0d0d1c" rx="1"/>'+
-    _h(222,55,13)+_s(222,67,183,123,25)+
-    _s(188,81,167,172,9)+_s(177,81,155,172,9)+
-    _s(183,122,176,181,18)+_s(169,122,162,181,17)+
-    _s(176,181,186,183,12)+_s(162,181,151,183,12)+
-    _z('zone-hamstrings',173,153,14,18)+_z('zone-glutes',183,119,20,13)+
-    _zp('zone-lower-back','M174,89 Q170,106 172,118 L192,118 Q190,106 186,89 Z')+
-    _z('zone-quads',173,161,12,13));
+  const equip=_bar(52,172,256)+_wb(75,158,21)+_wb(285,158,21)+
+    `<rect x="57" y="180" width="246" height="4" fill="${_CE}" rx="1"/>`;
+  const figure=`<g class="fig-body">`+
+    _h(222,54,13)+_s(222,67,183,124,26)+
+    _s(188,82,166,172,11)+_s(177,82,154,172,11)+
+    _s(183,123,176,182,20)+_s(169,123,162,182,19)+
+    _s(176,182,188,184,13)+_s(162,182,150,184,13)+
+    `</g>`;
+  const zones=_z('zone-hamstrings',172,154,14,18)+_z('zone-glutes',182,120,20,13)+
+    _zp('zone-lower-back','M174,88 Q170,107 172,119 L192,119 Q190,107 186,88 Z')+
+    _z('zone-quads',173,162,12,13);
+  return _sc('deadlift', equip+figure+zones);
 }
+
 function _scRow() {
-  return _sc('<rect x="272" y="35" width="7" height="148" rx="2" fill="#111120" opacity=".7"/>'+
-    '<rect x="290" y="35" width="7" height="148" rx="2" fill="#111120" opacity=".7"/>'+
-    _bar(98,155,164)+_pl(104,161)+
-    '<rect x="250" y="147" width="12" height="22" rx="3" fill="#141428" stroke="#20203a" stroke-width=".8"/>'+
-    '<rect x="261" y="145" width="11" height="26" rx="3" fill="#121224" stroke="#1c1c34" stroke-width=".8"/>'+
-    _h(220,57,13)+_s(220,69,178,127,26)+
-    _s(191,82,170,153,9)+_s(181,81,159,153,9)+
-    _s(181,126,177,181,19)+_s(165,126,161,181,18)+
-    _s(177,181,189,183,12)+_s(161,181,149,183,12)+
-    _zp('zone-back','M174,85 Q164,103 167,117 L186,117 Q182,103 178,85 Z')+
-    _z('zone-back',174,109,14,10)+
-    _z('zone-biceps',172,117,8,12)+_z('zone-biceps',160,117,7,11)+
-    _z('zone-traps',196,79,18,8));
+  const equip=`<rect x="273" y="34" width="7" height="150" rx="2" fill="${_CE}" stroke="${_CES}" stroke-width=".6" opacity=".8"/>`+
+    `<rect x="291" y="34" width="7" height="150" rx="2" fill="${_CE}" stroke="${_CES}" stroke-width=".6" opacity=".8"/>`+
+    `<rect x="250" y="148" width="12" height="23" rx="3" fill="${_CE}" stroke="${_CES}" stroke-width=".9"/>`+
+    `<rect x="261" y="146" width="11" height="27" rx="3" fill="${_CE}" stroke="${_CES}" stroke-width=".9"/>`;
+  const body=_h(220,56,13)+_s(220,69,178,128,27)+
+    _s(181,127,177,182,21)+_s(165,127,161,182,20)+
+    _s(177,182,190,184,13)+_s(161,182,148,184,12);
+  const arms=`<g class="fig-arms">`+
+    _s(192,83,170,154,11)+_s(181,82,158,154,11)+
+    _bar(98,154,166)+_pl(104,160)+
+    `</g>`;
+  const zones=_zp('zone-back','M174,85 Q163,104 167,118 L187,118 Q183,104 179,85 Z')+
+    _z('zone-back',174,110,14,10)+
+    _z('zone-biceps',171,118,9,12)+_z('zone-biceps',159,118,8,11)+
+    _z('zone-traps',196,80,18,8);
+  return _sc('row', equip+body+arms+zones);
 }
+
 function _scPullup() {
-  return _sc('<rect x="55" y="0" width="250" height="14" rx="3" fill="#101020"/>'+
-    '<rect x="76" y="14" width="208" height="7" rx="3" fill="#181830" stroke="#22223a" stroke-width=".8"/>'+
-    '<rect x="55" y="14" width="9" height="20" rx="3" fill="#141428"/>'+
-    '<rect x="296" y="14" width="9" height="20" rx="3" fill="#141428"/>'+
-    _h(180,56,13)+_s(180,20,154,54,9)+_s(180,20,206,54,9)+
-    _s(154,54,149,69,8)+_s(206,54,211,69,8)+
-    _s(150,67,168,136,26)+
-    _s(168,136,172,181,16)+_s(172,181,166,190,12)+
-    _s(168,136,172,181,16)+_s(192,181,198,190,12)+
-    _zp('zone-back','M150,72 Q137,99 141,127 L163,125 Q157,99 160,75 Z')+
-    _zp('zone-back','M210,72 Q223,99 219,127 L197,125 Q203,99 200,75 Z')+
-    _z('zone-biceps',150,61,9,10)+_z('zone-biceps',210,61,9,10)+
-    _z('zone-shoulders',157,69,10,8)+_z('zone-shoulders',203,69,10,8));
+  const equip=`<rect x="55" y="0" width="250" height="14" rx="3" fill="${_CE}"/>`+
+    `<rect x="76" y="14" width="208" height="7" rx="3" fill="${_CE}" stroke="${_CES}" stroke-width=".9"/>`+
+    `<rect x="55" y="14" width="9" height="20" rx="3" fill="${_CE}"/>`+
+    `<rect x="296" y="14" width="9" height="20" rx="3" fill="${_CE}"/>`;
+  const figure=`<g class="fig-body">`+
+    _h(180,55,13)+_s(180,20,153,53,10)+_s(180,20,207,53,10)+
+    _s(153,53,148,68,9)+_s(207,53,212,68,9)+
+    _s(150,66,168,137,27)+
+    _s(168,137,173,182,18)+_s(173,182,166,192,13)+
+    _s(192,182,199,192,13)+
+    `</g>`;
+  const zones=_zp('zone-back','M149,71 Q136,99 140,128 L163,126 Q157,99 160,74 Z')+
+    _zp('zone-back','M211,71 Q224,99 220,128 L197,126 Q203,99 200,74 Z')+
+    _z('zone-biceps',149,60,10,11)+_z('zone-biceps',211,60,10,11)+
+    _z('zone-shoulders',157,68,11,8)+_z('zone-shoulders',203,68,11,8);
+  return _sc('pullup', equip+figure+zones);
 }
+
 function _scOhp() {
-  return _sc(_bar(43,40,274)+_pl(50,46)+
-    '<rect x="297" y="32" width="13" height="23" rx="3" fill="#141428" stroke="#20203a" stroke-width=".8"/>'+
-    '<rect x="309" y="30" width="12" height="27" rx="3" fill="#121224" stroke="#1c1c34" stroke-width=".8"/>'+
-    _h(180,71,13)+
-    _s(174,59,159,43,9)+_s(186,59,201,43,9)+
-    _s(174,67,161,83,10)+_s(186,67,199,83,10)+
-    _s(180,83,180,147,26)+
-    _s(175,146,170,181,18)+_s(185,146,190,181,18)+
-    _s(170,181,158,183,12)+_s(190,181,202,183,12)+
-    _z('zone-shoulders',163,75,13,9)+_z('zone-shoulders',197,75,13,9)+
-    _z('zone-triceps',161,59,7,12)+_z('zone-triceps',199,59,7,12)+
-    _z('zone-traps',180,83,15,7));
+  const body=_h(180,72,13)+_s(180,84,180,148,27)+
+    _s(175,147,170,182,20)+_s(185,147,191,182,20)+
+    _s(170,182,157,184,13)+_s(191,182,203,184,13);
+  const arms=`<g class="fig-arms">`+
+    _s(174,60,158,43,11)+_s(186,60,202,43,11)+
+    _s(174,68,161,84,11)+_s(186,68,199,84,11)+
+    _bar(43,40,274)+_pl(50,46)+
+    `<rect x="297" y="32" width="13" height="24" rx="3" fill="${_CE}" stroke="${_CES}" stroke-width=".9"/>`+
+    `<rect x="309" y="30" width="12" height="28" rx="3" fill="${_CE}" stroke="${_CES}" stroke-width=".9"/>`+
+    `</g>`;
+  const zones=_z('zone-shoulders',162,75,14,10)+_z('zone-shoulders',198,75,14,10)+
+    _z('zone-triceps',160,59,8,13)+_z('zone-triceps',200,59,8,13)+
+    _z('zone-traps',180,84,16,7);
+  return _sc('ohp', body+arms+zones);
 }
+
 function _scCurl() {
-  return _sc('<rect x="288" y="74" width="62" height="108" rx="3" fill="#0d0d1e" opacity=".7"/>'+
-    '<rect x="288" y="74" width="62" height="7" rx="2" fill="#131328" opacity=".7"/>'+
-    '<rect x="288" y="115" width="62" height="6" rx="2" fill="#131328" opacity=".7"/>'+
-    '<rect x="288" y="152" width="62" height="6" rx="2" fill="#131328" opacity=".7"/>'+
-    _h(180,59,13)+_s(180,71,180,147,26)+
-    _s(172,79,154,108,10)+_s(154,108,144,138,9)+
-    _s(188,79,206,108,10)+_s(206,108,216,138,9)+
-    '<rect x="132" y="135" width="18" height="7" rx="3" fill="#141428" stroke="#1e1e38" stroke-width=".8"/>'+
-    '<circle cx="129" cy="138" r="5" fill="#101022" stroke="#181832" stroke-width="1"/>'+
-    '<circle cx="154" cy="138" r="5" fill="#101022" stroke="#181832" stroke-width="1"/>'+
-    '<rect x="208" y="135" width="18" height="7" rx="3" fill="#141428" stroke="#1e1e38" stroke-width=".8"/>'+
-    '<circle cx="205" cy="138" r="5" fill="#101022" stroke="#181832" stroke-width="1"/>'+
-    '<circle cx="230" cy="138" r="5" fill="#101022" stroke="#181832" stroke-width="1"/>'+
-    _s(175,146,170,181,18)+_s(185,146,190,181,18)+
-    _s(170,181,158,183,12)+_s(190,181,202,183,12)+
-    _z('zone-biceps',152,105,9,14)+_z('zone-biceps',208,105,9,14)+
-    _z('zone-forearms',146,129,7,11)+_z('zone-forearms',214,129,7,11));
+  const equip=`<rect x="288" y="74" width="62" height="108" rx="3" fill="${_CE}" opacity=".7"/>`+
+    `<rect x="288" y="74" width="62" height="7" rx="2" fill="${_CES}" opacity=".7"/>`+
+    `<rect x="288" y="115" width="62" height="6" rx="2" fill="${_CES}" opacity=".7"/>`+
+    `<rect x="288" y="152" width="62" height="6" rx="2" fill="${_CES}" opacity=".7"/>`;
+  const body=_h(180,58,13)+_s(180,70,180,148,27)+
+    _s(175,147,170,182,20)+_s(185,147,191,182,20)+
+    _s(170,182,157,184,13)+_s(191,182,203,184,13);
+  const arms=`<g class="fig-arms">`+
+    _s(172,79,153,109,12)+_s(153,109,143,139,11)+
+    _s(188,79,207,109,12)+_s(207,109,217,139,11)+
+    `<rect x="131" y="135" width="19" height="7" rx="3" fill="${_CE}" stroke="${_CES}" stroke-width=".9"/>`+
+    `<circle cx="129" cy="138" r="6" fill="${_CE}" stroke="${_CES}" stroke-width="1.1"/>`+
+    `<circle cx="154" cy="138" r="6" fill="${_CE}" stroke="${_CES}" stroke-width="1.1"/>`+
+    `<rect x="208" y="135" width="19" height="7" rx="3" fill="${_CE}" stroke="${_CES}" stroke-width=".9"/>`+
+    `<circle cx="205" cy="138" r="6" fill="${_CE}" stroke="${_CES}" stroke-width="1.1"/>`+
+    `<circle cx="231" cy="138" r="6" fill="${_CE}" stroke="${_CES}" stroke-width="1.1"/>`+
+    `</g>`;
+  const zones=_z('zone-biceps',151,106,10,14)+_z('zone-biceps',209,106,10,14)+
+    _z('zone-forearms',145,130,8,11)+_z('zone-forearms',215,130,8,11);
+  return _sc('curl', equip+body+arms+zones);
 }
+
 function _scHipthrust() {
-  return _sc('<rect x="58" y="116" width="208" height="20" rx="5" fill="#12122a" stroke="#1e1e38" stroke-width="1"/>'+
-    '<rect x="76" y="135" width="10" height="16" rx="2" fill="#0e0e1e"/>'+
-    '<rect x="213" y="135" width="10" height="16" rx="2" fill="#0e0e1e"/>'+
-    _bar(78,112,204)+_pl(85,118)+
-    '<rect x="268" y="104" width="12" height="22" rx="3" fill="#141428" stroke="#20203a" stroke-width=".8"/>'+
-    '<rect x="279" y="102" width="11" height="26" rx="3" fill="#121224" stroke="#1c1c34" stroke-width=".8"/>'+
-    _h(233,105,13)+_s(233,117,177,122,22)+
-    _s(177,119,157,163,20)+_s(157,163,155,181,15)+_s(155,181,165,183,11)+
-    _s(164,119,137,159,20)+_s(137,159,135,181,15)+_s(135,181,145,183,11)+
-    _s(224,120,243,147,9)+_s(220,120,202,147,9)+
-    _z('zone-glutes',167,116,27,11)+_z('zone-hamstrings',154,146,12,15)+
-    _z('zone-hamstrings',137,146,11,13)+_z('zone-quads',154,152,10,13));
+  const equip=`<rect x="58" y="118" width="208" height="20" rx="5" fill="${_CE}" stroke="${_CES}" stroke-width="1"/>`+
+    `<rect x="76" y="137" width="10" height="16" rx="2" fill="${_CE}"/>`+
+    `<rect x="213" y="137" width="10" height="16" rx="2" fill="${_CE}"/>`+
+    `<rect x="268" y="105" width="12" height="23" rx="3" fill="${_CE}" stroke="${_CES}" stroke-width=".9"/>`+
+    `<rect x="279" y="103" width="11" height="27" rx="3" fill="${_CE}" stroke="${_CES}" stroke-width=".9"/>`;
+  const figure=`<g class="fig-body">`+
+    _h(234,104,13)+_s(234,117,177,123,23)+
+    _bar(78,113,206)+_pl(85,119)+
+    _s(178,120,157,164,21)+_s(157,164,155,182,16)+_s(155,182,166,184,12)+
+    _s(165,120,136,160,21)+_s(136,160,134,182,16)+_s(134,182,145,184,12)+
+    _s(225,121,244,148,10)+_s(220,121,201,148,10)+
+    `</g>`;
+  const zones=_z('zone-glutes',166,117,27,11)+_z('zone-hamstrings',153,147,13,15)+
+    _z('zone-hamstrings',136,147,12,13)+_z('zone-quads',153,153,11,13);
+  return _sc('hipthrust', equip+figure+zones);
 }
+
 function _scLunge() {
-  return _sc(_bar(113,69,134)+
-    _h(196,49,13)+_s(196,61,191,118,24)+
-    _s(189,70,170,69,8)+_s(203,70,222,69,8)+
-    _s(191,117,180,164,19)+_s(180,164,178,181,15)+_s(178,181,190,183,11)+
-    _s(189,117,219,161,18)+_s(219,161,225,181,14)+_s(225,181,215,183,11)+
-    _z('zone-quads',179,142,14,18)+_z('zone-glutes',191,110,17,11)+
-    _z('zone-quads',221,142,12,16)+_z('zone-hamstrings',220,154,11,13));
+  const figure=`<g class="fig-body">`+
+    _h(196,48,13)+_s(196,61,191,119,25)+
+    _s(189,71,169,70,10)+_s(203,71,223,70,10)+
+    _bar(113,68,136)+
+    _s(191,118,180,165,21)+_s(180,165,178,182,16)+_s(178,182,191,184,12)+
+    _s(189,118,220,162,20)+_s(220,162,226,182,15)+_s(226,182,215,184,12)+
+    `</g>`;
+  const zones=_z('zone-quads',178,143,15,18)+_z('zone-glutes',191,111,17,11)+
+    _z('zone-quads',222,143,12,16)+_z('zone-hamstrings',221,155,11,13);
+  return _sc('lunge', figure+zones);
 }
+
 function _scCore() {
-  return _sc('<rect x="28" y="168" width="304" height="12" rx="3" fill="#0d0d1e" stroke="#14142a" stroke-width="1"/>'+
-    _h(283,119,13)+_s(283,131,178,151,24)+
-    _s(271,133,269,167,9)+_s(269,167,255,167,8)+
-    _s(199,147,197,167,9)+_s(197,167,183,167,8)+
-    _s(177,149,118,167,18)+_s(118,167,116,175,14)+_s(116,175,106,176,11)+
-    _z('zone-abs',228,146,25,8)+_z('zone-abs',213,148,17,7)+
-    _zp('zone-lower-back','M194,146 Q190,152 192,156 L202,156 Q204,152 200,146 Z'));
+  const equip=`<rect x="28" y="170" width="304" height="13" rx="3" fill="${_CE}" stroke="${_CES}" stroke-width=".8"/>`;
+  const figure=`<g class="fig-body">`+
+    _h(284,118,13)+_s(284,131,178,152,25)+
+    _s(272,134,269,168,10)+_s(269,168,254,168,9)+
+    _s(200,148,197,168,10)+_s(197,168,182,168,9)+
+    _s(178,150,117,168,19)+_s(117,168,115,176,15)+_s(115,176,104,177,12)+
+    `</g>`;
+  const zones=_z('zone-abs',228,147,25,9)+_z('zone-abs',212,149,17,8)+
+    _zp('zone-lower-back','M194,146 Q190,153 192,157 L203,157 Q205,153 200,146 Z');
+  return _sc('core', equip+figure+zones);
 }
-function _scGeneric(m) {
-  return _sc('<rect x="18" y="40" width="324" height="4" fill="#111120" opacity=".4"/>'+
-    '<rect x="22" y="44" width="6" height="136" rx="2" fill="#111120" opacity=".45"/>'+
-    '<rect x="332" y="44" width="6" height="136" rx="2" fill="#111120" opacity=".45"/>'+
-    _h(180,58,13)+_s(180,70,180,145,26)+
-    _s(174,78,154,118,9)+_s(186,78,206,118,9)+
-    _s(154,118,148,148,8)+_s(206,118,212,148,8)+
-    _s(175,144,170,181,18)+_s(185,144,190,181,18)+
-    _s(170,181,158,183,12)+_s(190,181,202,183,12)+
-    _z('zone-chest',170,86,17,10)+_z('zone-chest',190,86,17,10)+
-    _z('zone-shoulders',159,75,11,8)+_z('zone-shoulders',201,75,11,8)+
-    _z('zone-biceps',151,113,8,12)+_z('zone-biceps',209,113,8,12)+
-    _z('zone-triceps',148,116,7,11)+_z('zone-triceps',212,116,7,11)+
-    _z('zone-forearms',147,137,7,10)+_z('zone-forearms',213,137,7,10)+
-    _zp('zone-abs','M174,97 Q171,114 173,129 L187,129 Q185,114 186,97 Z')+
-    _zp('zone-back','M175,89 Q170,109 172,129 L188,129 Q186,109 185,89 Z')+
-    _z('zone-traps',180,79,14,7)+
-    _zp('zone-lower-back','M175,127 Q172,138 174,144 L186,144 Q184,138 185,127 Z')+
-    _z('zone-quads',172,160,12,18)+_z('zone-quads',188,160,12,18)+
-    _z('zone-hamstrings',172,161,11,16)+_z('zone-hamstrings',188,161,11,16)+
-    _z('zone-glutes',175,142,14,10)+_z('zone-glutes',185,142,14,10)+
-    _z('zone-calves',172,175,8,6)+_z('zone-calves',188,175,8,6)+
-    _z('zone-hip',174,147,9,6)+_z('zone-hip',186,147,9,6));
+
+function _scGeneric() {
+  const equip=`<rect x="18" y="40" width="324" height="4" fill="${_CE}" opacity=".5"/>`+
+    `<rect x="22" y="44" width="6" height="138" rx="2" fill="${_CE}" opacity=".5"/>`+
+    `<rect x="332" y="44" width="6" height="138" rx="2" fill="${_CE}" opacity=".5"/>`;
+  const figure=`<g class="fig-body">`+
+    _h(180,57,13)+_s(180,70,180,88,11)+_s(180,88,180,146,27)+
+    _s(174,78,153,119,12)+_s(186,78,207,119,12)+
+    _s(153,119,147,149,10)+_s(207,119,213,149,10)+
+    _s(175,145,170,182,20)+_s(185,145,191,182,20)+
+    _s(170,182,157,184,13)+_s(191,182,203,184,13)+
+    `</g>`;
+  const zones=_z('zone-chest',170,96,18,11)+_z('zone-chest',190,96,18,11)+
+    _z('zone-shoulders',159,80,12,9)+_z('zone-shoulders',201,80,12,9)+
+    _z('zone-biceps',150,114,9,13)+_z('zone-biceps',210,114,9,13)+
+    _z('zone-triceps',148,117,8,12)+_z('zone-triceps',212,117,8,12)+
+    _z('zone-forearms',147,138,8,11)+_z('zone-forearms',213,138,8,11)+
+    _zp('zone-abs','M174,100 Q171,116 173,130 L187,130 Q185,116 186,100 Z')+
+    _zp('zone-back','M175,92 Q170,112 172,130 L188,130 Q186,112 185,92 Z')+
+    _z('zone-traps',180,82,15,8)+
+    _zp('zone-lower-back','M175,128 Q172,139 174,145 L186,145 Q184,139 185,128 Z')+
+    _z('zone-quads',172,162,13,19)+_z('zone-quads',188,162,13,19)+
+    _z('zone-hamstrings',172,163,12,17)+_z('zone-hamstrings',188,163,12,17)+
+    _z('zone-glutes',175,143,15,11)+_z('zone-glutes',185,143,15,11)+
+    _z('zone-calves',172,176,9,7)+_z('zone-calves',188,176,9,7)+
+    _z('zone-hip',174,148,10,7)+_z('zone-hip',186,148,10,7);
+  return _sc('generic', equip+figure+zones);
 }
+
 function getExerciseCategory(n) {
   n=(n||'').toLowerCase();
   if (/bench|développé.couché|pec|push.?up|fly|écarté|cable.?cross/.test(n)) return 'bench';
