@@ -4216,8 +4216,24 @@ function renderBuilderSession(){
   const list=document.getElementById('builder-session-list');
   if(!list)return;
   if(!count){list.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">Ajoutez des exercices depuis le catalogue ←</div>';return;}
-  list.innerHTML=builderSessionExercises.map((e,i)=>`
-    <div class="session-ex-item">
+  list.innerHTML=builderSessionExercises.map((e,i)=>{
+    const isPairMethod = e.method==='bi-set'||e.method==='super-set';
+    const pairedEx = e.pairedWith ? builderSessionExercises.find(x=>x.exId===e.pairedWith) : null;
+    const pairSection = isPairMethod ? (
+      pairedEx
+        ? `<div style="margin-top:5px;display:flex;align-items:center;gap:6px;font-size:11px;color:#a78bfa;background:rgba(167,139,250,.12);border-radius:6px;padding:4px 8px;">
+            🔗 <span>Couplé avec <strong>${pairedEx.icon||'🏋️'} ${pairedEx.name}</strong></span>
+            <button onclick="clearPairing(${i})" title="Découpler" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:0;line-height:1;">✕</button>
+           </div>`
+        : `<select style="margin-top:5px;background:var(--bg3);border:1px solid #a78bfa;color:var(--text);font-family:var(--font);font-size:11px;padding:3px 6px;border-radius:6px;outline:none;width:100%;" onchange="setPairing(${i},this.value)">
+            <option value="">🔗 Coupler avec…</option>
+            ${builderSessionExercises.filter((_,j)=>j!==i).map(x=>`<option value="${x.exId}">${x.icon||'🏋️'} ${x.name}</option>`).join('')}
+           </select>`
+    ) : '';
+    const restField = e.pairFirst
+      ? `<div class="param-mini" style="opacity:.5;" title="Enchaînement direct — repos géré par l'exercice suivant">Repos <input type="number" value="0" disabled style="opacity:.6;">→</div>`
+      : `<div class="param-mini">Repos <input type="number" value="${e.rest}" min="15" max="600" step="15" onchange="updateExParam(${i},'rest',this.value)">s</div>`;
+    return `<div class="session-ex-item"${pairedEx?` style="border-color:rgba(167,139,250,.4);"`:''}>
       <div class="session-ex-icon">${e.icon||'🏋️'}</div>
       <div class="session-ex-info">
         <div class="session-ex-name">${e.name}</div>
@@ -4225,19 +4241,61 @@ function renderBuilderSession(){
           <div class="param-mini">Séries <input type="number" value="${e.sets}" min="1" max="20" onchange="updateExParam(${i},'sets',this.value)"></div>
           <div class="param-mini">Reps <input type="number" value="${e.reps}" min="1" max="100" onchange="updateExParam(${i},'reps',this.value)"></div>
           <div class="param-mini">Kg <input type="number" value="${e.kg}" min="0" max="500" step="2.5" onchange="updateExParam(${i},'kg',this.value)"></div>
-          <div class="param-mini">Repos <input type="number" value="${e.rest}" min="15" max="600" step="15" onchange="updateExParam(${i},'rest',this.value)">s</div>
+          ${restField}
         </div>
         <select style="margin-top:5px;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:11px;padding:3px 6px;border-radius:6px;outline:none;width:100%;" onchange="updateExParam(${i},'method',this.value)">
           <option value="">— Aucune méthode —</option>
           ${INTENSITY_METHODS.filter(m=>m).map(m=>`<option value="${m.id}"${e.method===m.id?' selected':''}>${m.icon} ${m.name} · ${m.category}</option>`).join('')}
         </select>
+        ${pairSection}
       </div>
       <button class="ex-remove-btn" onclick="removeBuilderEx(${i})">✕</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function updateExParam(i,key,val){
-  if(builderSessionExercises[i]) builderSessionExercises[i][key]=key==='method'?val:(parseFloat(val)||0);
+  const ex=builderSessionExercises[i];
+  if(!ex) return;
+  if(key==='method'){
+    const prev=ex.method;
+    ex.method=val;
+    if(prev!==val && val!=='bi-set' && val!=='super-set' && ex.pairedWith){
+      clearPairing(i); return;
+    }
+    renderBuilderSession();
+  } else {
+    ex[key]=parseFloat(val)||0;
+  }
+}
+
+function setPairing(i, targetExId){
+  if(!targetExId) return;
+  const exA=builderSessionExercises[i];
+  const jIdx=builderSessionExercises.findIndex(x=>x.exId===targetExId);
+  if(jIdx<0||!exA) return;
+  const exB=builderSessionExercises[jIdx];
+  if(exA.pairedWith) clearPairing(i, false);
+  if(exB.pairedWith) clearPairing(jIdx, false);
+  exA.pairedWith=targetExId;
+  exA.pairFirst=true;
+  exA.rest=0;
+  exB.pairedWith=exA.exId;
+  exB.pairFirst=false;
+  exB.method=exA.method;
+  renderBuilderSession();
+}
+
+function clearPairing(i, rerender){
+  if(rerender===undefined) rerender=true;
+  const ex=builderSessionExercises[i];
+  if(!ex||!ex.pairedWith) return;
+  const jIdx=builderSessionExercises.findIndex(x=>x.exId===ex.pairedWith);
+  if(jIdx>=0){ builderSessionExercises[jIdx].pairedWith=null; builderSessionExercises[jIdx].pairFirst=false; }
+  if(ex.pairFirst) ex.rest=90;
+  ex.pairedWith=null;
+  ex.pairFirst=false;
+  if(rerender) renderBuilderSession();
 }
 
 async function saveBuilderSession(){
@@ -7266,6 +7324,7 @@ function syncBuilderToProgSelected(){
 }
 
 function removeBuilderEx(i){
+  if(builderSessionExercises[i]?.pairedWith) clearPairing(i, false);
   builderSessionExercises.splice(i, 1);
   progSelectedEx = [...builderSessionExercises];
   renderBuilderList();
