@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Atlas Coach</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -30,6 +30,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .page{position:absolute;inset:0;overflow-y:auto;display:none;padding:36px 40px;}
 .page{display:none;position:absolute;inset:0;overflow-y:auto;padding:36px 40px;}
 .page.active{display:block;}
+#mobile-topbar{display:none;}
+#sidebar-backdrop{display:none;}
+.dash-2col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.ath-2col{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;}
+.chat-back-btn{display:none;background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:0 6px 0 0;flex-shrink:0;}
 
 /* ── Sidebar ── */
 .sidebar-logo{padding:26px 22px 20px;font-size:1.5rem;font-weight:800;letter-spacing:-.04em;border-bottom:1px solid var(--border);flex-shrink:0;}
@@ -1285,6 +1290,106 @@ select.input{cursor:pointer;}
 .auth-tab.active{background:var(--surface);color:var(--text);}
 .auth-err{color:var(--accent3);font-size:12px;margin-bottom:12px;display:none;}
 .auth-err.show{display:block;}
+
+/* ══════════════════════════════════════════════════
+   MOBILE (iPhone / petits écrans)
+   ══════════════════════════════════════════════════ */
+@media (max-width:900px){
+  /* ── Topbar mobile + hamburger ── */
+  #mobile-topbar{display:flex;align-items:center;gap:12px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+  #hamburger-btn{width:42px;height:42px;border-radius:12px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .mtb-logo{font-size:18px;font-weight:800;letter-spacing:-.03em;}
+  .mtb-logo span{color:var(--accent);}
+
+  /* ── Sidebar → drawer coulissant ── */
+  #sidebar{position:fixed;top:0;left:0;bottom:0;width:min(82vw,300px);z-index:860;transform:translateX(-105%);transition:transform .28s var(--ease);box-shadow:8px 0 40px rgba(0,0,0,.5);}
+  body.sidebar-open #sidebar{transform:translateX(0);}
+  body.sidebar-open #sidebar-backdrop{display:block;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:850;}
+  .sidebar-logo{padding-top:calc(20px + env(safe-area-inset-top));}
+  .nav-item{padding:14px 20px;font-size:15px;}
+
+  /* ── Pages ── */
+  .page{padding:18px 14px calc(48px + env(safe-area-inset-bottom));}
+  .page-header{margin-bottom:22px;}
+  .page-title{font-size:23px;}
+  .header-actions{width:100%;}
+  .header-actions .btn{flex:1;justify-content:center;}
+
+  /* ── Cibles tactiles + lisibilité (16px = pas de zoom iOS) ── */
+  .btn{min-height:46px;font-size:14px;}
+  .btn-sm{min-height:40px;font-size:13px;padding:8px 12px;}
+  .input,select.input,textarea,.chat-textarea,.builder-search,.chat-search,.nutri-input,.nutri-select,.coach-comment-input,.log-ta-m,.num-wrap input[type=number],.set-input,.set-rpe-sel,.macro-quick-input{font-size:16px;}
+
+  /* ── Dashboard ── */
+  .stats-row{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:22px;}
+  .stat-card{padding:16px 12px;}
+  .stat-val{font-size:30px;}
+  .dash-2col{grid-template-columns:1fr;gap:14px;}
+
+  /* ── Adhérents ── */
+  .athletes-grid{grid-template-columns:1fr;gap:12px;}
+  .ath-hero{flex-direction:column;align-items:flex-start;gap:14px;padding:18px;}
+  .ath-name-big{font-size:22px;}
+  .ath-2col{grid-template-columns:1fr;gap:16px;}
+
+  /* ── Constructeur de séance ── */
+  .builder-layout{display:flex;flex-direction:column;height:auto;overflow:visible;gap:16px;}
+  .builder-col{overflow:visible;}
+  .builder-col-body{max-height:48vh;}
+  .cat-filters{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .cat-filter-btn{flex-shrink:0;padding:8px 14px;font-size:12px;}
+
+  /* ── Modal exercice ── */
+  .ex-modal-body{grid-template-columns:1fr;}
+  .ex-modal-left{border-right:none;border-bottom:1px solid var(--border);}
+
+  /* ── Session runner ── */
+  .sr-body{display:flex;flex-direction:column;overflow-y:auto;}
+  .sr-left{width:100%;border-right:none;border-bottom:1px solid var(--border);flex-shrink:0;overflow:visible;}
+  .sr-body-section{display:none;}
+  .sr-right{overflow:visible;padding:14px;}
+  .sr-header{padding:10px 12px;gap:10px;}
+  .sr-title{font-size:14px;}
+  .sets-table th,.sets-table td{padding:7px 4px;}
+  .sets-table th:first-child,.sets-table td:first-child{padding-left:8px;}
+  .set-input{width:46px;padding:8px 4px;}
+  .set-rpe-sel{width:46px;}
+  .sr-summary{padding:16px;}
+
+  /* ── Chat : liste OU conversation ── */
+  .chat-layout{display:flex;flex-direction:column;height:calc(100dvh - 150px);}
+  .chat-sidebar{border-right:none;flex:1;min-height:0;}
+  .chat-main{display:none;flex:1;min-height:0;}
+  .chat-layout.show-conv .chat-sidebar{display:none;}
+  .chat-layout.show-conv .chat-main{display:flex;}
+  .chat-back-btn{display:flex;align-items:center;}
+  .msg-bubble{max-width:82%;}
+  .chat-header{padding:10px 12px;}
+
+  /* ── Modales → bottom sheet ── */
+  .modal-overlay{padding:0;align-items:flex-end;}
+  .modal-box{max-width:100%;border-radius:22px 22px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom));max-height:92dvh;}
+  .modal-actions .btn{flex:1;justify-content:center;}
+  #log-modal{padding:0;align-items:flex-end;}
+  .log-sheet{max-width:100%;border-radius:22px 22px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom));}
+
+  /* ── Nutrition / divers ── */
+  .macro-sources-grid{grid-template-columns:1fr;}
+  .checkin-photos-3,.checkin-photos-4{grid-template-columns:repeat(2,1fr);}
+  .macro-ring-wrap{flex-direction:column;}
+
+  /* ── Auth ── */
+  #auth-screen{padding:16px;}
+  .auth-box{padding:28px 22px;}
+
+  /* ── Toast ── */
+  #toast{left:14px;right:14px;bottom:calc(16px + env(safe-area-inset-bottom));text-align:center;}
+  .pr-toast{left:14px;right:14px;transform:none;justify-content:center;font-size:15px;}
+
+  /* ── Pas d'effets hover sur tactile ── */
+  .btn:hover{transform:none;box-shadow:none;}
+  .card:hover,.athlete-card:hover,.stat-card:hover{transform:none;}
+}
 </style>
 </head>
 <body>
@@ -1357,8 +1462,14 @@ select.input{cursor:pointer;}
     </div>
   </div>
 
+  <div id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
   <!-- ── MAIN CONTENT ── -->
   <div id="main-content">
+    <div id="mobile-topbar">
+      <button id="hamburger-btn" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+      <div class="mtb-logo">Atlas <span>Coach</span></div>
+    </div>
     <div id="page-area">
 
       <!-- DASHBOARD -->
@@ -1371,7 +1482,7 @@ select.input{cursor:pointer;}
           </div>
         </div>
         <div class="stats-row" id="dashboard-stats"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div class="dash-2col">
           <div class="card"><div class="card-head"><span class="card-title">Derniers adhérents</span></div><div class="card-body" id="dash-athletes"></div></div>
           <div class="card"><div class="card-head"><span class="card-title">Retours récents</span></div><div class="card-body" id="dash-logs"></div></div>
         </div>
@@ -3623,6 +3734,7 @@ function copyCalUrl(){
 // NAVIGATION
 // ═══════════════════════════════════════════════════════════════
 function showPage(name){
+  closeSidebar();
   document.querySelectorAll('.page').forEach(p=>{
     p.classList.remove('active');
     p.style.animation='none';
@@ -5021,6 +5133,9 @@ body{font-family:system-ui,sans-serif;background:#fff;color:#0a0a0f;font-size:12
 // ═══════════════════════════════════════════════════════════════
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
+function toggleSidebar(){document.body.classList.toggle('sidebar-open');}
+function closeSidebar(){document.body.classList.remove('sidebar-open');}
+function chatBack(){document.querySelector('.chat-layout')?.classList.remove('show-conv');}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 
 
@@ -5090,7 +5205,7 @@ function renderAthleteDetail(id){
     <!-- Sports profile -->
     <div id="ath-sports-profile" class="sport-suggest-section"></div>
 
-    <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;">
+    <div class="ath-2col">
       <!-- LEFT: séances + historique -->
       <div>
         <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;">Séances assignées</div>
@@ -8758,6 +8873,7 @@ async function openConv(athleteId) {
 
   document.getElementById('chat-main').innerHTML =
     '<div class="chat-header">'+
+      '<button class="chat-back-btn" onclick="chatBack()" aria-label="Retour">←</button>'+
       '<div class="chat-header-av" style="background:'+a.color+'">'+a.name[0]+'</div>'+
       '<div>'+
         '<div class="chat-header-name">'+a.name+'</div>'+
@@ -8780,6 +8896,7 @@ async function openConv(athleteId) {
       '<button class="chat-send-btn" onclick="doSendMsg()" title="Envoyer">➤</button>'+
     '</div>';
 
+  document.querySelector('.chat-layout')?.classList.add('show-conv');
   scrollToBottom();
   document.getElementById('chat-input')?.focus();
 }
