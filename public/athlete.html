@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Atlas — Mon Espace</title>
 <style>
 :root{
@@ -308,6 +308,34 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .photo-fullscreen{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.95);display:flex;align-items:center;justify-content:center;}
 .photo-fullscreen img{max-width:96vw;max-height:92vh;border-radius:10px;object-fit:contain;}
 .photo-fs-close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+/* ══════════════════════════════════════════════════
+   DESKTOP (grand écran) — drawer fixe + contenu centré
+   ══════════════════════════════════════════════════ */
+@media (min-width:900px){
+  .ham-btn{display:none;}
+  .drawer{transform:translateX(0);}
+  .drawer-overlay{display:none;}
+  #app.show{margin-left:282px;}
+  .app-header{padding:16px 36px;}
+  .app-logo{text-align:left;}
+  .page{padding:40px max(48px,calc((100% - 720px)/2)) 64px;}
+
+  /* Bottom sheets → modales centrées */
+  #log-panel,#profile-panel,#session-preview-panel{align-items:center;justify-content:center;padding:24px;}
+  .log-sheet,.profile-sheet{border-radius:20px;max-width:540px;}
+  .log-handle,.profile-handle{display:none;}
+
+  /* Messages : barre de saisie décalée du drawer, contenu centré */
+  .msgs-area{padding:24px max(48px,calc((100% - 720px)/2)) 96px;}
+  .msg-bar{left:282px;padding:14px max(48px,calc((100% - 720px)/2));}
+
+  /* Séance live (plein écran, couvre le drawer) : contenu centré */
+  .live-body{padding:28px max(48px,calc((100% - 680px)/2)) 110px;}
+  .live-nav{padding:12px max(48px,calc((100% - 680px)/2));}
+
+  .toast{bottom:32px;}
+}
 </style>
 </head>
 <body>
