@@ -1913,6 +1913,11 @@ select.input{cursor:pointer;}
   <div class="ex-modal-body">
     <!-- LEFT panel -->
     <div class="ex-modal-left">
+      <!-- Démonstration animée -->
+      <div class="ex-section">
+        <div class="ex-section-title">🎬 Démonstration par le coach</div>
+        <div id="em-avatar-stage" style="position:relative;border-radius:14px;overflow:hidden;"></div>
+      </div>
       <!-- Body SVG -->
       <div class="ex-section">
         <div class="ex-section-title">Corps musculaire — Activation</div>
@@ -2350,6 +2355,7 @@ select.input{cursor:pointer;}
 </div>
 
 
+<script src="/avatar.js"></script>
 <script>
 
 
@@ -4624,6 +4630,9 @@ function openExModal(ex){
   addBtn.style.color=added?'var(--text)':'#0a0a0f';
   document.getElementById('ex-modal').classList.add('open');
 
+  // Démonstration animée par l'avatar coach
+  AtlasAvatar.play(document.getElementById('em-avatar-stage'), ex.name, { category: ex.cat });
+
   // SVGs
   document.getElementById('em-svg-front').innerHTML=buildFront();
   document.getElementById('em-svg-back').innerHTML=buildBack();
@@ -4681,7 +4690,11 @@ function colorBodyForEx(ex, modalId){
   });
 }
 
-function closeExModal(){document.getElementById('ex-modal').classList.remove('open');currentExModal=null;}
+function closeExModal(){
+  document.getElementById('ex-modal').classList.remove('open');
+  document.getElementById('em-avatar-stage')?.__atlasAv?.stop();
+  currentExModal=null;
+}
 
 // ═══════════════════════════════════════════════════════════════
 // LOG MODAL

@@ -1,4 +1,4 @@
-const CACHE = 'atlas-v9';
+const CACHE = 'atlas-v10';
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -23,9 +23,10 @@ self.addEventListener('fetch', e => {
   if (url.pathname.startsWith('/api/')) return;
 
   const isHTML = e.request.headers.get('accept')?.includes('text/html');
+  const isJS = url.pathname.endsWith('.js');
 
-  if (isHTML) {
-    // Network-first pour les pages : toujours la version la plus récente
+  if (isHTML || isJS) {
+    // Network-first pour les pages et les scripts : toujours la version la plus récente
     e.respondWith(
       fetch(e.request).catch(() => caches.match(e.request))
     );
