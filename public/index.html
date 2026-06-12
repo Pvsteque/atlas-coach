@@ -154,8 +154,12 @@ select.input{cursor:pointer;}
 .ex-pick-btn:hover{background:rgba(255,122,0,.2);}
 .ex-pick-btn.added{background:rgba(255,159,69,.15);border-color:rgba(255,159,69,.4);color:var(--accent2);}
 /* Session exercise list */
-.session-ex-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);}
+.session-ex-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);transition:opacity .15s,border-top .1s;}
 .session-ex-item:last-child{border-bottom:none;}
+.session-ex-item.dragging{opacity:.35;}
+.session-ex-item.drag-over{border-top:2px solid var(--accent);}
+.drag-handle{cursor:grab;color:var(--muted);font-size:15px;flex-shrink:0;padding:0 2px;user-select:none;line-height:1;touch-action:none;}
+.drag-handle:active{cursor:grabbing;color:var(--accent);}
 .session-ex-icon{font-size:20px;width:26px;text-align:center;}
 .session-ex-info{flex:1;min-width:0;}
 .session-ex-name{font-size:13px;font-weight:700;}
@@ -3423,6 +3427,7 @@ let progSelectedEx=[], activePathologies=[], bodyView='front', activeCurveMuscle
 let builderCat = 'all';
 let builderSessionExercises = [];
 let builderAthleteId = null;
+let builderDragIdx = null;
 let currentExModal = null;
 let currentAthleteId = null;
 let currentLogAssignId = null;
@@ -4233,7 +4238,14 @@ function renderBuilderSession(){
     const restField = e.pairFirst
       ? `<div class="param-mini" style="opacity:.5;" title="Enchaînement direct — repos géré par l'exercice suivant">Repos <input type="number" value="0" disabled style="opacity:.6;">→</div>`
       : `<div class="param-mini">Repos <input type="number" value="${e.rest}" min="15" max="600" step="15" onchange="updateExParam(${i},'rest',this.value)">s</div>`;
-    return `<div class="session-ex-item"${pairedEx?` style="border-color:rgba(167,139,250,.4);"`:''}>
+    return `<div class="session-ex-item" draggable="true"
+      ondragstart="builderDragStart(${i})"
+      ondragover="builderDragOver(event,${i})"
+      ondragleave="builderDragLeave(event)"
+      ondrop="builderDrop(${i})"
+      ondragend="builderDragEnd()"
+      ${pairedEx?`style="border-color:rgba(167,139,250,.4);"`:''}>
+      <span class="drag-handle" title="Glisser pour réordonner">⠿</span>
       <div class="session-ex-icon">${e.icon||'🏋️'}</div>
       <div class="session-ex-info">
         <div class="session-ex-name">${e.name}</div>
@@ -4252,6 +4264,43 @@ function renderBuilderSession(){
       <button class="ex-remove-btn" onclick="removeBuilderEx(${i})">✕</button>
     </div>`;
   }).join('');
+}
+
+function builderDragStart(i){
+  builderDragIdx=i;
+  setTimeout(()=>{
+    const items=document.querySelectorAll('#builder-session-list .session-ex-item');
+    if(items[i]) items[i].classList.add('dragging');
+  },0);
+}
+function builderDragOver(event,i){
+  event.preventDefault();
+  event.dataTransfer.dropEffect='move';
+  document.querySelectorAll('#builder-session-list .session-ex-item').forEach((el,j)=>{
+    el.classList.toggle('drag-over', j===i && j!==builderDragIdx);
+  });
+}
+function builderDragLeave(event){
+  if(!event.currentTarget.contains(event.relatedTarget)){
+    event.currentTarget.classList.remove('drag-over');
+  }
+}
+function builderDragEnd(){
+  builderDragIdx=null;
+  document.querySelectorAll('#builder-session-list .session-ex-item').forEach(el=>{
+    el.classList.remove('drag-over','dragging');
+  });
+}
+function builderDrop(toIdx){
+  document.querySelectorAll('#builder-session-list .session-ex-item').forEach(el=>{
+    el.classList.remove('drag-over','dragging');
+  });
+  if(builderDragIdx===null||builderDragIdx===toIdx){builderDragIdx=null;return;}
+  const [moved]=builderSessionExercises.splice(builderDragIdx,1);
+  builderSessionExercises.splice(toIdx,0,moved);
+  builderDragIdx=null;
+  renderBuilderSession();
+  updateBuilderCurve();
 }
 
 function updateExParam(i,key,val){
