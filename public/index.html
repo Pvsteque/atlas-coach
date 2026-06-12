@@ -1333,9 +1333,12 @@ select.input{cursor:pointer;}
   .ath-2col{grid-template-columns:1fr;gap:16px;}
 
   /* ── Constructeur de séance ── */
-  .builder-layout{display:flex;flex-direction:column;height:auto;overflow:visible;gap:16px;}
+  /* !important requis : #page-builder et .builder-layout ont des styles inline desktop */
+  #page-builder{padding:18px 14px calc(48px + env(safe-area-inset-bottom)) !important;overflow-y:auto !important;}
+  .builder-layout{display:flex;flex-direction:column;height:auto !important;overflow:visible;gap:16px;}
   .builder-col{overflow:visible;}
   .builder-col-body{max-height:48vh;}
+  #builder-session-name{width:100% !important;}
   .cat-filters{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;}
   .cat-filter-btn{flex-shrink:0;padding:8px 14px;font-size:12px;}
 
