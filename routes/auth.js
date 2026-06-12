@@ -26,10 +26,11 @@ router.post('/register', async (req, res) => {
 
     const hash = await bcrypt.hash(password, 12);
     const id = randomUUID();
-    db.prepare('INSERT INTO coaches (id, name, email, password, coach_code) VALUES (?, ?, ?, ?, ?)').run(id, name, email, hash, coach_code);
+    const cal_token = randomUUID();
+    db.prepare('INSERT INTO coaches (id, name, email, password, coach_code, cal_token) VALUES (?, ?, ?, ?, ?, ?)').run(id, name, email, hash, coach_code, cal_token);
 
     const token = jwt.sign({ id, name, email }, SECRET, { expiresIn: '30d' });
-    res.json({ token, coach: { id, name, email, coach_code } });
+    res.json({ token, coach: { id, name, email, coach_code, cal_token } });
   } catch (err) {
     res.status(500).json({ error: 'Erreur serveur' });
   }
@@ -48,7 +49,7 @@ router.post('/login', async (req, res) => {
     if (!ok) return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
 
     const token = jwt.sign({ id: coach.id, name: coach.name, email: coach.email }, SECRET, { expiresIn: '30d' });
-    res.json({ token, coach: { id: coach.id, name: coach.name, email: coach.email, coach_code: coach.coach_code } });
+    res.json({ token, coach: { id: coach.id, name: coach.name, email: coach.email, coach_code: coach.coach_code, cal_token: coach.cal_token } });
   } catch (err) {
     res.status(500).json({ error: 'Erreur serveur' });
   }
@@ -60,7 +61,7 @@ router.get('/me', (req, res) => {
   if (!auth?.startsWith('Bearer ')) return res.status(401).json({ error: 'Non authentifié' });
   try {
     const payload = jwt.verify(auth.slice(7), SECRET);
-    const coach = db.prepare('SELECT id, name, email, coach_code FROM coaches WHERE id = ?').get(payload.id);
+    const coach = db.prepare('SELECT id, name, email, coach_code, cal_token FROM coaches WHERE id = ?').get(payload.id);
     if (!coach) return res.status(401).json({ error: 'Coach introuvable' });
     res.json({ coach });
   } catch {

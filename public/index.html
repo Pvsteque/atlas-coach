@@ -3595,6 +3595,20 @@ function copyCoachCode(){
     setTimeout(()=>{icon.textContent='⎘';icon.style.color='var(--muted)';},1500);
   });
 }
+function openCalModal(){
+  if(!_calToken){toast('Lien calendrier indisponible — reconnecte-toi');return;}
+  document.getElementById('cal-url-input').value=location.origin+'/calendar/'+_calToken+'.ics';
+  openModal('modal-calendar');
+}
+function copyCalUrl(){
+  const url=document.getElementById('cal-url-input').value;
+  if(!url)return;
+  navigator.clipboard.writeText(url).then(()=>{
+    const btn=document.getElementById('cal-copy-btn');
+    btn.textContent='Copié ✓';
+    setTimeout(()=>{btn.textContent='Copier';},1500);
+  });
+}
 
 // ═══════════════════════════════════════════════════════════════
 // NAVIGATION

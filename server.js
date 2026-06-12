@@ -35,6 +35,9 @@ app.use('/api/contact', require('./routes/contact'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api', require('./routes/api'));
 
+// Flux iCal public (abonnement Apple Calendar / Google Calendar)
+app.use('/calendar', require('./routes/calendar'));
+
 // Landing page
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'landing.html'));
